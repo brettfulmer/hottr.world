@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #050608;
+  --color-bg-deep: #020203;
+  --color-pink-300: #ff8ce0;
+  --color-pink-500: #ff4dcc;
+  --color-pink-700: #FF0CB6;
+  --color-pink-900: #b30880;
+  --font-poppins: 'Poppins', sans-serif;
+  --font-mono: ui-monospace, Consolas, monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #050608;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(255,12,182,0.8), 0 0 32px rgba(255,12,182,0.4);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(255,12,182,1), 0 0 48px rgba(255,12,182,0.6);
+  }
+}
+
+.cta-pulse {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
