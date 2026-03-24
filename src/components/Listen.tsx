@@ -1,12 +1,12 @@
 import { useSectionReveal } from '../hooks/useSectionReveal'
 
 const platforms = [
-  { name: 'Spotify', href: '#' },
-  { name: 'Apple Music', href: '#' },
-  { name: 'YouTube Music', href: '#' },
-  { name: 'Amazon Music', href: '#' },
-  { name: 'Tidal', href: '#' },
-  { name: 'Deezer', href: '#' },
+  { name: 'Spotify', href: 'https://open.spotify.com' },
+  { name: 'Apple Music', href: 'https://music.apple.com' },
+  { name: 'YouTube Music', href: 'https://music.youtube.com' },
+  { name: 'Amazon Music', href: 'https://music.amazon.com' },
+  { name: 'Tidal', href: 'https://tidal.com' },
+  { name: 'Deezer', href: 'https://www.deezer.com' },
 ]
 
 export default function Listen() {
@@ -22,6 +22,8 @@ export default function Listen() {
               <a
                 key={name}
                 href={href}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-sm border border-white/10 bg-white/5 px-5 py-3 font-['Poppins'] text-sm text-white/70 transition-all duration-300 hover:border-[#FF0CB6]/40 hover:text-white hover:shadow-[0_0_16px_rgba(255,12,182,0.3)]"
               >
                 {name}

@@ -16,17 +16,28 @@ export default function Hero() {
     let particles: { x: number; y: number; vx: number; vy: number; size: number; opacity: number }[] = []
 
     const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      const dpr = window.devicePixelRatio || 1
+      const logicalWidth = window.innerWidth
+      const logicalHeight = window.innerHeight
+      canvas.width = logicalWidth * dpr
+      canvas.height = logicalHeight * dpr
+      canvas.style.width = `${logicalWidth}px`
+      canvas.style.height = `${logicalHeight}px`
     }
+
+    const getLogicalSize = () => ({
+      w: canvas.width / (window.devicePixelRatio || 1),
+      h: canvas.height / (window.devicePixelRatio || 1),
+    })
 
     const initParticles = () => {
       particles = []
-      const count = Math.floor((canvas.width * canvas.height) / 18000)
+      const { w, h } = getLogicalSize()
+      const count = Math.floor((w * h) / 18000)
       for (let i = 0; i < count; i++) {
         particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
+          x: Math.random() * w,
+          y: Math.random() * h,
           vx: (Math.random() - 0.5) * 0.2,
           vy: (Math.random() - 0.5) * 0.2,
           size: Math.random() * 1.2 + 0.3,
@@ -36,14 +47,17 @@ export default function Hero() {
     }
 
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      const dpr = window.devicePixelRatio || 1
+      const { w, h } = getLogicalSize()
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.clearRect(0, 0, w, h)
       for (const p of particles) {
         p.x += p.vx
         p.y += p.vy
-        if (p.x < 0) p.x = canvas.width
-        if (p.x > canvas.width) p.x = 0
-        if (p.y < 0) p.y = canvas.height
-        if (p.y > canvas.height) p.y = 0
+        if (p.x < 0) p.x = w
+        if (p.x > w) p.x = 0
+        if (p.y < 0) p.y = h
+        if (p.y > h) p.y = 0
 
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
@@ -99,12 +113,15 @@ export default function Hero() {
         <p className="mt-3 font-['Poppins'] text-sm tracking-wider text-white/50 sm:text-base">
           by HOTTR
         </p>
-        <a
-          href="#"
+        <button
+          onClick={() => {
+            const section = document.querySelector('[data-section="4"]')
+            if (section) section.scrollIntoView({ behavior: 'smooth' })
+          }}
           className="cta-pulse mt-10 inline-block rounded-sm bg-[#FF0CB6] px-10 py-4 font-['Poppins'] text-sm font-semibold uppercase tracking-widest text-white transition-all duration-300 hover:bg-[#ff4dcc]"
         >
           LISTEN NOW
-        </a>
+        </button>
       </div>
     </section>
   )

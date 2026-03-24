@@ -49,7 +49,8 @@ export default function SectionDots() {
   return (
     <div
       className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 transition-opacity duration-500"
-      style={{ opacity: visible ? 1 : 0 }}
+      style={{ opacity: visible ? 1 : 0, pointerEvents: visible ? 'auto' : 'none' }}
+      aria-hidden={!visible}
     >
       {Array.from({ length: SECTION_COUNT }).map((_, i) => (
         <button
