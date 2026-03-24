@@ -7,7 +7,9 @@
   --color-pink-500: #ff4dcc;
   --color-pink-700: #FF0CB6;
   --color-pink-900: #b30880;
-  --font-poppins: 'Poppins', sans-serif;
+  --color-surface-container-lowest: #0d0e11;
+  --font-jakarta: 'Plus Jakarta Sans', sans-serif;
+  --font-manrope: 'Manrope', sans-serif;
   --font-mono: ui-monospace, Consolas, monospace;
 }
 
@@ -19,28 +21,55 @@
 
 body {
   background: #050608;
-  color: #ffffff;
-  font-family: 'Poppins', sans-serif;
+  color: #e3e2e5;
+  font-family: 'Manrope', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  min-height: max(884px, 100dvh);
+}
+
+::selection {
+  background: #ff3db9;
+  color: #56003b;
 }
 
 #root {
   min-height: 100vh;
 }
 
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 16px rgba(255,12,182,0.8), 0 0 32px rgba(255,12,182,0.4);
-  }
-  50% {
-    box-shadow: 0 0 24px rgba(255,12,182,1), 0 0 48px rgba(255,12,182,0.6);
-  }
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
 }
 
-.cta-pulse {
-  animation: pulse-glow 3s ease-in-out infinite;
+.neon-glow {
+  text-shadow: 0 0 15px rgba(255, 12, 182, 0.6);
+}
+
+.neon-box-glow {
+  box-shadow: 0 0 15px rgba(255, 12, 182, 0.4);
+}
+
+.glass-pane {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.live-signal {
+  width: 4px;
+  height: 4px;
+  background-color: #FF0CB6;
+  box-shadow: 0 0 8px #FF0CB6;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+.pulse-pink {
+  animation: pulse-glow 2s infinite ease-in-out;
 }
 
 .fade-in {

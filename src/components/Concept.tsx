@@ -1,16 +1,35 @@
-import { useScrollReveal } from '../hooks/useScrollReveal'
-
 export default function Concept() {
-  const ref = useScrollReveal<HTMLElement>()
-
   return (
-    <section ref={ref} className="fade-in px-6 py-28 md:py-36">
-      <div className="mx-auto max-w-[720px] text-center">
-        <p className="font-[Poppins] text-xl font-semibold leading-relaxed text-white sm:text-2xl md:text-3xl">
-          One club track. Twenty-five languages. The most widely localized single release in music history.
-        </p>
-        <p className="mt-6 font-[Poppins] text-base leading-relaxed text-white/72 sm:text-lg">
-          The dancefloor doesn't care what language you speak. We just made sure 25 cities can sing along.
+    <section className="relative py-20 px-6 overflow-hidden flex flex-col items-center">
+      <div className="w-full max-w-sm aspect-square relative flex items-center justify-center">
+        {/* Decorative Rotating "Globe" Element */}
+        <div className="absolute inset-0 border border-white/5 rounded-full" />
+        <div className="absolute inset-4 border border-white/10 rounded-full animate-[spin_20s_linear_infinite]" />
+        <div className="relative w-72 h-72 rounded-full overflow-hidden shadow-[inset_0_0_50px_rgba(0,0,0,1)]">
+          <img
+            className="w-full h-full object-cover opacity-60 grayscale brightness-50 contrast-125"
+            alt="abstract dark earth globe texture with neon pink glowing landmasses and digital data lines on a black void background"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzo9nYUtg5Jx2U1PdFbfnuQ_4n4-NkxWXFnON_fENePMYBp-vkCic0AxrdrZ3KtZEH8EmYv9OnJuPS4Wzld7_IRi4aKQ9GDgpafxd5hjep7JyxElxDGXDbTbCvgLqHwiSMlLxB3T_z1PCw1SL986mxj1S5Z6U8u66NLv1IkusgKadT8G1Et7PZbuEH2XvG5l61EGmkh9Llo2N9oVattGIWFs_DfTS2jRzgEEuBdTHFsLLwYc8hK1G4XF20ekw1lFVoQajAHR7uvoxd"
+          />
+          {/* Pulse Points (Cities) */}
+          <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-[#ff3db9] rounded-full pulse-pink shadow-[0_0_10px_#FF0CB6]" />
+          <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-[#ff3db9] rounded-full pulse-pink shadow-[0_0_10px_#FF0CB6]" />
+          <div className="absolute bottom-1/3 right-1/4 w-2 h-2 bg-[#ff3db9] rounded-full pulse-pink shadow-[0_0_10px_#FF0CB6]" />
+          <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-[#ff3db9] rounded-full pulse-pink shadow-[0_0_10px_#FF0CB6]" />
+          <div className="absolute bottom-1/4 left-1/2 w-2 h-2 bg-[#ff3db9] rounded-full pulse-pink shadow-[0_0_10px_#FF0CB6]" />
+        </div>
+        {/* Tooltip Mockup */}
+        <div className="absolute top-10 right-0 glass-pane p-2 px-3 z-10 border-[#ff3db9]/30">
+          <div className="flex items-center gap-2">
+            <div className="live-signal" />
+            <span className="font-[var(--font-manrope)] text-[9px] font-bold tracking-widest text-white uppercase">MELBOURNE</span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-12 text-center max-w-xs">
+        <h2 className="font-[var(--font-jakarta)] text-lg font-semibold uppercase tracking-widest mb-4">GLOBAL SYNC</h2>
+        <p className="text-white/60 text-sm leading-relaxed">
+          A singular composition fractured across 25 global epicenters. Seamlessly translated, unified by the beat.
         </p>
       </div>
     </section>
