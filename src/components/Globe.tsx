@@ -1,6 +1,47 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import * as THREE from 'three'
-import { cities, type CityData } from '../data/cities'
+
+interface CityData {
+  city: string
+  language: string
+  country: string
+  lat: number
+  lng: number
+  slug: string
+}
+
+const cities: CityData[] = [
+  { city: 'Melbourne', language: 'English', country: 'Australia', lat: -37.81, lng: 144.96, slug: 'melbourne' },
+  { city: 'Santiago', language: 'Chilean Spanish', country: 'Chile', lat: -33.45, lng: -70.67, slug: 'santiago' },
+  { city: 'Medellín', language: 'Colombian Spanish', country: 'Colombia', lat: 6.25, lng: -75.56, slug: 'medellin' },
+  { city: 'Mexico City', language: 'Mexican Spanish', country: 'Mexico', lat: 19.43, lng: -99.13, slug: 'mexico-city' },
+  { city: 'São Paulo', language: 'Brazilian Portuguese', country: 'Brazil', lat: -23.55, lng: -46.63, slug: 'sao-paulo' },
+  { city: 'Madrid', language: 'Madrid Spanish', country: 'Spain', lat: 40.42, lng: -3.70, slug: 'madrid' },
+  { city: 'Paris', language: 'French', country: 'France', lat: 48.86, lng: 2.35, slug: 'paris' },
+  { city: 'Milan', language: 'Italian', country: 'Italy', lat: 45.46, lng: 9.19, slug: 'milan' },
+  { city: 'Amsterdam', language: 'Dutch', country: 'Netherlands', lat: 52.37, lng: 4.90, slug: 'amsterdam' },
+  { city: 'Berlin', language: 'German', country: 'Germany', lat: 52.52, lng: 13.41, slug: 'berlin' },
+  { city: 'Belfast', language: 'Belfast English', country: 'Northern Ireland', lat: 54.60, lng: -5.93, slug: 'belfast' },
+  { city: 'Stockholm', language: 'Swedish', country: 'Sweden', lat: 59.33, lng: 18.07, slug: 'stockholm' },
+  { city: 'Warsaw', language: 'Polish', country: 'Poland', lat: 52.23, lng: 21.01, slug: 'warsaw' },
+  { city: 'Bucharest', language: 'Romanian', country: 'Romania', lat: 44.43, lng: 26.10, slug: 'bucharest' },
+  { city: 'Istanbul', language: 'Turkish', country: 'Turkey', lat: 41.01, lng: 28.98, slug: 'istanbul' },
+  { city: 'Moscow', language: 'Russian', country: 'Russia', lat: 55.76, lng: 37.62, slug: 'moscow' },
+  { city: 'Cairo', language: 'Egyptian Arabic', country: 'Egypt', lat: 30.04, lng: 31.24, slug: 'cairo' },
+  { city: 'Tel Aviv', language: 'Hebrew', country: 'Israel', lat: 32.07, lng: 34.77, slug: 'tel-aviv' },
+  { city: 'Johannesburg', language: 'Afrikaans', country: 'South Africa', lat: -26.20, lng: 28.04, slug: 'johannesburg' },
+  { city: 'Nairobi', language: 'Swahili', country: 'Kenya', lat: -1.29, lng: 36.82, slug: 'nairobi' },
+  { city: 'Mumbai', language: 'Hindi', country: 'India', lat: 19.08, lng: 72.88, slug: 'mumbai' },
+  { city: 'Bangkok', language: 'Thai', country: 'Thailand', lat: 13.76, lng: 100.50, slug: 'bangkok' },
+  { city: 'Ho Chi Minh City', language: 'Vietnamese', country: 'Vietnam', lat: 10.82, lng: 106.63, slug: 'ho-chi-minh-city' },
+  { city: 'Manila', language: 'Tagalog', country: 'Philippines', lat: 14.60, lng: 120.98, slug: 'manila' },
+  { city: 'Bali', language: 'Indonesian', country: 'Indonesia', lat: -8.34, lng: 115.09, slug: 'bali' },
+  { city: 'Tokyo', language: 'Japanese', country: 'Japan', lat: 35.68, lng: 139.69, slug: 'tokyo' },
+  { city: 'Seoul', language: 'Korean', country: 'South Korea', lat: 37.57, lng: 126.98, slug: 'seoul' },
+  { city: 'Shanghai', language: 'Mandarin', country: 'China', lat: 31.23, lng: 121.47, slug: 'shanghai' },
+  { city: 'Mykonos', language: 'Greek', country: 'Greece', lat: 37.45, lng: 25.33, slug: 'mykonos' },
+  { city: 'Lagos', language: 'Nigerian Pidgin', country: 'Nigeria', lat: 6.52, lng: 3.38, slug: 'lagos' },
+]
 
 function latLngToVector3(lat: number, lng: number, radius: number): THREE.Vector3 {
   const phi = (90 - lat) * (Math.PI / 180)
