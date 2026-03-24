@@ -46,6 +46,8 @@ export default function GlobeCanvas({ activeCity, targetLon, targetLat, width, h
   const animRef = useRef<number>(0)
   const currentCenter = useRef({ lon: targetLon, lat: targetLat })
   const time = useRef(0)
+  const isVisible = useRef(true)
+  const isInViewport = useRef(true)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -53,13 +55,32 @@ export default function GlobeCanvas({ activeCity, targetLon, targetLat, width, h
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
     const dpr = window.devicePixelRatio || 1
     canvas.width = width * dpr
     canvas.height = height * dpr
     ctx.scale(dpr, dpr)
 
+    const onVisibilityChange = () => {
+      isVisible.current = document.visibilityState === 'visible'
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    const observer = new IntersectionObserver(
+      ([entry]) => { isInViewport.current = entry.isIntersecting },
+      { threshold: 0 },
+    )
+    observer.observe(canvas)
+
     const draw = () => {
-      time.current += 0.016
+      if (!isVisible.current || !isInViewport.current) {
+        animRef.current = requestAnimationFrame(draw)
+        return
+      }
+      if (!prefersReducedMotion) {
+        time.current += 0.016
+      }
 
       // Smooth interpolation toward target
       const ease = 0.04
@@ -149,20 +170,20 @@ export default function GlobeCanvas({ activeCity, targetLon, targetLat, width, h
         ctx.stroke()
       }
 
-      // Fill continents faintly
+      // Fill continents faintly — split into visible segments to avoid horizon-bridging artifacts
       ctx.fillStyle = 'rgba(255, 255, 255, 0.03)'
       for (const outline of continents) {
-        ctx.beginPath()
-        let started = false
+        let pathOpen = false
         for (const [lon, lat] of outline) {
           const [x, y, vis] = project(lon, lat, cLon, cLat, cx, cy, R)
           if (vis) {
-            if (!started) { ctx.moveTo(x, y); started = true }
+            if (!pathOpen) { ctx.beginPath(); ctx.moveTo(x, y); pathOpen = true }
             else ctx.lineTo(x, y)
+          } else {
+            if (pathOpen) { ctx.closePath(); ctx.fill(); pathOpen = false }
           }
         }
-        ctx.closePath()
-        ctx.fill()
+        if (pathOpen) { ctx.closePath(); ctx.fill() }
       }
 
       // Highlight active country regions with pink glow
@@ -217,7 +238,11 @@ export default function GlobeCanvas({ activeCity, targetLon, targetLat, width, h
     }
 
     draw()
-    return () => cancelAnimationFrame(animRef.current)
+    return () => {
+      cancelAnimationFrame(animRef.current)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      observer.disconnect()
+    }
   }, [activeCity, targetLon, targetLat, width, height])
 
   return (

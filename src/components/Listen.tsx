@@ -14,9 +14,14 @@ export default function Listen() {
     <section ref={ref} className="fade-in pb-32 px-6">
       <div className="flex flex-wrap justify-center items-center gap-10 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
         {platforms.map(({ name, icon }) => (
-          <a key={name} href="#" aria-label={name} className="transition-opacity hover:opacity-100">
+          <button
+            key={name}
+            type="button"
+            aria-label={name}
+            className="transition-opacity hover:opacity-100 bg-transparent border-0 p-0 cursor-pointer"
+          >
             <span className="material-symbols-outlined text-3xl">{icon}</span>
-          </a>
+          </button>
         ))}
       </div>
     </section>
