@@ -1,7 +1,14 @@
 import { useEffect, useRef } from 'react'
 
+const TRACK_URL = 'https://ykjntvewdxdgbmzmvmwa.supabase.co/storage/v1/object/public/records/Dancefloor.mp3'
+
 export default function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    audioRef.current = document.getElementById('dancefloor-audio') as HTMLAudioElement
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -78,6 +85,26 @@ export default function Hero() {
     }
   }, [])
 
+  const handlePlay = () => {
+    const audio = audioRef.current
+    if (!audio) {
+      // Create it if not yet in DOM
+      const el = document.createElement('audio')
+      el.id = 'dancefloor-audio'
+      el.src = TRACK_URL
+      el.preload = 'none'
+      document.body.appendChild(el)
+      audioRef.current = el
+      el.play()
+      return
+    }
+    if (audio.paused) {
+      audio.play()
+    } else {
+      audio.pause()
+    }
+  }
+
   return (
     <div className="w-full h-full flex items-center justify-center relative">
       <canvas ref={canvasRef} className="absolute inset-0" />
@@ -95,13 +122,10 @@ export default function Hero() {
           by HOTTR
         </p>
         <button
-          onClick={() => {
-            const section = document.querySelector('[data-section="4"]')
-            if (section) section.scrollIntoView({ behavior: 'smooth' })
-          }}
+          onClick={handlePlay}
           className="cta-pulse mt-10 inline-block rounded-sm bg-[#FF0CB6] px-8 py-4 font-['Poppins'] text-[14px] font-semibold uppercase tracking-[0.15em] text-white transition-all duration-300 hover:bg-[#ff4dcc]"
         >
-          LISTEN NOW
+          PLAY NOW
         </button>
       </div>
     </div>
