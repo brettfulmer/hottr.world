@@ -10,7 +10,6 @@ export default function GlobeCarousel() {
   const touchDelta = useRef(0)
   const [dragOffset, setDragOffset] = useState(0)
   const isDragging = useRef(false)
-  const containerRef = useRef<HTMLDivElement>(null)
   const [globeSize, setGlobeSize] = useState(320)
 
   const activeCity = cities[activeIndex]
@@ -80,18 +79,21 @@ export default function GlobeCarousel() {
     touchDelta.current = 0
   }
 
-  // Keyboard navigation
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') goTo(activeIndex + 1)
-      if (e.key === 'ArrowLeft') goTo(activeIndex - 1)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [activeIndex, goTo])
+  // Keyboard navigation (scoped to carousel container via onKeyDown)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === 'ArrowRight') { e.preventDefault(); goTo(activeIndex + 1) }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(activeIndex - 1) }
+  }
 
   return (
-    <section ref={sectionRef} className="fade-in relative py-20 px-6 overflow-hidden flex flex-col items-center">
+    <section
+      ref={sectionRef}
+      role="region"
+      aria-label="Globe carousel"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      className="fade-in relative py-20 px-6 overflow-hidden flex flex-col items-center outline-none"
+    >
       {/* Globe */}
       <div className="relative flex items-center justify-center" style={{ width: globeSize, height: globeSize }}>
         {/* Decorative rings */}
@@ -127,7 +129,6 @@ export default function GlobeCarousel() {
 
       {/* Swipeable City Carousel */}
       <div
-        ref={containerRef}
         className="mt-12 w-full max-w-md relative select-none"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

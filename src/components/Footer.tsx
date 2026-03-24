@@ -6,13 +6,13 @@ export default function Footer() {
       </div>
       <div className="flex flex-wrap justify-center gap-6">
         {['PRIVACY', 'TERMS', 'CONTACT'].map((link) => (
-          <a
+          <button
             key={link}
-            href="#"
-            className="font-headline text-[10px] font-bold tracking-[0.1em] uppercase text-white/40 hover:text-[#FF0CB6] transition-all duration-200"
+            type="button"
+            className="font-headline text-[10px] font-bold tracking-[0.1em] uppercase text-white/40 hover:text-[#FF0CB6] transition-all duration-200 bg-transparent border-0 p-0 cursor-pointer"
           >
             {link}
-          </a>
+          </button>
         ))}
         <a
           href="https://instagram.com/hottr"

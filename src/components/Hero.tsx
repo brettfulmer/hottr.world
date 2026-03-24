@@ -15,12 +15,12 @@ export default function Hero() {
       <p className="relative font-headline text-sm font-semibold tracking-widest text-[#ff3db9] neon-glow mb-12">
         25 LANGUAGES. ONE NIGHT.
       </p>
-      <a
-        href="#"
+      <button
+        type="button"
         className="relative bg-[#FF0CB6] text-white px-8 py-4 font-headline font-bold text-xs tracking-[0.2em] hover:shadow-[0_0_15px_rgba(255,12,182,0.4)] active:scale-95 transition-all duration-300"
       >
         LISTEN NOW
-      </a>
+      </button>
     </section>
   )
 }
