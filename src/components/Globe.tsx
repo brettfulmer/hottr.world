@@ -1,46 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import * as THREE from 'three'
-
-interface CityData {
-  city: string
-  language: string
-  lat: number
-  lng: number
-  slug: string
-}
-
-const cities: CityData[] = [
-  { city: 'Melbourne', language: 'English', lat: -37.81, lng: 144.96, slug: 'melbourne' },
-  { city: 'Santiago', language: 'Chilean Spanish', lat: -33.45, lng: -70.67, slug: 'santiago' },
-  { city: 'Medellín', language: 'Colombian Spanish', lat: 6.25, lng: -75.56, slug: 'medellin' },
-  { city: 'Mexico City', language: 'Mexican Spanish', lat: 19.43, lng: -99.13, slug: 'mexico-city' },
-  { city: 'São Paulo', language: 'Brazilian Portuguese', lat: -23.55, lng: -46.63, slug: 'sao-paulo' },
-  { city: 'Madrid', language: 'Madrid Spanish', lat: 40.42, lng: -3.70, slug: 'madrid' },
-  { city: 'Paris', language: 'French', lat: 48.86, lng: 2.35, slug: 'paris' },
-  { city: 'Milan', language: 'Italian', lat: 45.46, lng: 9.19, slug: 'milan' },
-  { city: 'Amsterdam', language: 'Dutch', lat: 52.37, lng: 4.90, slug: 'amsterdam' },
-  { city: 'Berlin', language: 'German', lat: 52.52, lng: 13.41, slug: 'berlin' },
-  { city: 'Belfast', language: 'Belfast English', lat: 54.60, lng: -5.93, slug: 'belfast' },
-  { city: 'Stockholm', language: 'Swedish', lat: 59.33, lng: 18.07, slug: 'stockholm' },
-  { city: 'Warsaw', language: 'Polish', lat: 52.23, lng: 21.01, slug: 'warsaw' },
-  { city: 'Bucharest', language: 'Romanian', lat: 44.43, lng: 26.10, slug: 'bucharest' },
-  { city: 'Istanbul', language: 'Turkish', lat: 41.01, lng: 28.98, slug: 'istanbul' },
-  { city: 'Moscow', language: 'Russian', lat: 55.76, lng: 37.62, slug: 'moscow' },
-  { city: 'Cairo', language: 'Egyptian Arabic', lat: 30.04, lng: 31.24, slug: 'cairo' },
-  { city: 'Tel Aviv', language: 'Hebrew', lat: 32.07, lng: 34.77, slug: 'tel-aviv' },
-  { city: 'Johannesburg', language: 'Afrikaans', lat: -26.20, lng: 28.04, slug: 'johannesburg' },
-  { city: 'Nairobi', language: 'Swahili', lat: -1.29, lng: 36.82, slug: 'nairobi' },
-  { city: 'Mumbai', language: 'Hindi', lat: 19.08, lng: 72.88, slug: 'mumbai' },
-  { city: 'Bangkok', language: 'Thai', lat: 13.76, lng: 100.50, slug: 'bangkok' },
-  { city: 'Ho Chi Minh City', language: 'Vietnamese', lat: 10.82, lng: 106.63, slug: 'ho-chi-minh-city' },
-  { city: 'Manila', language: 'Tagalog', lat: 14.60, lng: 120.98, slug: 'manila' },
-  { city: 'Bali', language: 'Indonesian', lat: -8.34, lng: 115.09, slug: 'bali' },
-  { city: 'Tokyo', language: 'Japanese', lat: 35.68, lng: 139.69, slug: 'tokyo' },
-  { city: 'Seoul', language: 'Korean', lat: 37.57, lng: 126.98, slug: 'seoul' },
-  { city: 'Shanghai', language: 'Mandarin', lat: 31.23, lng: 121.47, slug: 'shanghai' },
-  { city: 'Mykonos', language: 'Greek', lat: 37.45, lng: 25.33, slug: 'mykonos' },
-  { city: 'Lagos', language: 'Nigerian Pidgin', lat: 6.52, lng: 3.38, slug: 'lagos' },
-]
+import { cities, type CityData } from '../data/cities'
 
 function latLngToVector3(lat: number, lng: number, radius: number): THREE.Vector3 {
   const phi = (90 - lat) * (Math.PI / 180)
@@ -97,7 +57,8 @@ export default function Globe() {
       if (idx !== -1) {
         const city = cityData[idx]
         if (isClick) {
-          window.location.href = `#spotify-${city.slug}`
+          const listenSection = document.querySelector('[data-section="4"]')
+          if (listenSection) listenSection.scrollIntoView({ behavior: 'smooth' })
         } else {
           setTooltip({
             city: city.city,
@@ -169,6 +130,7 @@ export default function Globe() {
     // City dots
     const dotGeo = new THREE.SphereGeometry(0.02, 8, 8)
     const dots: THREE.Mesh[] = []
+    const dotMaterials: THREE.MeshBasicMaterial[] = []
 
     cities.forEach((city) => {
       const pos = latLngToVector3(city.lat, city.lng, 1.01)
@@ -181,6 +143,7 @@ export default function Globe() {
       dot.position.copy(pos)
       globe.add(dot)
       dots.push(dot)
+      dotMaterials.push(dotMat)
     })
 
     // Ambient light
@@ -211,7 +174,7 @@ export default function Globe() {
 
       // Pulse dots
       dots.forEach((dot, i) => {
-        const mat = dot.material as THREE.MeshBasicMaterial
+        const mat = dotMaterials[i]
         mat.opacity = 0.6 + 0.4 * Math.sin(elapsed * 2 + i * 0.5)
         const scale = 1 + 0.3 * Math.sin(elapsed * 2 + i * 0.5)
         dot.scale.setScalar(scale)
@@ -268,6 +231,7 @@ export default function Globe() {
     renderer.domElement.addEventListener('pointermove', onPointerMove)
     renderer.domElement.addEventListener('pointerup', onPointerUp)
     renderer.domElement.addEventListener('pointerleave', onPointerUp)
+    renderer.domElement.addEventListener('pointercancel', onPointerUp)
     renderer.domElement.addEventListener('click', onClick)
     renderer.domElement.style.touchAction = 'none'
 
@@ -278,7 +242,17 @@ export default function Globe() {
       renderer.domElement.removeEventListener('pointermove', onPointerMove)
       renderer.domElement.removeEventListener('pointerup', onPointerUp)
       renderer.domElement.removeEventListener('pointerleave', onPointerUp)
+      renderer.domElement.removeEventListener('pointercancel', onPointerUp)
       renderer.domElement.removeEventListener('click', onClick)
+      // Dispose Three.js GPU resources
+      sphereGeo.dispose()
+      sphereMat.dispose()
+      wireGeo.dispose()
+      wireMat.dispose()
+      ringGeo.dispose()
+      ringMat.dispose()
+      dotGeo.dispose()
+      dotMaterials.forEach((mat) => mat.dispose())
       renderer.dispose()
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement)
@@ -294,18 +268,21 @@ export default function Globe() {
         <div
           className="absolute pointer-events-none z-20"
           style={{
-            left: Math.min(tooltip.x + 12, tooltip.containerWidth - 180),
-            top: tooltip.y - 30,
+            left: Math.max(0, Math.min(tooltip.x + 12, tooltip.containerWidth - 180)),
+            top: Math.max(0, tooltip.y - 30),
           }}
         >
-          <a
-            href={`#spotify-${tooltip.slug}`}
-            className="pointer-events-auto block rounded-sm bg-white/5 backdrop-blur-xl border border-white/10 px-4 py-3 min-w-[140px]"
+          <button
+            onClick={() => {
+              const listenSection = document.querySelector('[data-section="4"]')
+              if (listenSection) listenSection.scrollIntoView({ behavior: 'smooth' })
+            }}
+            className="pointer-events-auto block rounded-sm bg-white/5 backdrop-blur-xl border border-white/10 px-4 py-3 min-w-[140px] text-left w-full"
           >
             <p className="text-sm font-semibold text-white font-['Poppins']">{tooltip.city}</p>
             <p className="text-xs text-white/60 font-['Poppins'] mt-0.5">{tooltip.language}</p>
             <p className="text-[10px] text-[#FF0CB6] font-['Poppins'] mt-1">Listen &rarr;</p>
-          </a>
+          </button>
         </div>
       )}
     </div>
