@@ -3,8 +3,8 @@ export interface Language {
   name: string
   label: string
   speakers: string
-  officialIn: string
-  countries: string[]
+  globalRank: string
+  regions: string[]
   culturalHubs: string[]
   dots: { top: string; left: string; primary?: boolean }[]
 }
@@ -12,8 +12,8 @@ export interface Language {
 export const languages: Language[] = [
   {
     id: 1, name: 'English', label: 'English (Australian)',
-    speakers: '~1.5 billion', officialIn: '60+ nations',
-    countries: ['Australia', 'United Kingdom', 'United States', 'Canada', 'New Zealand', 'Ireland', 'South Africa', 'Nigeria', 'India', 'Philippines', 'Singapore', 'Jamaica', 'Ghana', 'Kenya', 'Uganda', 'Tanzania', 'Zimbabwe'],
+    speakers: '~1.5 Billion', globalRank: '1st Most Spoken',
+    regions: ['AUSTRALIA', 'UNITED KINGDOM', 'UNITED STATES', 'CANADA', 'NEW ZEALAND', 'IRELAND', 'SOUTH AFRICA', 'NIGERIA', 'INDIA'],
     culturalHubs: ['SYDNEY', 'LONDON', 'NEW YORK', 'TORONTO', 'MUMBAI'],
     dots: [
       { top: '78%', left: '85%', primary: true },
@@ -24,8 +24,8 @@ export const languages: Language[] = [
   },
   {
     id: 2, name: 'Turkish', label: 'Turkish',
-    speakers: '~80 million', officialIn: '5 nations',
-    countries: ['Turkey', 'Northern Cyprus', 'Germany', 'Netherlands', 'Austria', 'Bulgaria', 'Greece'],
+    speakers: '~80 Million', globalRank: '18th Most Spoken',
+    regions: ['TURKEY', 'NORTHERN CYPRUS', 'GERMANY', 'NETHERLANDS', 'AUSTRIA', 'BULGARIA', 'GREECE'],
     culturalHubs: ['ISTANBUL', 'ANKARA', 'IZMIR'],
     dots: [
       { top: '34%', left: '57%', primary: true },
@@ -34,8 +34,8 @@ export const languages: Language[] = [
   },
   {
     id: 3, name: 'Chilean Spanish', label: 'Chilean Spanish',
-    speakers: '~550 million', officialIn: '20+ nations',
-    countries: ['Chile', 'Spain', 'Mexico', 'Colombia', 'Argentina', 'Peru', 'Venezuela', 'Ecuador', 'Guatemala', 'Cuba', 'Bolivia', 'Dominican Republic', 'Honduras', 'Paraguay', 'El Salvador', 'Nicaragua', 'Costa Rica', 'Panama', 'Uruguay', 'Puerto Rico'],
+    speakers: '~550 Million', globalRank: '4th Most Spoken',
+    regions: ['CHILE', 'SPAIN', 'MEXICO', 'COLOMBIA', 'ARGENTINA', 'PERU', 'VENEZUELA', 'ECUADOR', 'CUBA'],
     culturalHubs: ['SANTIAGO', 'VALPARAISO', 'CONCEPCION'],
     dots: [
       { top: '82%', left: '22%', primary: true },
@@ -44,8 +44,8 @@ export const languages: Language[] = [
   },
   {
     id: 4, name: 'Colombian Spanish', label: 'Colombian Spanish',
-    speakers: '~550 million', officialIn: '20+ nations',
-    countries: ['Colombia', 'Spain', 'Mexico', 'Chile', 'Argentina', 'Peru', 'Venezuela', 'Ecuador', 'Guatemala', 'Cuba', 'Bolivia'],
+    speakers: '~550 Million', globalRank: '4th Most Spoken',
+    regions: ['COLOMBIA', 'SPAIN', 'MEXICO', 'CHILE', 'ARGENTINA', 'PERU', 'VENEZUELA', 'ECUADOR', 'GUATEMALA'],
     culturalHubs: ['BOGOTA', 'MEDELLIN', 'CALI', 'CARTAGENA'],
     dots: [
       { top: '55%', left: '20%', primary: true },
@@ -54,8 +54,8 @@ export const languages: Language[] = [
   },
   {
     id: 5, name: 'Mexican Spanish', label: 'Mexican Spanish',
-    speakers: '~550 million', officialIn: '20+ nations',
-    countries: ['Mexico', 'United States', 'Spain', 'Colombia', 'Chile', 'Argentina', 'Peru', 'Venezuela'],
+    speakers: '~550 Million', globalRank: '4th Most Spoken',
+    regions: ['MEXICO', 'UNITED STATES', 'SPAIN', 'COLOMBIA', 'CHILE', 'ARGENTINA', 'PERU', 'VENEZUELA', 'CUBA'],
     culturalHubs: ['MEXICO CITY', 'GUADALAJARA', 'MONTERREY'],
     dots: [
       { top: '42%', left: '12%', primary: true },
@@ -64,8 +64,8 @@ export const languages: Language[] = [
   },
   {
     id: 6, name: 'Madrid Spanish', label: 'Madrid Spanish',
-    speakers: '~550 million', officialIn: '20+ nations',
-    countries: ['Spain', 'Mexico', 'Colombia', 'Chile', 'Argentina', 'Peru', 'Venezuela'],
+    speakers: '~550 Million', globalRank: '4th Most Spoken',
+    regions: ['SPAIN', 'MEXICO', 'COLOMBIA', 'CHILE', 'ARGENTINA', 'PERU', 'VENEZUELA', 'ECUADOR', 'CUBA'],
     culturalHubs: ['MADRID', 'BARCELONA', 'SEVILLE', 'VALENCIA'],
     dots: [
       { top: '36%', left: '44%', primary: true },
@@ -74,8 +74,8 @@ export const languages: Language[] = [
   },
   {
     id: 7, name: 'Brazilian Portuguese', label: 'Brazilian Portuguese',
-    speakers: '~260 million', officialIn: '11 nations',
-    countries: ['Brazil', 'Portugal', 'Angola', 'Mozambique', 'Guinea-Bissau', 'East Timor', 'Cape Verde', 'Sao Tome and Principe'],
+    speakers: '~260 Million', globalRank: '6th Most Spoken',
+    regions: ['BRAZIL', 'PORTUGAL', 'ANGOLA', 'MOZAMBIQUE', 'GUINEA-BISSAU', 'EAST TIMOR', 'CAPE VERDE', 'SAO TOME', 'MACAU'],
     culturalHubs: ['SAO PAULO', 'RIO DE JANEIRO', 'LISBON', 'LUANDA'],
     dots: [
       { top: '65%', left: '28%', primary: true },
@@ -85,8 +85,8 @@ export const languages: Language[] = [
   },
   {
     id: 8, name: 'German', label: 'German',
-    speakers: '~130 million', officialIn: '8 nations',
-    countries: ['Germany', 'Austria', 'Switzerland', 'Liechtenstein', 'Luxembourg', 'Belgium', 'South Tyrol'],
+    speakers: '~130 Million', globalRank: '11th Most Spoken',
+    regions: ['GERMANY', 'AUSTRIA', 'SWITZERLAND', 'LIECHTENSTEIN', 'LUXEMBOURG', 'BELGIUM', 'SOUTH TYROL'],
     culturalHubs: ['BERLIN', 'MUNICH', 'VIENNA', 'ZURICH'],
     dots: [
       { top: '30%', left: '49%', primary: true },
@@ -96,8 +96,8 @@ export const languages: Language[] = [
   },
   {
     id: 9, name: 'Egyptian Arabic', label: 'Egyptian Arabic',
-    speakers: '~400 million', officialIn: '18+ nations',
-    countries: ['Egypt', 'Saudi Arabia', 'UAE', 'Jordan', 'Lebanon', 'Syria', 'Iraq', 'Kuwait', 'Qatar', 'Bahrain', 'Oman', 'Yemen', 'Libya', 'Tunisia', 'Algeria', 'Morocco', 'Sudan', 'Palestine'],
+    speakers: '~400 Million', globalRank: '5th Most Spoken',
+    regions: ['EGYPT', 'SAUDI ARABIA', 'UAE', 'JORDAN', 'LEBANON', 'IRAQ', 'KUWAIT', 'MOROCCO', 'SUDAN'],
     culturalHubs: ['CAIRO', 'ALEXANDRIA', 'RIYADH', 'DUBAI'],
     dots: [
       { top: '42%', left: '57%', primary: true },
@@ -107,8 +107,8 @@ export const languages: Language[] = [
   },
   {
     id: 10, name: 'Belfast English', label: 'Belfast English',
-    speakers: '~1.5 billion', officialIn: '60+ nations',
-    countries: ['Northern Ireland', 'Republic of Ireland', 'United Kingdom', 'United States', 'Canada', 'Australia'],
+    speakers: '~1.5 Billion', globalRank: '1st Most Spoken',
+    regions: ['NORTHERN IRELAND', 'IRELAND', 'UNITED KINGDOM', 'UNITED STATES', 'CANADA', 'AUSTRALIA'],
     culturalHubs: ['BELFAST', 'DUBLIN', 'LONDON'],
     dots: [
       { top: '28%', left: '44%', primary: true },
@@ -117,8 +117,8 @@ export const languages: Language[] = [
   },
   {
     id: 11, name: 'Thai', label: 'Thai',
-    speakers: '~60 million', officialIn: '1 nation',
-    countries: ['Thailand'],
+    speakers: '~60 Million', globalRank: '20th Most Spoken',
+    regions: ['THAILAND'],
     culturalHubs: ['BANGKOK', 'CHIANG MAI', 'PHUKET'],
     dots: [
       { top: '48%', left: '78%', primary: true },
@@ -126,9 +126,9 @@ export const languages: Language[] = [
   },
   {
     id: 12, name: 'French', label: 'French',
-    speakers: '~320 million', officialIn: '29 nations',
-    countries: ['France', 'Canada', 'Belgium', 'Switzerland', 'DR Congo', 'Ivory Coast', 'Madagascar', 'Cameroon', 'Burkina Faso', 'Niger', 'Senegal', 'Mali', 'Rwanda', 'Haiti', 'Burundi', 'Benin', 'Togo', 'Central African Republic', 'Republic of Congo', 'Gabon', 'Djibouti', 'Comoros', 'Seychelles', 'Vanuatu', 'Lebanon', 'Morocco', 'Tunisia', 'Algeria'],
-    culturalHubs: ['PARIS', 'MONTREAL', 'DAKAR', 'BRUSSELS', 'GENEVA'],
+    speakers: '~320 Million', globalRank: '5th Most Spoken',
+    regions: ['FRANCE', 'CANADA (QC)', 'SENEGAL', 'BELGIUM', 'SWITZERLAND', 'CONGO', 'MOROCCO', 'VIETNAM', 'MADAGASCAR'],
+    culturalHubs: ['PARIS', 'MONTREAL', 'DAKAR', 'BRUSSELS', 'GENEVA', 'CASABLANCA'],
     dots: [
       { top: '33%', left: '48%', primary: true },
       { top: '38%', left: '25%' },
@@ -139,8 +139,8 @@ export const languages: Language[] = [
   },
   {
     id: 13, name: 'Hindi', label: 'Hindi',
-    speakers: '~600 million', officialIn: '7 nations',
-    countries: ['India', 'Fiji', 'Mauritius', 'Suriname', 'Trinidad and Tobago', 'Guyana', 'Nepal'],
+    speakers: '~600 Million', globalRank: '3rd Most Spoken',
+    regions: ['INDIA', 'FIJI', 'MAURITIUS', 'SURINAME', 'TRINIDAD', 'GUYANA', 'NEPAL'],
     culturalHubs: ['MUMBAI', 'DELHI', 'KOLKATA', 'BANGALORE'],
     dots: [
       { top: '44%', left: '70%', primary: true },
@@ -150,8 +150,8 @@ export const languages: Language[] = [
   },
   {
     id: 14, name: 'Afrikaans', label: 'Afrikaans',
-    speakers: '~16 million', officialIn: '3 nations',
-    countries: ['South Africa', 'Namibia', 'Botswana'],
+    speakers: '~16 Million', globalRank: '75th Most Spoken',
+    regions: ['SOUTH AFRICA', 'NAMIBIA', 'BOTSWANA'],
     culturalHubs: ['CAPE TOWN', 'JOHANNESBURG', 'PRETORIA'],
     dots: [
       { top: '78%', left: '53%', primary: true },
@@ -160,8 +160,8 @@ export const languages: Language[] = [
   },
   {
     id: 15, name: 'Indonesian', label: 'Indonesian',
-    speakers: '~200 million', officialIn: '5+ nations',
-    countries: ['Indonesia', 'East Timor', 'Malaysia', 'Brunei', 'Singapore'],
+    speakers: '~200 Million', globalRank: '10th Most Spoken',
+    regions: ['INDONESIA', 'EAST TIMOR', 'MALAYSIA', 'BRUNEI', 'SINGAPORE'],
     culturalHubs: ['JAKARTA', 'BALI', 'SURABAYA'],
     dots: [
       { top: '60%', left: '82%', primary: true },
@@ -170,8 +170,8 @@ export const languages: Language[] = [
   },
   {
     id: 16, name: 'Italian', label: 'Italian',
-    speakers: '~85 million', officialIn: '6 nations',
-    countries: ['Italy', 'Switzerland', 'San Marino', 'Vatican City'],
+    speakers: '~85 Million', globalRank: '21st Most Spoken',
+    regions: ['ITALY', 'SWITZERLAND', 'SAN MARINO', 'VATICAN CITY'],
     culturalHubs: ['ROME', 'MILAN', 'NAPLES', 'FLORENCE'],
     dots: [
       { top: '35%', left: '50%', primary: true },
@@ -180,8 +180,8 @@ export const languages: Language[] = [
   },
   {
     id: 17, name: 'Greek', label: 'Greek',
-    speakers: '~13 million', officialIn: '3 nations',
-    countries: ['Greece', 'Cyprus', 'Australia', 'United States'],
+    speakers: '~13 Million', globalRank: '74th Most Spoken',
+    regions: ['GREECE', 'CYPRUS', 'AUSTRALIA', 'UNITED STATES'],
     culturalHubs: ['ATHENS', 'THESSALONIKI', 'NICOSIA'],
     dots: [
       { top: '36%', left: '53%', primary: true },
@@ -190,8 +190,8 @@ export const languages: Language[] = [
   },
   {
     id: 18, name: 'Japanese', label: 'Japanese',
-    speakers: '~125 million', officialIn: '1 nation',
-    countries: ['Japan'],
+    speakers: '~125 Million', globalRank: '13th Most Spoken',
+    regions: ['JAPAN'],
     culturalHubs: ['TOKYO', 'OSAKA', 'KYOTO'],
     dots: [
       { top: '36%', left: '90%', primary: true },
@@ -199,8 +199,8 @@ export const languages: Language[] = [
   },
   {
     id: 19, name: 'Korean', label: 'Korean',
-    speakers: '~80 million', officialIn: '2 nations',
-    countries: ['South Korea', 'North Korea', 'United States', 'China', 'Japan'],
+    speakers: '~80 Million', globalRank: '17th Most Spoken',
+    regions: ['SOUTH KOREA', 'NORTH KOREA', 'UNITED STATES', 'CHINA', 'JAPAN'],
     culturalHubs: ['SEOUL', 'BUSAN', 'INCHEON'],
     dots: [
       { top: '37%', left: '87%', primary: true },
@@ -208,8 +208,8 @@ export const languages: Language[] = [
   },
   {
     id: 20, name: 'Hebrew', label: 'Hebrew',
-    speakers: '~9 million', officialIn: '1 nation',
-    countries: ['Israel', 'United States', 'France', 'Canada', 'United Kingdom', 'Argentina', 'Australia'],
+    speakers: '~9 Million', globalRank: '64th Most Spoken',
+    regions: ['ISRAEL', 'UNITED STATES', 'FRANCE', 'CANADA', 'UNITED KINGDOM', 'ARGENTINA', 'AUSTRALIA'],
     culturalHubs: ['TEL AVIV', 'JERUSALEM', 'HAIFA'],
     dots: [
       { top: '38%', left: '58%', primary: true },
@@ -217,8 +217,8 @@ export const languages: Language[] = [
   },
   {
     id: 21, name: 'Mandarin', label: 'Mandarin',
-    speakers: '~1.1 billion', officialIn: '4+ nations',
-    countries: ['China', 'Taiwan', 'Singapore', 'Malaysia'],
+    speakers: '~1.1 Billion', globalRank: '2nd Most Spoken',
+    regions: ['CHINA', 'TAIWAN', 'SINGAPORE', 'MALAYSIA'],
     culturalHubs: ['BEIJING', 'SHANGHAI', 'TAIPEI', 'SHENZHEN'],
     dots: [
       { top: '38%', left: '82%', primary: true },
@@ -228,8 +228,8 @@ export const languages: Language[] = [
   },
   {
     id: 22, name: 'Dutch', label: 'Dutch',
-    speakers: '~25 million', officialIn: '6 nations',
-    countries: ['Netherlands', 'Belgium', 'Suriname', 'Aruba', 'Curacao', 'Sint Maarten'],
+    speakers: '~25 Million', globalRank: '56th Most Spoken',
+    regions: ['NETHERLANDS', 'BELGIUM', 'SURINAME', 'ARUBA', 'CURACAO', 'SINT MAARTEN'],
     culturalHubs: ['AMSTERDAM', 'ROTTERDAM', 'BRUSSELS'],
     dots: [
       { top: '30%', left: '47%', primary: true },
@@ -238,8 +238,8 @@ export const languages: Language[] = [
   },
   {
     id: 23, name: 'Polish', label: 'Polish',
-    speakers: '~45 million', officialIn: '1 nation',
-    countries: ['Poland', 'United Kingdom', 'Germany', 'United States', 'Ireland', 'France', 'Canada'],
+    speakers: '~45 Million', globalRank: '25th Most Spoken',
+    regions: ['POLAND', 'UNITED KINGDOM', 'GERMANY', 'UNITED STATES', 'IRELAND', 'FRANCE', 'CANADA'],
     culturalHubs: ['WARSAW', 'KRAKOW', 'GDANSK'],
     dots: [
       { top: '30%', left: '52%', primary: true },
@@ -247,8 +247,8 @@ export const languages: Language[] = [
   },
   {
     id: 24, name: 'Swedish', label: 'Swedish',
-    speakers: '~10 million', officialIn: '2 nations',
-    countries: ['Sweden', 'Finland'],
+    speakers: '~10 Million', globalRank: '89th Most Spoken',
+    regions: ['SWEDEN', 'FINLAND'],
     culturalHubs: ['STOCKHOLM', 'GOTHENBURG', 'MALMÖ'],
     dots: [
       { top: '24%', left: '50%', primary: true },
@@ -256,8 +256,8 @@ export const languages: Language[] = [
   },
   {
     id: 25, name: 'Tagalog', label: 'Tagalog',
-    speakers: '~80 million', officialIn: '1 nation',
-    countries: ['Philippines', 'United States', 'Saudi Arabia', 'UAE', 'Canada', 'Australia'],
+    speakers: '~80 Million', globalRank: '19th Most Spoken',
+    regions: ['PHILIPPINES', 'UNITED STATES', 'SAUDI ARABIA', 'UAE', 'CANADA', 'AUSTRALIA'],
     culturalHubs: ['MANILA', 'CEBU', 'DAVAO'],
     dots: [
       { top: '48%', left: '86%', primary: true },
@@ -265,8 +265,8 @@ export const languages: Language[] = [
   },
   {
     id: 26, name: 'Swahili', label: 'Swahili',
-    speakers: '~100 million', officialIn: '10 nations',
-    countries: ['Kenya', 'Tanzania', 'Uganda', 'DR Congo', 'Rwanda', 'Burundi', 'Mozambique', 'Malawi', 'Comoros', 'Somalia'],
+    speakers: '~100 Million', globalRank: '15th Most Spoken',
+    regions: ['KENYA', 'TANZANIA', 'UGANDA', 'DR CONGO', 'RWANDA', 'BURUNDI', 'MOZAMBIQUE', 'MALAWI', 'SOMALIA'],
     culturalHubs: ['NAIROBI', 'DAR ES SALAAM', 'MOMBASA'],
     dots: [
       { top: '58%', left: '60%', primary: true },
@@ -276,8 +276,8 @@ export const languages: Language[] = [
   },
   {
     id: 27, name: 'Russian', label: 'Russian',
-    speakers: '~250 million', officialIn: '15+ nations',
-    countries: ['Russia', 'Belarus', 'Kazakhstan', 'Kyrgyzstan', 'Ukraine', 'Moldova', 'Latvia', 'Estonia', 'Lithuania', 'Georgia'],
+    speakers: '~250 Million', globalRank: '7th Most Spoken',
+    regions: ['RUSSIA', 'BELARUS', 'KAZAKHSTAN', 'KYRGYZSTAN', 'UKRAINE', 'MOLDOVA', 'LATVIA', 'ESTONIA', 'GEORGIA'],
     culturalHubs: ['MOSCOW', 'ST PETERSBURG', 'NOVOSIBIRSK'],
     dots: [
       { top: '26%', left: '58%', primary: true },
@@ -287,8 +287,8 @@ export const languages: Language[] = [
   },
   {
     id: 28, name: 'Nigerian Pidgin', label: 'Nigerian Pidgin',
-    speakers: '~75 million', officialIn: '4 nations',
-    countries: ['Nigeria', 'Cameroon', 'Ghana', 'Equatorial Guinea'],
+    speakers: '~75 Million', globalRank: '22nd Most Spoken',
+    regions: ['NIGERIA', 'CAMEROON', 'GHANA', 'EQUATORIAL GUINEA'],
     culturalHubs: ['LAGOS', 'PORT HARCOURT', 'ABUJA'],
     dots: [
       { top: '52%', left: '48%', primary: true },
@@ -297,8 +297,8 @@ export const languages: Language[] = [
   },
   {
     id: 29, name: 'Vietnamese', label: 'Vietnamese',
-    speakers: '~85 million', officialIn: '1 nation',
-    countries: ['Vietnam', 'United States', 'Australia', 'France', 'Canada', 'Germany'],
+    speakers: '~85 Million', globalRank: '16th Most Spoken',
+    regions: ['VIETNAM', 'UNITED STATES', 'AUSTRALIA', 'FRANCE', 'CANADA', 'GERMANY'],
     culturalHubs: ['HO CHI MINH CITY', 'HANOI', 'DA NANG'],
     dots: [
       { top: '46%', left: '80%', primary: true },
@@ -307,20 +307,11 @@ export const languages: Language[] = [
   },
   {
     id: 30, name: 'Romanian', label: 'Romanian',
-    speakers: '~26 million', officialIn: '3 nations',
-    countries: ['Romania', 'Moldova', 'Italy', 'Spain', 'Germany'],
+    speakers: '~26 Million', globalRank: '36th Most Spoken',
+    regions: ['ROMANIA', 'MOLDOVA', 'ITALY', 'SPAIN', 'GERMANY'],
     culturalHubs: ['BUCHAREST', 'CLUJ-NAPOCA', 'TIMISOARA'],
     dots: [
       { top: '32%', left: '54%', primary: true },
     ],
   },
-]
-
-// Group languages for bottom nav display
-export const languageGroups = [
-  'French', 'English', 'Chilean Spanish', 'Colombian Spanish', 'Mexican Spanish', 'Madrid Spanish',
-  'Brazilian Portuguese', 'German', 'Egyptian Arabic', 'Belfast English', 'Turkish', 'Thai',
-  'Hindi', 'Afrikaans', 'Indonesian', 'Italian', 'Greek', 'Japanese', 'Korean', 'Hebrew',
-  'Mandarin', 'Dutch', 'Polish', 'Swedish', 'Tagalog', 'Swahili', 'Russian',
-  'Nigerian Pidgin', 'Vietnamese', 'Romanian',
 ]

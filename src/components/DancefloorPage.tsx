@@ -8,8 +8,8 @@ const GLOBE_IMG = 'https://lh3.googleusercontent.com/aida-public/AB6AXuDoY4QNlU1
 export default function DancefloorPage() {
   const [selected, setSelected] = useState<Language>(languages.find(l => l.name === 'French')!)
   const [playing, setPlaying] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const navRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const existing = document.getElementById('dancefloor-audio') as HTMLAudioElement | null
@@ -55,11 +55,48 @@ export default function DancefloorPage() {
           <button className="material-symbols-outlined text-white/60 hover:text-[#FF0CB6] transition-all duration-300">
             shopping_bag
           </button>
-          <button className="material-symbols-outlined text-white/60 hover:text-[#FF0CB6] transition-all duration-300">
-            menu
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="material-symbols-outlined text-white/60 hover:text-[#FF0CB6] transition-all duration-300"
+          >
+            {menuOpen ? 'close' : 'menu'}
           </button>
         </div>
       </header>
+
+      {/* Language Menu */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 bg-[#050608]/95 backdrop-blur-xl flex flex-col">
+          <header className="flex justify-between items-center px-6 py-6">
+            <div className="text-xl font-extrabold tracking-[-0.04em] text-[#FF0CB6]">DANCEFLOOR</div>
+            <button
+              onClick={() => setMenuOpen(false)}
+              className="material-symbols-outlined text-white/60 hover:text-[#FF0CB6] transition-all duration-300"
+            >
+              close
+            </button>
+          </header>
+          <div className="flex-1 overflow-y-auto selection-scroll px-8 py-4">
+            <p className="text-[9px] tracking-[0.4em] font-bold text-[#FF0CB6] opacity-80 uppercase mb-6">Select Language</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {languages.map(lang => (
+                <button
+                  key={lang.id}
+                  onClick={() => { setSelected(lang); setMenuOpen(false) }}
+                  className={`text-left px-4 py-3 rounded-[4px] border transition-all ${
+                    lang.id === selected.id
+                      ? 'border-[#FF0CB6]/50 bg-[#FF0CB6]/10 text-white'
+                      : 'border-white/5 bg-white/[0.02] text-white/50 hover:text-white hover:border-white/20'
+                  }`}
+                >
+                  <span className="text-xs font-bold tracking-wider uppercase">{lang.name}</span>
+                  <span className="block text-[8px] tracking-widest text-white/30 mt-1 uppercase">{lang.speakers}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Ambient Blooms */}
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -117,73 +154,48 @@ export default function DancefloorPage() {
       </main>
 
       {/* Language Panel */}
-      <aside className="fixed md:left-12 bottom-20 left-6 right-6 md:right-auto md:w-[420px] glass-module flex flex-col max-h-[60vh] z-30 transition-all duration-500 hover:border-white/20">
-        {/* Header */}
-        <div className="p-6 md:p-8 border-b divider-low-contrast shrink-0">
-          <div className="flex justify-between items-start">
-            <div className="space-y-1">
-              <p className="text-[9px] tracking-[0.4em] font-bold text-[#FF0CB6] opacity-80">ACTIVE LINGUA</p>
-              <h3 className="text-4xl md:text-5xl font-black text-white tracking-tight uppercase brightness-125">
-                {selected.name}
-              </h3>
-            </div>
-            <div className="w-10 h-10 flex items-center justify-center glass-module bg-white/5 border-white/5">
-              <span className="material-symbols-outlined text-[#FF0CB6] text-xl">language</span>
-            </div>
+      <aside className="fixed md:left-12 bottom-20 left-6 right-6 md:right-auto md:w-[420px] glass-module p-6 md:p-8 z-30 transition-all duration-500 hover:border-white/20">
+        <div className="flex justify-between items-start mb-6">
+          <div className="space-y-1">
+            <p className="text-[9px] tracking-[0.4em] font-bold text-[#FF0CB6] opacity-80 uppercase">Active Linguistic Region</p>
+            <h3 className="text-4xl md:text-5xl font-black text-white tracking-tight uppercase brightness-125">
+              {selected.name}
+            </h3>
+          </div>
+          <div className="w-10 h-10 flex items-center justify-center glass-module bg-white/5 border-white/5">
+            <span className="material-symbols-outlined text-[#FF0CB6] text-xl">language</span>
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto selection-scroll p-6 md:p-8 space-y-8">
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <p className="text-[8px] tracking-[0.2em] font-semibold text-white/30 mb-1 uppercase">Speakers</p>
-              <p className="text-xl font-black text-white/90 tracking-tight">{selected.speakers}</p>
-            </div>
-            <div>
-              <p className="text-[8px] tracking-[0.2em] font-semibold text-white/30 mb-1 uppercase">Official In</p>
-              <p className="text-xl font-black text-white/90 tracking-tight">{selected.officialIn}</p>
-            </div>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-6 mb-6 border-t divider-low-contrast pt-6">
+          <div>
+            <p className="text-[8px] tracking-[0.2em] font-semibold text-white/30 mb-1 uppercase">Native Speakers</p>
+            <p className="text-xs font-bold text-white/90 tracking-widest uppercase">{selected.speakers}</p>
           </div>
-
-          <div className="space-y-4">
-            <p className="text-[8px] tracking-[0.2em] font-semibold text-white/30 uppercase border-b divider-low-contrast pb-2">
-              Global Jurisdictions
-            </p>
-            <div className="grid grid-cols-2 gap-y-3 text-[10px] font-bold text-white/70 tracking-widest uppercase">
-              {selected.countries.map((c, i) => (
-                <div key={c} className="flex items-center gap-2">
-                  <span className={`w-1 h-1 rounded-full ${i < 2 ? 'bg-[#FF0CB6]' : 'bg-[#FF0CB6]/40'}`} />
-                  {c}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="pt-4 border-t divider-low-contrast">
-            <p className="text-[8px] tracking-[0.2em] font-semibold text-white/30 mb-2 uppercase">Core Cultural Hubs</p>
-            <div className="flex flex-wrap gap-2">
-              {selected.culturalHubs.map(hub => (
-                <span key={hub} className="px-2 py-1 bg-white/5 border border-white/10 text-[9px] font-bold tracking-wider">
-                  {hub}
-                </span>
-              ))}
-            </div>
+          <div>
+            <p className="text-[8px] tracking-[0.2em] font-semibold text-white/30 mb-1 uppercase">Global Rank</p>
+            <p className="text-xs font-bold text-white/90 tracking-widest uppercase">{selected.globalRank}</p>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-6 md:p-8 border-t divider-low-contrast shrink-0 bg-[#11131A]/20">
-          <button
-            onClick={handlePlay}
-            className="w-full bg-[#FF0CB6] text-black py-4 rounded-[4px] font-extrabold text-[10px] tracking-[0.4em] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-[0_4px_20px_rgba(255,12,182,0.2)]"
-          >
-            {playing ? 'PAUSE' : 'LISTEN NOW'}
-            <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-              {playing ? 'pause' : 'play_arrow'}
-            </span>
-          </button>
+        <div className="border-t divider-low-contrast pt-4 mb-8">
+          <p className="text-[8px] tracking-[0.2em] font-semibold text-white/30 mb-3 uppercase">Primary Regions / Nations</p>
+          <div className="grid grid-cols-3 gap-y-2">
+            {selected.regions.slice(0, 9).map(r => (
+              <div key={r} className="text-[9px] font-bold text-white/80 tracking-wider">{r}</div>
+            ))}
+          </div>
         </div>
+
+        <button
+          onClick={handlePlay}
+          className="w-full bg-[#FF0CB6] text-black py-5 rounded-[4px] font-black text-[11px] tracking-[0.4em] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-[0_4px_30px_rgba(255,12,182,0.4)]"
+        >
+          {playing ? 'PAUSE' : 'LISTEN NOW'}
+          <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+            {playing ? 'pause' : 'play_arrow'}
+          </span>
+        </button>
       </aside>
 
       {/* Audio Visualizer (Top Right) */}
@@ -207,28 +219,26 @@ export default function DancefloorPage() {
 
       {/* Bottom Navigation Tray */}
       <div
-        ref={navRef}
         className="fixed bottom-0 left-0 right-0 h-14 bg-[#11131A]/40 backdrop-blur-xl border-t border-white/5 flex items-center px-6 md:px-12 gap-8 overflow-x-auto no-scrollbar z-40"
       >
         <div className="flex-shrink-0 flex items-center gap-2 pr-4 border-r border-white/10">
           <span className="w-1.5 h-1.5 rounded-full bg-[#FF0CB6] shadow-[0_0_8px_rgba(255,12,182,0.6)]" />
           <span className="text-[9px] tracking-[0.3em] font-bold text-white/60 whitespace-nowrap">
-            ACTIVE: {selected.name.toUpperCase()}
+            NEXT STREAM:
           </span>
         </div>
         <div className="flex items-center gap-8 whitespace-nowrap">
-          {languages.map(lang => (
-            <button
-              key={lang.id}
-              onClick={() => setSelected(lang)}
-              className={`text-[9px] tracking-[0.3em] font-bold transition-colors uppercase ${
-                lang.id === selected.id
-                  ? 'text-[#FF0CB6]'
-                  : 'text-white/40 hover:text-white cursor-pointer'
+          {selected.culturalHubs.map((hub, i) => (
+            <span
+              key={hub}
+              className={`text-[9px] tracking-[0.3em] font-bold transition-colors uppercase cursor-pointer ${
+                i === 0
+                  ? 'text-white underline underline-offset-4 decoration-[#FF0CB6]/50'
+                  : 'text-white/40 hover:text-white'
               }`}
             >
-              {lang.name}
-            </button>
+              {hub}
+            </span>
           ))}
         </div>
       </div>
