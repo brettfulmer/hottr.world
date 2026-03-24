@@ -5,16 +5,16 @@ export default function Footer() {
         HOTTR
       </div>
       <div className="flex flex-wrap justify-center gap-6">
-        <a className="font-[var(--font-jakarta)] text-[10px] font-bold tracking-[0.1em] uppercase text-white/40 hover:text-[#FF0CB6] transition-all duration-200 cursor-pointer">
+        <a href="/privacy" className="font-[var(--font-jakarta)] text-[10px] font-bold tracking-[0.1em] uppercase text-white/40 hover:text-[#FF0CB6] transition-all duration-200 cursor-pointer">
           PRIVACY
         </a>
-        <a className="font-[var(--font-jakarta)] text-[10px] font-bold tracking-[0.1em] uppercase text-white/40 hover:text-[#FF0CB6] transition-all duration-200 cursor-pointer">
+        <a href="/terms" className="font-[var(--font-jakarta)] text-[10px] font-bold tracking-[0.1em] uppercase text-white/40 hover:text-[#FF0CB6] transition-all duration-200 cursor-pointer">
           TERMS
         </a>
-        <a className="font-[var(--font-jakarta)] text-[10px] font-bold tracking-[0.1em] uppercase text-white/40 hover:text-[#FF0CB6] transition-all duration-200 cursor-pointer">
+        <a href="mailto:hello@hottr.world" className="font-[var(--font-jakarta)] text-[10px] font-bold tracking-[0.1em] uppercase text-white/40 hover:text-[#FF0CB6] transition-all duration-200 cursor-pointer">
           CONTACT
         </a>
-        <a className="font-[var(--font-jakarta)] text-[10px] font-bold tracking-[0.1em] uppercase text-white/40 hover:text-[#FF0CB6] transition-all duration-200 cursor-pointer underline underline-offset-4">
+        <a href="https://www.instagram.com/hottr.world" target="_blank" rel="noopener noreferrer" className="font-[var(--font-jakarta)] text-[10px] font-bold tracking-[0.1em] uppercase text-white/40 hover:text-[#FF0CB6] transition-all duration-200 cursor-pointer underline underline-offset-4">
           INSTAGRAM
         </a>
       </div>
