@@ -1,15 +1,16 @@
 import { lazy, Suspense } from 'react'
-import { useSectionReveal } from '../hooks/useSectionReveal'
 
 const Globe = lazy(() => import('./Globe'))
 
-export default function Concept() {
-  const sectionRef = useSectionReveal<HTMLElement>()
+interface Props {
+  isActive: boolean
+}
 
+export default function Concept({ isActive }: Props) {
   return (
-    <section ref={sectionRef} data-section="1" className="snap-section flex flex-col items-center justify-center">
-      <div className="section-content flex flex-col items-center w-full h-full">
-        <div className="flex-1 w-full max-w-2xl mx-auto">
+    <div className="w-full h-full flex flex-col items-center relative">
+      <div className="flex-1 w-full max-w-2xl mx-auto">
+        {isActive && (
           <Suspense fallback={
             <div className="w-full h-full flex items-center justify-center">
               <div className="w-4 h-4 bg-[#FF0CB6] rounded-sm animate-pulse" />
@@ -17,13 +18,13 @@ export default function Concept() {
           }>
             <Globe />
           </Suspense>
-        </div>
-        <div className="px-6 pb-12 text-center max-w-[720px] mx-auto">
-          <p className="font-['Poppins'] text-base leading-relaxed text-white/70 sm:text-lg">
-            The dancefloor doesn't care what language you speak. We just made sure 30 cities can sing along.
-          </p>
-        </div>
+        )}
       </div>
-    </section>
+      <div className="absolute bottom-0 left-0 right-0 px-6 pb-10 text-center">
+        <p className="font-['Poppins'] text-[14px] md:text-[16px] font-normal leading-relaxed text-white/80 max-w-[720px] mx-auto">
+          The dancefloor doesn't care what language you speak. We just made sure 4.5 billion people can sing along.
+        </p>
+      </div>
+    </div>
   )
 }

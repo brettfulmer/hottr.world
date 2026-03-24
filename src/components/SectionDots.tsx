@@ -1,61 +1,40 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 
-const SECTION_COUNT = 5
+interface Props {
+  active: number
+  count: number
+  goTo: (idx: number) => void
+}
 
-export default function SectionDots() {
-  const [active, setActive] = useState(0)
-  const [visible, setVisible] = useState(true)
+export default function SectionDots({ active, count, goTo }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const hideTimeout = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  useEffect(() => {
-    const sections = document.querySelectorAll('[data-section]')
-    if (sections.length === 0) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const idx = Number((entry.target as HTMLElement).dataset.section)
-            setActive(idx)
-          }
-        })
-      },
-      { threshold: 0.5 }
-    )
-
-    sections.forEach((s) => observer.observe(s))
-
-    const showDots = () => {
-      setVisible(true)
-      if (hideTimeout.current) clearTimeout(hideTimeout.current)
-      hideTimeout.current = setTimeout(() => setVisible(false), 3000)
-    }
-
-    window.addEventListener('scroll', showDots, { passive: true })
-    showDots()
-
-    return () => {
-      observer.disconnect()
-      window.removeEventListener('scroll', showDots)
-      if (hideTimeout.current) clearTimeout(hideTimeout.current)
-    }
+  const showDots = useCallback(() => {
+    const el = containerRef.current
+    if (!el) return
+    el.style.opacity = '1'
+    if (hideTimeout.current) clearTimeout(hideTimeout.current)
+    hideTimeout.current = setTimeout(() => {
+      if (containerRef.current) containerRef.current.style.opacity = '0.2'
+    }, 3000)
   }, [])
 
-  const scrollTo = (idx: number) => {
-    const section = document.querySelector(`[data-section="${idx}"]`)
-    if (section) section.scrollIntoView({ behavior: 'smooth' })
-  }
+  useEffect(() => {
+    showDots()
+    return () => { if (hideTimeout.current) clearTimeout(hideTimeout.current) }
+  }, [active, showDots])
 
   return (
     <div
-      className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 transition-opacity duration-500"
-      style={{ opacity: visible ? 1 : 0, pointerEvents: visible ? 'auto' : 'none' }}
-      aria-hidden={!visible}
+      ref={containerRef}
+      className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3"
+      style={{ opacity: 1, transition: 'opacity 0.5s' }}
     >
-      {Array.from({ length: SECTION_COUNT }).map((_, i) => (
+      {Array.from({ length: count }).map((_, i) => (
         <button
           key={i}
-          onClick={() => scrollTo(i)}
+          onClick={() => goTo(i)}
           className="w-[4px] h-[4px] border border-white/20 transition-all duration-300 cursor-pointer"
           style={
             i === active

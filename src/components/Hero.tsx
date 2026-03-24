@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { useSectionReveal } from '../hooks/useSectionReveal'
 
 export default function Hero() {
-  const sectionRef = useSectionReveal<HTMLElement>()
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -33,15 +31,15 @@ export default function Hero() {
     const initParticles = () => {
       particles = []
       const { w, h } = getLogicalSize()
-      const count = Math.floor((w * h) / 18000)
+      const count = Math.min(40, Math.floor((w * h) / 25000))
       for (let i = 0; i < count; i++) {
         particles.push({
           x: Math.random() * w,
           y: Math.random() * h,
-          vx: (Math.random() - 0.5) * 0.2,
-          vy: (Math.random() - 0.5) * 0.2,
-          size: Math.random() * 1.2 + 0.3,
-          opacity: Math.random() * 0.4 + 0.05,
+          vx: (Math.random() - 0.5) * 0.15,
+          vy: (Math.random() - 0.5) * 0.15,
+          size: Math.random() * 1.2 + 0.5,
+          opacity: Math.random() * 0.4 + 0.2,
         })
       }
     }
@@ -64,23 +62,6 @@ export default function Hero() {
         ctx.fillStyle = `rgba(255, 12, 182, ${p.opacity})`
         ctx.fill()
       }
-
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x
-          const dy = particles[i].y - particles[j].y
-          const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < 80) {
-            ctx.beginPath()
-            ctx.moveTo(particles[i].x, particles[i].y)
-            ctx.lineTo(particles[j].x, particles[j].y)
-            ctx.strokeStyle = `rgba(255, 12, 182, ${0.04 * (1 - dist / 80)})`
-            ctx.lineWidth = 0.5
-            ctx.stroke()
-          }
-        }
-      }
-
       animationId = requestAnimationFrame(draw)
     }
 
@@ -98,19 +79,19 @@ export default function Hero() {
   }, [])
 
   return (
-    <section ref={sectionRef} data-section="0" className="snap-section flex items-center justify-center">
-      <canvas ref={canvasRef} className="absolute inset-0" style={{ zIndex: 0 }} />
-      <div className="section-content relative z-10 text-center px-6">
-        <h1 className="font-['Poppins'] text-6xl font-bold tracking-tight text-white uppercase sm:text-7xl md:text-8xl lg:text-9xl">
+    <div className="w-full h-full flex items-center justify-center relative">
+      <canvas ref={canvasRef} className="absolute inset-0" />
+      <div className="relative z-10 text-center px-6">
+        <h1 className="font-['Poppins'] text-[48px] sm:text-[64px] md:text-[80px] font-bold tracking-tight text-white uppercase leading-none">
           DANCEFLOOR
         </h1>
         <p
-          className="mt-4 font-['Poppins'] text-lg tracking-widest text-white/70 sm:text-xl md:text-2xl"
-          style={{ textShadow: '0 0 16px rgba(255,12,182,0.4)' }}
+          className="mt-4 font-['Poppins'] text-[18px] md:text-[24px] font-semibold tracking-wider text-[#FF0CB6]"
+          style={{ textShadow: '0 0 20px rgba(255,12,182,0.5)' }}
         >
-          30 LANGUAGES. ONE NIGHT.
+          OVER 4.5 BILLION PEOPLE. ONE NIGHT.
         </p>
-        <p className="mt-3 font-['Poppins'] text-sm tracking-wider text-white/50 sm:text-base">
+        <p className="mt-3 font-['Poppins'] text-[14px] font-normal tracking-[0.2em] text-white/60 uppercase">
           by HOTTR
         </p>
         <button
@@ -118,11 +99,11 @@ export default function Hero() {
             const section = document.querySelector('[data-section="4"]')
             if (section) section.scrollIntoView({ behavior: 'smooth' })
           }}
-          className="cta-pulse mt-10 inline-block rounded-sm bg-[#FF0CB6] px-10 py-4 font-['Poppins'] text-sm font-semibold uppercase tracking-widest text-white transition-all duration-300 hover:bg-[#ff4dcc]"
+          className="cta-pulse mt-10 inline-block rounded-sm bg-[#FF0CB6] px-8 py-4 font-['Poppins'] text-[14px] font-semibold uppercase tracking-[0.15em] text-white transition-all duration-300 hover:bg-[#ff4dcc]"
         >
           LISTEN NOW
         </button>
       </div>
-    </section>
+    </div>
   )
 }

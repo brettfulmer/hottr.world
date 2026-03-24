@@ -1,56 +1,49 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSectionReveal } from '../hooks/useSectionReveal'
 
-export default function Counter() {
-  const sectionRef = useSectionReveal<HTMLElement>()
-  const [count, setCount] = useState(0)
+interface Props {
+  isActive: boolean
+}
+
+export default function Counter({ isActive }: Props) {
+  const [display, setDisplay] = useState('0.0B')
   const hasRun = useRef(false)
-  const numberRef = useRef<HTMLDivElement>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
 
   useEffect(() => {
-    const el = numberRef.current
-    if (!el) return
+    if (!isActive || hasRun.current) return
+    hasRun.current = true
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !hasRun.current) {
-          hasRun.current = true
-          let current = 0
-          intervalRef.current = setInterval(() => {
-            current++
-            setCount(current)
-            if (current >= 30) clearInterval(intervalRef.current)
-          }, 66) // ~2 seconds for 30 ticks
-        }
-      },
-      { threshold: 0.5 }
-    )
+    const target = 4.5
+    const duration = 2500
+    const startTime = performance.now()
 
-    observer.observe(el)
-    return () => {
-      observer.disconnect()
-      if (intervalRef.current) clearInterval(intervalRef.current)
+    const tick = (now: number) => {
+      const elapsed = now - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const value = eased * target
+      setDisplay(`${value.toFixed(1)}B`)
+      if (progress < 1) requestAnimationFrame(tick)
     }
-  }, [])
+
+    requestAnimationFrame(tick)
+  }, [isActive])
 
   return (
-    <section ref={sectionRef} data-section="3" className="snap-section flex items-center justify-center">
-      <div className="section-content text-center px-6">
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="text-center px-6">
         <div
-          ref={numberRef}
-          className="font-['Poppins'] leading-none text-white"
+          className="font-mono leading-none text-white"
           style={{
-            fontSize: 'clamp(120px, 25vw, 300px)',
-            textShadow: '0 0 40px rgba(255,12,182,0.8), 0 0 80px rgba(255,12,182,0.4)',
+            fontSize: 'clamp(120px, 25vw, 240px)',
+            textShadow: '0 0 40px rgba(255,12,182,0.6), 0 0 80px rgba(255,12,182,0.3), 0 0 120px rgba(255,12,182,0.15)',
           }}
         >
-          {count}
+          {display}
         </div>
-        <p className="mt-6 font-['Poppins'] text-base tracking-wider text-white/70 uppercase sm:text-lg md:text-xl">
-          languages. one song. every platform.
+        <p className="mt-8 font-['Poppins'] text-[14px] font-semibold tracking-[0.2em] text-white uppercase">
+          PEOPLE CAN SING ALONG IN THEIR OWN LANGUAGE
         </p>
       </div>
-    </section>
+    </div>
   )
 }
