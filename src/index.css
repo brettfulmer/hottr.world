@@ -7,7 +7,9 @@
   --color-pink-500: #ff4dcc;
   --color-pink-700: #FF0CB6;
   --color-pink-900: #b30880;
-  --font-poppins: 'Poppins', sans-serif;
+  --font-headline: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Manrope', sans-serif;
+  --font-label: 'Manrope', sans-serif;
   --font-mono: ui-monospace, Consolas, monospace;
 }
 
@@ -19,15 +21,53 @@
 
 body {
   background: #050608;
-  color: #ffffff;
-  font-family: 'Poppins', sans-serif;
+  color: #e3e2e5;
+  font-family: 'Manrope', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  min-height: 100dvh;
 }
 
 #root {
   min-height: 100vh;
+}
+
+::selection {
+  background: #ff3db9;
+  color: #56003b;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+}
+
+.neon-glow {
+  text-shadow: 0 0 15px rgba(255, 12, 182, 0.6);
+}
+
+.neon-box-glow {
+  box-shadow: 0 0 15px rgba(255, 12, 182, 0.4);
+}
+
+.glass-pane {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.live-signal {
+  width: 4px;
+  height: 4px;
+  background-color: #FF0CB6;
+  box-shadow: 0 0 8px #FF0CB6;
+  border-radius: 9999px;
+  animation: pulse-glow-dot 2s infinite ease-in-out;
+}
+
+@keyframes pulse-glow-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
 }
 
 @keyframes pulse-glow {

@@ -1,6 +1,6 @@
+import Navbar from './components/Navbar'
 import Hero from './components/Hero'
-import Concept from './components/Concept'
-import Cities from './components/Cities'
+import GlobeCarousel from './components/GlobeCarousel'
 import Counter from './components/Counter'
 import Listen from './components/Listen'
 import Footer from './components/Footer'
@@ -8,11 +8,13 @@ import Footer from './components/Footer'
 export default function App() {
   return (
     <>
-      <Hero />
-      <Concept />
-      <Cities />
-      <Counter />
-      <Listen />
+      <Navbar />
+      <main className="pt-16 overflow-x-hidden">
+        <Hero />
+        <GlobeCarousel />
+        <Counter />
+        <Listen />
+      </main>
       <Footer />
     </>
   )
