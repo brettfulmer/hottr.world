@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useSnapScroll } from './hooks/useSnapScroll'
+import PinGate from './components/PinGate'
 import Hero from './components/Hero'
 import Concept from './components/Concept'
 import Cities from './components/Cities'
@@ -9,7 +11,12 @@ import SectionDots from './components/SectionDots'
 const SECTION_COUNT = 5
 
 export default function App() {
+  const [unlocked, setUnlocked] = useState(false)
   const { activeSection, goTo } = useSnapScroll(SECTION_COUNT)
+
+  if (!unlocked) {
+    return <PinGate onUnlock={() => setUnlocked(true)} />
+  }
 
   const sectionClass = (idx: number) => {
     if (idx === activeSection) return 'active'
