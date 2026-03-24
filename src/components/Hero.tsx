@@ -13,9 +13,14 @@ export default function Hero() {
       <p className="font-[var(--font-jakarta)] text-sm font-semibold tracking-widest text-[#ff3db9] neon-glow mb-12">
         25 LANGUAGES. ONE NIGHT.
       </p>
-      <button className="bg-[#FF0CB6] text-white px-8 py-4 font-[var(--font-jakarta)] font-bold text-xs tracking-[0.2em] rounded-none hover:neon-box-glow active:scale-95 transition-all duration-300">
+      <a
+        href="https://open.spotify.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="bg-[#FF0CB6] text-white px-8 py-4 font-[var(--font-jakarta)] font-bold text-xs tracking-[0.2em] rounded-none hover:neon-box-glow active:scale-95 transition-all duration-300"
+      >
         LISTEN NOW
-      </button>
+      </a>
     </section>
   )
 }
