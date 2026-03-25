@@ -31,13 +31,13 @@ export const languages: Language[] = [
   { id: 'it', name: 'Italian', speakers: '~85 million', globalRank: '\u2014', countries: ['Italy','Switzerland','San Marino','Vatican City'], moreCountries: 8, lat: 45.46, lng: 9.19 },
   { id: 'ja', name: 'Japanese', speakers: '~125 million', globalRank: '13th most spoken', countries: ['Japan'], moreCountries: 0, lat: 35.68, lng: 139.69 },
   { id: 'ko', name: 'Korean', speakers: '~80 million', globalRank: '\u2014', countries: ['South Korea','North Korea'], moreCountries: 5, lat: 37.57, lng: 126.98 },
-  { id: 'es-es', name: 'Madrid Spanish', speakers: '~550 million Spanish speakers', globalRank: '4th most spoken', countries: ['Spain'], moreCountries: 0, note: 'Understood across 20+ Spanish-speaking nations', lat: 40.42, lng: -3.70 },
   { id: 'zh', name: 'Mandarin', speakers: '~1.1 billion', globalRank: '2nd most spoken', countries: ['China','Taiwan','Singapore'], moreCountries: 3, lat: 31.23, lng: 121.47 },
   { id: 'es-mx', name: 'Mexican Spanish', speakers: '~550 million Spanish speakers', globalRank: '4th most spoken', countries: ['Mexico','United States (60M+ Spanish speakers)'], moreCountries: 0, note: 'Understood across 20+ Spanish-speaking nations', lat: 19.43, lng: -99.13 },
   { id: 'pcm', name: 'Nigerian Pidgin', speakers: '~75 million', globalRank: '\u2014', countries: ['Nigeria','Cameroon','Ghana'], moreCountries: 2, lat: 6.52, lng: 3.38 },
   { id: 'pl', name: 'Polish', speakers: '~45 million', globalRank: '25th most spoken', countries: ['Poland','United Kingdom','Germany','USA','Ireland','France','Canada'], moreCountries: 0, lat: 52.23, lng: 21.01 },
   { id: 'ro', name: 'Romanian', speakers: '~26 million', globalRank: '\u2014', countries: ['Romania','Moldova'], moreCountries: 6, lat: 44.43, lng: 26.10 },
   { id: 'ru', name: 'Russian', speakers: '~250 million', globalRank: '7th most spoken', countries: ['Russia','Belarus','Kazakhstan','Kyrgyzstan'], moreCountries: 11, lat: 55.76, lng: 37.62 },
+  { id: 'es-es', name: 'Spanish', speakers: '~550 million Spanish speakers', globalRank: '4th most spoken', countries: ['Spain'], moreCountries: 0, note: 'Understood across 20+ Spanish-speaking nations', lat: 40.42, lng: -3.70 },
   { id: 'sw', name: 'Swahili', speakers: '~100 million', globalRank: '\u2014', countries: ['Kenya','Tanzania','Uganda','DR Congo','Rwanda','Burundi'], moreCountries: 4, lat: -1.29, lng: 36.82 },
   { id: 'sv', name: 'Swedish', speakers: '~10 million', globalRank: '\u2014', countries: ['Sweden','Finland'], note: 'Mutually intelligible with Norwegian and Danish (~15M more)', moreCountries: 0, lat: 59.33, lng: 18.07 },
   { id: 'tl', name: 'Tagalog', speakers: '~80 million', globalRank: '\u2014', countries: ['Philippines','USA','Saudi Arabia','UAE','Canada','Australia'], moreCountries: 6, lat: 14.60, lng: 120.98 },
@@ -46,5 +46,5 @@ export const languages: Language[] = [
   { id: 'ur', name: 'Urdu', speakers: '~230 million', globalRank: '10th most spoken', countries: ['Pakistan','India'], moreCountries: 4, lat: 24.86, lng: 67.01 },
   { id: 'vi', name: 'Vietnamese', speakers: '~85 million', globalRank: '\u2014', countries: ['Vietnam'], moreCountries: 8, lat: 10.82, lng: 106.63 },
   // Kriol: bonus — always last
-  { id: 'kriol', name: 'Kriol', speakers: '~20,000', globalRank: '\u2014', countries: ['Australia (Northern Territory, Kimberley, Far North QLD)'], note: 'First Nations Australian creole language', moreCountries: 0, lat: -12.46, lng: 130.84, isIndigenous: true },
+  { id: 'kriol', name: 'Kriol', speakers: '~20,000', globalRank: '\u2014', countries: ['Australia (Northern Territory, Kimberley, Far North QLD)'], note: 'First Nations Australian creole language', moreCountries: 0, lat: -16.0, lng: 145.0, isIndigenous: true },
 ]

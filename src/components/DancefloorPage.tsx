@@ -76,10 +76,10 @@ export default function DancefloorPage() {
   const [countStarted, setCountStarted] = useState(false)
   const [countValue, setCountValue] = useState(0)
   const [statLine1, setStatLine1] = useState(false)
-  const [statLine2, setStatLine2] = useState(false)
   const [quoteLine1, setQuoteLine1] = useState(false)
   const [quoteLine2, setQuoteLine2] = useState(false)
   const [quoteLine3, setQuoteLine3] = useState(false)
+  const [quoteLine4, setQuoteLine4] = useState(false)
   const [dotsVisible, setDotsVisible] = useState(true)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const tickerRef = useRef<HTMLDivElement>(null)
@@ -105,10 +105,11 @@ export default function DancefloorPage() {
   // Section 1: stagger quote lines on load
   useEffect(() => {
     if (section === 0) {
-      setQuoteLine1(false); setQuoteLine2(false); setQuoteLine3(false)
+      setQuoteLine1(false); setQuoteLine2(false); setQuoteLine3(false); setQuoteLine4(false)
       setTimeout(() => setQuoteLine1(true), 300)
-      setTimeout(() => setQuoteLine2(true), 800)
-      setTimeout(() => setQuoteLine3(true), 1300)
+      setTimeout(() => setQuoteLine2(true), 1200)
+      setTimeout(() => setQuoteLine3(true), 2100)
+      setTimeout(() => setQuoteLine4(true), 3000)
     }
   }, [section])
 
@@ -122,7 +123,6 @@ export default function DancefloorPage() {
         if (v >= 5.0) {
           setCountValue(5.0)
           setTimeout(() => setStatLine1(true), 500)
-          setTimeout(() => setStatLine2(true), 800)
           return
         }
         setCountValue(Math.round(v * 10) / 10)
@@ -247,18 +247,22 @@ export default function DancefloorPage() {
       {/* ====== SECTION 1: THE STATEMENT ====== */}
       <div style={sectionStyle(0)}>
         <ParticleCanvas />
-        <div className="relative z-10 flex flex-col items-center gap-6 px-6 max-w-[800px]">
-          <p className="text-[22px] md:text-[32px] font-semibold text-white text-center leading-snug transition-all duration-500"
-            style={{ fontFamily: 'Poppins', opacity: quoteLine1 ? 1 : 0, transform: quoteLine1 ? 'translateY(0)' : 'translateY(10px)' }}>
-            Music doesn&apos;t care what language you speak.
+        <div className="relative z-10 flex flex-col items-center gap-5 px-6 max-w-[780px]">
+          <p className="text-[18px] md:text-[26px] font-semibold text-white text-center leading-relaxed transition-all duration-700"
+            style={{ fontFamily: 'Poppins', opacity: quoteLine1 ? 1 : 0, transform: quoteLine1 ? 'translateY(0)' : 'translateY(12px)' }}>
+            Music has always been the thing that brings strangers together. Across borders, across cultures, across languages you&apos;ve never spoken.
           </p>
-          <p className="text-[16px] md:text-[20px] font-normal text-white/70 text-center leading-snug transition-all duration-500"
-            style={{ fontFamily: 'Poppins', opacity: quoteLine2 ? 1 : 0, transform: quoteLine2 ? 'translateY(0)' : 'translateY(10px)' }}>
-            But not every song speaks yours.
+          <p className="text-[15px] md:text-[19px] font-normal text-white/65 text-center leading-relaxed transition-all duration-700"
+            style={{ fontFamily: 'Poppins', opacity: quoteLine2 ? 1 : 0, transform: quoteLine2 ? 'translateY(0)' : 'translateY(12px)' }}>
+            You know that feeling — when a song takes over and you can&apos;t help but sing along. The joy, the release, the shared moment on the dancefloor when nothing else matters.
           </p>
-          <p className="text-[18px] md:text-[24px] font-bold text-[#FF0CB6] text-center transition-all duration-500"
-            style={{ fontFamily: 'Poppins', opacity: quoteLine3 ? 1 : 0, transform: quoteLine3 ? 'translateY(0)' : 'translateY(10px)', textShadow: '0 0 20px rgba(255,12,182,0.5)' }}>
-            Until now.
+          <p className="text-[15px] md:text-[19px] font-normal text-white/65 text-center leading-relaxed transition-all duration-700"
+            style={{ fontFamily: 'Poppins', opacity: quoteLine3 ? 1 : 0, transform: quoteLine3 ? 'translateY(0)' : 'translateY(12px)' }}>
+            But sometimes you don&apos;t understand the lyrics. You&apos;re singing sounds, not words. And you&apos;ve never known what you were actually singing.
+          </p>
+          <p className="text-[20px] md:text-[28px] font-bold text-[#FF0CB6] text-center transition-all duration-700 mt-2"
+            style={{ fontFamily: 'Poppins', opacity: quoteLine4 ? 1 : 0, transform: quoteLine4 ? 'translateY(0)' : 'translateY(12px)', textShadow: '0 0 24px rgba(255,12,182,0.5)' }}>
+            Not anymore.
           </p>
         </div>
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/15 animate-bounce text-2xl">&#8595;</div>
@@ -266,18 +270,18 @@ export default function DancefloorPage() {
 
       {/* ====== SECTION 2: THE NUMBER ====== */}
       <div style={sectionStyle(1)}>
-        <div className="flex flex-col items-center gap-6 px-6">
-          <span className="font-mono text-[100px] md:text-[200px] text-white leading-none"
-            style={{ textShadow: '0 0 40px rgba(255,12,182,0.6), 0 0 80px rgba(255,12,182,0.3), 0 0 120px rgba(255,12,182,0.15)' }}>
-            {countValue.toFixed(1)}B
-          </span>
-          <p className="text-[14px] md:text-[18px] font-semibold text-white uppercase tracking-[0.12em] text-center transition-opacity duration-500"
-            style={{ fontFamily: 'Poppins', opacity: statLine1 ? 1 : 0 }}>
-            People can sing along in their own language
+        <div className="flex flex-col items-center gap-4 px-6 max-w-[800px]">
+          <p className="text-[13px] md:text-[16px] font-normal text-white/60 text-center leading-relaxed transition-opacity duration-500"
+            style={{ fontFamily: 'Poppins', opacity: statLine1 ? 1 : (countStarted ? 1 : 0) }}>
+            For the first time in history, a commercially released single is dropping in multiple languages — allowing over
           </p>
-          <p className="text-[12px] md:text-[14px] font-semibold text-[#FF0CB6] uppercase tracking-[0.2em] text-center transition-opacity duration-300"
-            style={{ fontFamily: 'Poppins', opacity: statLine2 ? 1 : 0, textShadow: '0 0 16px rgba(255,12,182,0.4)' }}>
-            For the first time in music history
+          <span className="font-mono text-[80px] md:text-[160px] text-white leading-none"
+            style={{ textShadow: '0 0 40px rgba(255,12,182,0.6), 0 0 80px rgba(255,12,182,0.3), 0 0 120px rgba(255,12,182,0.15)' }}>
+            {countStarted ? (countValue >= 5 ? '5,000,000,000' : Math.floor(countValue * 1e9).toLocaleString()) : '0'}
+          </span>
+          <p className="text-[13px] md:text-[16px] font-normal text-white/60 text-center leading-relaxed transition-opacity duration-500"
+            style={{ fontFamily: 'Poppins', opacity: statLine1 ? 1 : 0 }}>
+            people around the world to sing along — and actually understand every word they&apos;re singing.
           </p>
         </div>
       </div>
@@ -298,6 +302,7 @@ export default function DancefloorPage() {
             </>
           ) : (
             <>
+              <h2 className="text-[48px] md:text-[72px] font-bold text-white leading-none tracking-tight mb-4" style={{ fontFamily: 'Poppins' }}>DANCEFLOOR</h2>
               <p className="text-[12px] font-semibold text-white/40 uppercase tracking-[0.25em]" style={{ fontFamily: 'Poppins' }}>The World Premiere</p>
               <div className="flex items-start gap-2 md:gap-4">
                 {[

@@ -5,7 +5,6 @@ import type { Topology, GeometryCollection } from 'topojson-specification'
 import type { FeatureCollection, Feature, Geometry, Position } from 'geojson'
 import type { Language } from '../data/languages'
 
-const PINK = 0xFF0CB6
 const RADIUS = 2
 const PI2 = Math.PI * 2
 const CW = 4096
@@ -38,16 +37,6 @@ function matchesCountry(geoName: string, langCountries: string[]): boolean {
     }
   }
   return false
-}
-
-function latLngToVec3(lat: number, lng: number, r: number): THREE.Vector3 {
-  const phi = (90 - lat) * (Math.PI / 180)
-  const theta = (lng + 180) * (Math.PI / 180)
-  return new THREE.Vector3(
-    -r * Math.sin(phi) * Math.cos(theta),
-    r * Math.cos(phi),
-    r * Math.sin(phi) * Math.sin(theta),
-  )
 }
 
 function drawRing(ctx: CanvasRenderingContext2D, coords: Position[], w: number, h: number) {
@@ -96,11 +85,9 @@ export default function Globe3D({ selected }: Props) {
   const hlTextureRef = useRef<THREE.CanvasTexture | null>(null)
   const geoDataRef = useRef<FeatureCollection | null>(null)
   const dotsGroupRef = useRef<THREE.Group | null>(null)
-  const autoRotate = useRef(true)
-  const lastInteraction = useRef(0)
   const isDragging = useRef(false)
   const prevMouse = useRef({ x: 0, y: 0 })
-  const targetRotY = useRef(0)
+  const velocity = useRef(0.0008) // gentle initial spin
   const currentRotY = useRef(0)
   const rafId = useRef(0)
 
@@ -226,40 +213,13 @@ export default function Globe3D({ selected }: Props) {
     ctx.globalAlpha = 1
   }
 
-  const updateDots = useCallback((lang: Language, globe: THREE.Group) => {
+  const updateDots = useCallback((_lang: Language, globe: THREE.Group) => {
+    // Country-only highlighting — no city dots or markers
     if (dotsGroupRef.current) {
       globe.remove(dotsGroupRef.current)
       dotsGroupRef.current.traverse(c => { if ((c as THREE.Mesh).geometry) (c as THREE.Mesh).geometry.dispose() })
+      dotsGroupRef.current = null
     }
-    const group = new THREE.Group()
-
-    // Main dot
-    const dotGeo = new THREE.SphereGeometry(0.035, 16, 16)
-    const dotMat = new THREE.MeshBasicMaterial({ color: PINK })
-    const dot = new THREE.Mesh(dotGeo, dotMat)
-    dot.position.copy(latLngToVec3(lang.lat, lang.lng, RADIUS + 0.012))
-    group.add(dot)
-
-    // Pulsing ring
-    const glowGeo = new THREE.RingGeometry(0.05, 0.085, 32)
-    const glowMat = new THREE.MeshBasicMaterial({ color: PINK, transparent: true, opacity: 0.5, side: THREE.DoubleSide })
-    const glow = new THREE.Mesh(glowGeo, glowMat)
-    glow.position.copy(dot.position)
-    glow.lookAt(new THREE.Vector3(0, 0, 0))
-    group.add(glow)
-
-    dotsGroupRef.current = group
-    globe.add(group)
-  }, [])
-
-  const rotateToLanguage = useCallback((lang: Language) => {
-    const target = -lang.lng * (Math.PI / 180) - Math.PI / 2
-    const current = currentRotY.current % PI2
-    let t = target % PI2
-    const diff = t - current
-    if (diff > Math.PI) t -= PI2
-    else if (diff < -Math.PI) t += PI2
-    targetRotY.current = t
   }, [])
 
   const loadGeoData = useCallback(async () => {
@@ -374,31 +334,21 @@ export default function Globe3D({ selected }: Props) {
     scene.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS * 1.12, 64, 64), atmoMat))
 
     updateDots(selected, globe)
-    rotateToLanguage(selected)
-    currentRotY.current = targetRotY.current
-    globe.rotation.y = currentRotY.current
-
     loadGeoData()
 
     const animate = () => {
       rafId.current = requestAnimationFrame(animate)
       const now = Date.now()
 
-      if (now - lastInteraction.current > 5000) autoRotate.current = true
-      if (autoRotate.current && !isDragging.current) targetRotY.current += 0.0008
-
-      currentRotY.current += (targetRotY.current - currentRotY.current) * 0.04
+      // Free-spin: apply velocity, gentle friction
+      if (!isDragging.current) {
+        velocity.current *= 0.997 // very slow friction — spins freely
+        currentRotY.current += velocity.current
+      }
       globe.rotation.y = currentRotY.current
 
       // Pulse atmosphere
       atmoMat.uniforms.uOpacity.value = 0.15 * Math.sin(now * 0.001 * (PI2 / 3.5)) + 0.45
-
-      // Pulse dot ring
-      if (dotsGroupRef.current && dotsGroupRef.current.children.length > 1) {
-        const ring = dotsGroupRef.current.children[1] as THREE.Mesh
-        ring.scale.setScalar(1 + 0.3 * Math.sin(now * 0.003))
-        ;(ring.material as THREE.MeshBasicMaterial).opacity = 0.3 + 0.2 * Math.sin(now * 0.003)
-      }
 
       renderer.render(scene, camera)
     }
@@ -413,16 +363,18 @@ export default function Globe3D({ selected }: Props) {
     window.addEventListener('resize', onResize)
 
     const onDown = (e: PointerEvent) => {
-      isDragging.current = true; autoRotate.current = false
-      lastInteraction.current = Date.now()
+      isDragging.current = true
+      velocity.current = 0
       prevMouse.current = { x: e.clientX, y: e.clientY }
     }
     const onMove = (e: PointerEvent) => {
       if (!isDragging.current) return
-      targetRotY.current += (e.clientX - prevMouse.current.x) * 0.005
+      const dx = (e.clientX - prevMouse.current.x) * 0.005
+      currentRotY.current += dx
+      velocity.current = dx // last frame's delta becomes release velocity
       prevMouse.current = { x: e.clientX, y: e.clientY }
     }
-    const onUp = () => { isDragging.current = false; lastInteraction.current = Date.now() }
+    const onUp = () => { isDragging.current = false }
 
     renderer.domElement.addEventListener('pointerdown', onDown)
     window.addEventListener('pointermove', onMove)
@@ -442,11 +394,8 @@ export default function Globe3D({ selected }: Props) {
   useEffect(() => {
     if (!globeRef.current) return
     updateDots(selected, globeRef.current)
-    rotateToLanguage(selected)
     updateHighlights(selected)
-    autoRotate.current = false
-    lastInteraction.current = Date.now()
-  }, [selected, updateDots, rotateToLanguage, updateHighlights])
+  }, [selected, updateDots, updateHighlights])
 
   return <div ref={containerRef} className="w-full h-full" style={{ touchAction: 'none', cursor: 'grab' }} />
 }
