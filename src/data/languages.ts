@@ -106,10 +106,10 @@ export const languages: Language[] = [
     ],
   },
   {
-    id: 10, name: 'Belfast English', label: 'Belfast English',
-    speakers: '~1.5 Billion', globalRank: '1st Most Spoken',
-    regions: ['NORTHERN IRELAND', 'IRELAND', 'UNITED KINGDOM', 'UNITED STATES', 'CANADA', 'AUSTRALIA'],
-    culturalHubs: ['BELFAST', 'DUBLIN', 'LONDON'],
+    id: 10, name: 'Irish Gaelic', label: 'Irish Gaelic',
+    speakers: '~1.7 Million', globalRank: '133rd Most Spoken',
+    regions: ['IRELAND', 'NORTHERN IRELAND', 'UNITED STATES', 'UNITED KINGDOM', 'CANADA', 'AUSTRALIA'],
+    culturalHubs: ['DUBLIN', 'GALWAY', 'BELFAST'],
     dots: [
       { top: '28%', left: '44%', primary: true },
       { top: '29%', left: '43%' },
