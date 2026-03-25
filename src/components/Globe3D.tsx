@@ -8,10 +8,9 @@ import type { Language } from '../data/languages'
 const PINK = 0xFF0CB6
 const RADIUS = 2
 const PI2 = Math.PI * 2
-const CW = 2048
-const CH = 1024
+const CW = 4096
+const CH = 2048
 
-// Country name aliases for GeoJSON ↔ language data matching
 const ALIASES: Record<string, string[]> = {
   'United States of America': ['United States','USA','United States (60M+ Spanish speakers)'],
   'United Kingdom': ['United Kingdom','UK'],
@@ -21,10 +20,8 @@ const ALIASES: Record<string, string[]> = {
   'Republic of the Congo': ['Republic of Congo'],
   "Côte d'Ivoire": ['Ivory Coast'],
   'Czechia': ['Czech Republic'],
-  'Myanmar': ['Burma'],
   'Turkey': ['Turkey','Türkiye'],
   'Taiwan': ['Taiwan'],
-  'Curaçao': ['Curaçao','Curacao'],
 }
 
 function matchesCountry(geoName: string, langCountries: string[]): boolean {
@@ -53,25 +50,31 @@ function latLngToVec3(lat: number, lng: number, r: number): THREE.Vector3 {
   )
 }
 
-// Draw a GeoJSON ring onto canvas with equirectangular projection
 function drawRing(ctx: CanvasRenderingContext2D, coords: Position[], w: number, h: number) {
   ctx.beginPath()
+  let prevX = -1
   for (let i = 0; i < coords.length; i++) {
     const [lng, lat] = coords[i]
     const x = ((lng + 180) / 360) * w
     const y = ((90 - lat) / 180) * h
-    if (i === 0) ctx.moveTo(x, y)
-    else ctx.lineTo(x, y)
+    // Break path at dateline wrap
+    if (i > 0 && Math.abs(x - prevX) > w * 0.5) {
+      ctx.moveTo(x, y)
+    } else if (i === 0) {
+      ctx.moveTo(x, y)
+    } else {
+      ctx.lineTo(x, y)
+    }
+    prevX = x
   }
   ctx.closePath()
 }
 
-function drawFeatureOnCanvas(ctx: CanvasRenderingContext2D, feat: Feature, w: number, h: number, fill: boolean) {
+function drawFeature(ctx: CanvasRenderingContext2D, feat: Feature, w: number, h: number, fill: boolean) {
   const geom = feat.geometry as Geometry
   const rings: Position[][] = []
   if (geom.type === 'Polygon') rings.push(...geom.coordinates)
   else if (geom.type === 'MultiPolygon') for (const p of geom.coordinates) rings.push(...p)
-
   for (const ring of rings) {
     drawRing(ctx, ring, w, h)
     if (fill) ctx.fill()
@@ -101,73 +104,112 @@ export default function Globe3D({ selected }: Props) {
   const currentRotY = useRef(0)
   const rafId = useRef(0)
 
-  // Draw the base globe texture: dark ocean + country outlines + subtle fills
+  // Draw the base globe texture — traditional globe look
   const drawBaseMap = useCallback((geo: FeatureCollection) => {
     const canvas = baseCanvasRef.current
     const texture = baseTextureRef.current
     if (!canvas || !texture) return
-
     const ctx = canvas.getContext('2d')!
+    const w = CW, h = CH
 
-    // Dark ocean
-    ctx.fillStyle = '#080a10'
-    ctx.fillRect(0, 0, CW, CH)
+    // Deep dark ocean
+    ctx.fillStyle = '#060810'
+    ctx.fillRect(0, 0, w, h)
 
-    // Subtle latitude/longitude grid
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)'
-    ctx.lineWidth = 0.5
-    for (let lat = -60; lat <= 60; lat += 30) {
-      const y = ((90 - lat) / 180) * CH
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(CW, y); ctx.stroke()
+    // Subtle ocean gradient (darker at poles)
+    const grad = ctx.createLinearGradient(0, 0, 0, h)
+    grad.addColorStop(0, 'rgba(0,0,0,0.3)')
+    grad.addColorStop(0.3, 'rgba(0,0,0,0)')
+    grad.addColorStop(0.7, 'rgba(0,0,0,0)')
+    grad.addColorStop(1, 'rgba(0,0,0,0.3)')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, w, h)
+
+    // Grid lines — latitude (horizontal)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)'
+    ctx.lineWidth = 1
+    for (let lat = -60; lat <= 60; lat += 15) {
+      const y = ((90 - lat) / 180) * h
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke()
     }
-    for (let lng = -150; lng <= 180; lng += 30) {
-      const x = ((lng + 180) / 360) * CW
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CH); ctx.stroke()
+
+    // Grid lines — longitude (vertical)
+    for (let lng = -180; lng < 180; lng += 15) {
+      const x = ((lng + 180) / 360) * w
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke()
     }
 
-    // Country fills (very subtle dark land)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.06)'
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'
-    ctx.lineWidth = 0.8
+    // Equator — pink accent
+    const eqY = h / 2
+    ctx.strokeStyle = 'rgba(255, 12, 182, 0.12)'
+    ctx.lineWidth = 2
+    ctx.beginPath(); ctx.moveTo(0, eqY); ctx.lineTo(w, eqY); ctx.stroke()
+
+    // Country landmasses — filled + outlined
+    // Fill (subtle dark land)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.07)'
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)'
+    ctx.lineWidth = 1.2
     for (const feat of geo.features) {
-      drawFeatureOnCanvas(ctx, feat, CW, CH, true)
+      drawFeature(ctx, feat, w, h, true)
+    }
+
+    // Second pass — brighter borders for definition
+    ctx.fillStyle = 'transparent'
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.13)'
+    ctx.lineWidth = 0.6
+    for (const feat of geo.features) {
+      drawFeature(ctx, feat, w, h, false)
     }
 
     texture.needsUpdate = true
   }, [])
 
-  // Draw country highlights for selected language
+  // Highlight countries for selected language
   const updateHighlights = useCallback((lang: Language) => {
     const canvas = hlCanvasRef.current
     const texture = hlTextureRef.current
     const geo = geoDataRef.current
     if (!canvas || !texture) return
-
     const ctx = canvas.getContext('2d')!
-    ctx.clearRect(0, 0, CW, CH)
+    const w = CW, h = CH
+    ctx.clearRect(0, 0, w, h)
 
     if (lang.isIndigenous) {
-      drawKriolOverlay(ctx, lang)
+      drawKriolOverlay(ctx, w, h, lang)
     } else if (geo) {
-      ctx.fillStyle = 'rgba(255, 12, 182, 0.35)'
-      ctx.strokeStyle = 'rgba(255, 12, 182, 0.6)'
-      ctx.lineWidth = 1.2
+      // Filled pink highlight
+      ctx.fillStyle = 'rgba(255, 12, 182, 0.30)'
+      ctx.strokeStyle = 'rgba(255, 12, 182, 0.70)'
+      ctx.lineWidth = 2
 
       for (const feat of geo.features) {
         const name = (feat.properties as Record<string, string>)?.name || ''
         if (!matchesCountry(name, lang.countries)) continue
-        drawFeatureOnCanvas(ctx, feat, CW, CH, true)
+        drawFeature(ctx, feat, w, h, true)
       }
+
+      // Second pass — brighter glow border
+      ctx.fillStyle = 'transparent'
+      ctx.strokeStyle = 'rgba(255, 12, 182, 0.45)'
+      ctx.lineWidth = 1
+      ctx.shadowColor = 'rgba(255, 12, 182, 0.6)'
+      ctx.shadowBlur = 8
+      for (const feat of geo.features) {
+        const name = (feat.properties as Record<string, string>)?.name || ''
+        if (!matchesCountry(name, lang.countries)) continue
+        drawFeature(ctx, feat, w, h, false)
+      }
+      ctx.shadowBlur = 0
     }
     texture.needsUpdate = true
   }, [])
 
-  const drawKriolOverlay = (ctx: CanvasRenderingContext2D, lang: Language) => {
-    const cx = ((lang.lng + 180) / 360) * CW
-    const cy = ((90 - lang.lat) / 180) * CH
+  const drawKriolOverlay = (ctx: CanvasRenderingContext2D, w: number, h: number, lang: Language) => {
+    const cx = ((lang.lng + 180) / 360) * w
+    const cy = ((90 - lang.lat) / 180) * h
     const ochres = ['#C4722F', '#8B4513', '#E8D5B7', '#FF0CB6']
-    const maxR = Math.min(CW, CH) * 0.1
-
+    const maxR = Math.min(w, h) * 0.08
     for (let ring = 0; ring < 8; ring++) {
       const r = (ring + 1) * (maxR / 8)
       const dots = Math.floor(r * 0.8)
@@ -175,7 +217,7 @@ export default function Globe3D({ selected }: Props) {
         const angle = (d / dots) * PI2 + ring * 0.3
         const jitter = (Math.random() - 0.5) * 4
         ctx.beginPath()
-        ctx.arc(cx + Math.cos(angle) * (r + jitter), cy + Math.sin(angle) * (r + jitter), 1.5 + Math.random(), 0, PI2)
+        ctx.arc(cx + Math.cos(angle) * (r + jitter), cy + Math.sin(angle) * (r + jitter), 2 + Math.random(), 0, PI2)
         ctx.fillStyle = ochres[Math.floor(Math.random() * ochres.length)]
         ctx.globalAlpha = 0.6 + Math.random() * 0.3
         ctx.fill()
@@ -191,13 +233,15 @@ export default function Globe3D({ selected }: Props) {
     }
     const group = new THREE.Group()
 
-    const dotGeo = new THREE.SphereGeometry(0.035, 12, 12)
+    // Main dot
+    const dotGeo = new THREE.SphereGeometry(0.035, 16, 16)
     const dotMat = new THREE.MeshBasicMaterial({ color: PINK })
     const dot = new THREE.Mesh(dotGeo, dotMat)
-    dot.position.copy(latLngToVec3(lang.lat, lang.lng, RADIUS + 0.01))
+    dot.position.copy(latLngToVec3(lang.lat, lang.lng, RADIUS + 0.012))
     group.add(dot)
 
-    const glowGeo = new THREE.RingGeometry(0.045, 0.08, 24)
+    // Pulsing ring
+    const glowGeo = new THREE.RingGeometry(0.05, 0.085, 32)
     const glowMat = new THREE.MeshBasicMaterial({ color: PINK, transparent: true, opacity: 0.5, side: THREE.DoubleSide })
     const glow = new THREE.Mesh(glowGeo, glowMat)
     glow.position.copy(dot.position)
@@ -218,7 +262,6 @@ export default function Globe3D({ selected }: Props) {
     targetRotY.current = t
   }, [])
 
-  // Load GeoJSON and init
   const loadGeoData = useCallback(async () => {
     try {
       const topoModule = await import('world-atlas/countries-110m.json')
@@ -227,7 +270,7 @@ export default function Globe3D({ selected }: Props) {
       geoDataRef.current = geo
       drawBaseMap(geo)
       updateHighlights(selected)
-    } catch { /* globe works without highlights */ }
+    } catch { /* graceful fallback */ }
   }, [drawBaseMap, updateHighlights])
 
   useEffect(() => {
@@ -239,7 +282,7 @@ export default function Globe3D({ selected }: Props) {
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100)
-    camera.position.z = 5.5
+    camera.position.z = 5.2
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
     renderer.setSize(w, h)
@@ -252,20 +295,19 @@ export default function Globe3D({ selected }: Props) {
     globeRef.current = globe
     scene.add(globe)
 
-    // Base map canvas — drawn country outlines (traditional globe look)
+    // Base map canvas
     const baseCanvas = document.createElement('canvas')
     baseCanvas.width = CW; baseCanvas.height = CH
     baseCanvasRef.current = baseCanvas
-    // Fill with dark initially
     const bctx = baseCanvas.getContext('2d')!
-    bctx.fillStyle = '#080a10'
+    bctx.fillStyle = '#060810'
     bctx.fillRect(0, 0, CW, CH)
 
     const baseTex = new THREE.CanvasTexture(baseCanvas)
     baseTex.colorSpace = THREE.SRGBColorSpace
     baseTextureRef.current = baseTex
 
-    const earthGeo = new THREE.SphereGeometry(RADIUS, 64, 64)
+    const earthGeo = new THREE.SphereGeometry(RADIUS, 96, 96)
     const earthMat = new THREE.MeshBasicMaterial({ map: baseTex })
     globe.add(new THREE.Mesh(earthGeo, earthMat))
 
@@ -280,9 +322,33 @@ export default function Globe3D({ selected }: Props) {
     const hlMat = new THREE.MeshBasicMaterial({
       map: hlTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     })
-    globe.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS + 0.004, 64, 64), hlMat))
+    globe.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS + 0.003, 96, 96), hlMat))
 
-    // Pink atmosphere
+    // Inner shadow for depth (like real globe under glass)
+    const innerGeo = new THREE.SphereGeometry(RADIUS + 0.006, 64, 64)
+    const innerMat = new THREE.ShaderMaterial({
+      vertexShader: `
+        varying vec3 vNormal;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vNormal;
+        void main() {
+          float rim = 1.0 - max(0.0, dot(vNormal, vec3(0.0, 0.0, 1.0)));
+          float edge = smoothstep(0.4, 1.0, rim);
+          gl_FragColor = vec4(0.0, 0.0, 0.0, edge * 0.6);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.FrontSide,
+    })
+    globe.add(new THREE.Mesh(innerGeo, innerMat))
+
+    // Pink atmospheric glow (behind)
     const atmoMat = new THREE.ShaderMaterial({
       vertexShader: `
         varying vec3 vNormal;
@@ -295,7 +361,7 @@ export default function Globe3D({ selected }: Props) {
         varying vec3 vNormal;
         uniform float uOpacity;
         void main() {
-          float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.5);
+          float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.0);
           gl_FragColor = vec4(1.0, 0.047, 0.714, 1.0) * intensity * uOpacity;
         }
       `,
@@ -305,8 +371,7 @@ export default function Globe3D({ selected }: Props) {
       transparent: true,
       depthWrite: false,
     })
-    const atmo = new THREE.Mesh(new THREE.SphereGeometry(RADIUS * 1.15, 64, 64), atmoMat)
-    scene.add(atmo)
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS * 1.12, 64, 64), atmoMat))
 
     updateDots(selected, globe)
     rotateToLanguage(selected)
@@ -320,15 +385,19 @@ export default function Globe3D({ selected }: Props) {
       const now = Date.now()
 
       if (now - lastInteraction.current > 5000) autoRotate.current = true
-      if (autoRotate.current && !isDragging.current) targetRotY.current += 0.001
+      if (autoRotate.current && !isDragging.current) targetRotY.current += 0.0008
 
-      currentRotY.current += (targetRotY.current - currentRotY.current) * 0.05
+      currentRotY.current += (targetRotY.current - currentRotY.current) * 0.04
       globe.rotation.y = currentRotY.current
 
-      atmoMat.uniforms.uOpacity.value = 0.2 * Math.sin(now * 0.001 * (PI2 / 3.5)) + 0.5
+      // Pulse atmosphere
+      atmoMat.uniforms.uOpacity.value = 0.15 * Math.sin(now * 0.001 * (PI2 / 3.5)) + 0.45
 
+      // Pulse dot ring
       if (dotsGroupRef.current && dotsGroupRef.current.children.length > 1) {
-        (dotsGroupRef.current.children[1] as THREE.Mesh).scale.setScalar(1 + 0.3 * Math.sin(now * 0.003))
+        const ring = dotsGroupRef.current.children[1] as THREE.Mesh
+        ring.scale.setScalar(1 + 0.3 * Math.sin(now * 0.003))
+        ;(ring.material as THREE.MeshBasicMaterial).opacity = 0.3 + 0.2 * Math.sin(now * 0.003)
       }
 
       renderer.render(scene, camera)
@@ -343,28 +412,28 @@ export default function Globe3D({ selected }: Props) {
     }
     window.addEventListener('resize', onResize)
 
-    const onPointerDown = (e: PointerEvent) => {
+    const onDown = (e: PointerEvent) => {
       isDragging.current = true; autoRotate.current = false
       lastInteraction.current = Date.now()
       prevMouse.current = { x: e.clientX, y: e.clientY }
     }
-    const onPointerMove = (e: PointerEvent) => {
+    const onMove = (e: PointerEvent) => {
       if (!isDragging.current) return
       targetRotY.current += (e.clientX - prevMouse.current.x) * 0.005
       prevMouse.current = { x: e.clientX, y: e.clientY }
     }
-    const onPointerUp = () => { isDragging.current = false; lastInteraction.current = Date.now() }
+    const onUp = () => { isDragging.current = false; lastInteraction.current = Date.now() }
 
-    renderer.domElement.addEventListener('pointerdown', onPointerDown)
-    window.addEventListener('pointermove', onPointerMove)
-    window.addEventListener('pointerup', onPointerUp)
+    renderer.domElement.addEventListener('pointerdown', onDown)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
 
     return () => {
       cancelAnimationFrame(rafId.current)
       window.removeEventListener('resize', onResize)
-      renderer.domElement.removeEventListener('pointerdown', onPointerDown)
-      window.removeEventListener('pointermove', onPointerMove)
-      window.removeEventListener('pointerup', onPointerUp)
+      renderer.domElement.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
       renderer.dispose()
       if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement)
     }
