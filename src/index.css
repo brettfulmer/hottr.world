@@ -9,8 +9,8 @@
   --color-pink-500: #ff4dcc;
   --color-pink-700: #FF0CB6;
   --color-pink-900: #b30880;
-  --font-headline: 'Plus Jakarta Sans', sans-serif;
-  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-headline: 'Poppins', sans-serif;
+  --font-body: 'Poppins', sans-serif;
   --font-mono: ui-monospace, Consolas, monospace;
 }
 
@@ -28,7 +28,7 @@ html {
 body {
   background: #050608;
   color: #e3e2e5;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
@@ -71,6 +71,17 @@ body {
   mix-blend-mode: screen;
 }
 
+/* Globe Pink Glow */
+.globe-glow {
+  box-shadow: 0 0 60px 20px rgba(255, 12, 182, 0.5), 0 0 120px 40px rgba(255, 12, 182, 0.25);
+  animation: globe-pulse 3.5s ease-in-out infinite;
+}
+
+@keyframes globe-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
 /* City Pulse */
 .city-pulse {
   box-shadow: 0 0 15px 4px rgba(255, 12, 182, 0.6), 0 0 30px 8px rgba(255, 12, 182, 0.2);
@@ -98,6 +109,12 @@ body {
 /* Divider */
 .divider-low-contrast {
   border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Colon Pulse for countdown */
+@keyframes colon-pulse {
+  0%, 100% { color: rgba(255, 12, 182, 0.4); }
+  50% { color: rgba(255, 12, 182, 1); }
 }
 
 /* PIN Gate animations */

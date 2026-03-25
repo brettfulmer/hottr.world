@@ -74,13 +74,13 @@ export default function PinGate({ onUnlock }: Props) {
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center bg-[#050608] px-6">
-      <p className="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold tracking-[0.3em] uppercase text-white/40 mb-6">
+      <p className="font-['Poppins'] text-[10px] font-semibold tracking-[0.3em] uppercase text-white/40 mb-6">
         HOTTR
       </p>
-      <h1 className="font-['Plus_Jakarta_Sans'] text-[28px] sm:text-[36px] font-bold text-white tracking-tight mb-2">
+      <h1 className="font-['Poppins'] text-[28px] sm:text-[36px] font-bold text-white tracking-tight mb-2">
         ENTER ACCESS CODE
       </h1>
-      <p className="font-['Plus_Jakarta_Sans'] text-[13px] text-white/40 mb-10">
+      <p className="font-['Poppins'] text-[13px] text-white/40 mb-10">
         This experience is invite-only.
       </p>
 
@@ -111,7 +111,7 @@ export default function PinGate({ onUnlock }: Props) {
       </div>
 
       {error && (
-        <p className="font-['Plus_Jakarta_Sans'] text-[12px] text-red-400/80 mt-4 tracking-wider">
+        <p className="font-['Poppins'] text-[12px] text-red-400/80 mt-4 tracking-wider">
           INVALID CODE
         </p>
       )}
