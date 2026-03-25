@@ -1,317 +1,49 @@
 export interface Language {
-  id: number
+  id: string
   name: string
-  label: string
   speakers: string
   globalRank: string
-  regions: string[]
-  culturalHubs: string[]
-  dots: { top: string; left: string; primary?: boolean }[]
+  countries: string[]
+  moreCountries: number
+  note?: string
+  lat: number
+  lng: number
+  isIndigenous?: boolean
 }
 
 export const languages: Language[] = [
-  {
-    id: 1, name: 'English', label: 'English (Australian)',
-    speakers: '~1.5 Billion', globalRank: '1st Most Spoken',
-    regions: ['AUSTRALIA', 'UNITED KINGDOM', 'UNITED STATES', 'CANADA', 'NEW ZEALAND', 'IRELAND', 'SOUTH AFRICA', 'NIGERIA', 'INDIA'],
-    culturalHubs: ['SYDNEY', 'LONDON', 'NEW YORK', 'TORONTO', 'MUMBAI'],
-    dots: [
-      { top: '78%', left: '85%', primary: true },
-      { top: '32%', left: '48%' },
-      { top: '36%', left: '18%' },
-      { top: '50%', left: '70%' },
-    ],
-  },
-  {
-    id: 2, name: 'Turkish', label: 'Turkish',
-    speakers: '~80 Million', globalRank: '18th Most Spoken',
-    regions: ['TURKEY', 'NORTHERN CYPRUS', 'GERMANY', 'NETHERLANDS', 'AUSTRIA', 'BULGARIA', 'GREECE'],
-    culturalHubs: ['ISTANBUL', 'ANKARA', 'IZMIR'],
-    dots: [
-      { top: '34%', left: '57%', primary: true },
-      { top: '36%', left: '59%' },
-    ],
-  },
-  {
-    id: 3, name: 'Chilean Spanish', label: 'Chilean Spanish',
-    speakers: '~550 Million', globalRank: '4th Most Spoken',
-    regions: ['CHILE', 'SPAIN', 'MEXICO', 'COLOMBIA', 'ARGENTINA', 'PERU', 'VENEZUELA', 'ECUADOR', 'CUBA'],
-    culturalHubs: ['SANTIAGO', 'VALPARAISO', 'CONCEPCION'],
-    dots: [
-      { top: '82%', left: '22%', primary: true },
-      { top: '68%', left: '20%' },
-    ],
-  },
-  {
-    id: 4, name: 'Colombian Spanish', label: 'Colombian Spanish',
-    speakers: '~550 Million', globalRank: '4th Most Spoken',
-    regions: ['COLOMBIA', 'SPAIN', 'MEXICO', 'CHILE', 'ARGENTINA', 'PERU', 'VENEZUELA', 'ECUADOR', 'GUATEMALA'],
-    culturalHubs: ['BOGOTA', 'MEDELLIN', 'CALI', 'CARTAGENA'],
-    dots: [
-      { top: '55%', left: '20%', primary: true },
-      { top: '57%', left: '18%' },
-    ],
-  },
-  {
-    id: 5, name: 'Mexican Spanish', label: 'Mexican Spanish',
-    speakers: '~550 Million', globalRank: '4th Most Spoken',
-    regions: ['MEXICO', 'UNITED STATES', 'SPAIN', 'COLOMBIA', 'CHILE', 'ARGENTINA', 'PERU', 'VENEZUELA', 'CUBA'],
-    culturalHubs: ['MEXICO CITY', 'GUADALAJARA', 'MONTERREY'],
-    dots: [
-      { top: '42%', left: '12%', primary: true },
-      { top: '38%', left: '15%' },
-    ],
-  },
-  {
-    id: 6, name: 'Madrid Spanish', label: 'Madrid Spanish',
-    speakers: '~550 Million', globalRank: '4th Most Spoken',
-    regions: ['SPAIN', 'MEXICO', 'COLOMBIA', 'CHILE', 'ARGENTINA', 'PERU', 'VENEZUELA', 'ECUADOR', 'CUBA'],
-    culturalHubs: ['MADRID', 'BARCELONA', 'SEVILLE', 'VALENCIA'],
-    dots: [
-      { top: '36%', left: '44%', primary: true },
-      { top: '37%', left: '46%' },
-    ],
-  },
-  {
-    id: 7, name: 'Brazilian Portuguese', label: 'Brazilian Portuguese',
-    speakers: '~260 Million', globalRank: '6th Most Spoken',
-    regions: ['BRAZIL', 'PORTUGAL', 'ANGOLA', 'MOZAMBIQUE', 'GUINEA-BISSAU', 'EAST TIMOR', 'CAPE VERDE', 'SAO TOME', 'MACAU'],
-    culturalHubs: ['SAO PAULO', 'RIO DE JANEIRO', 'LISBON', 'LUANDA'],
-    dots: [
-      { top: '65%', left: '28%', primary: true },
-      { top: '60%', left: '30%' },
-      { top: '37%', left: '44%' },
-    ],
-  },
-  {
-    id: 8, name: 'German', label: 'German',
-    speakers: '~130 Million', globalRank: '11th Most Spoken',
-    regions: ['GERMANY', 'AUSTRIA', 'SWITZERLAND', 'LIECHTENSTEIN', 'LUXEMBOURG', 'BELGIUM', 'SOUTH TYROL'],
-    culturalHubs: ['BERLIN', 'MUNICH', 'VIENNA', 'ZURICH'],
-    dots: [
-      { top: '30%', left: '49%', primary: true },
-      { top: '31%', left: '50%' },
-      { top: '32%', left: '48%' },
-    ],
-  },
-  {
-    id: 9, name: 'Egyptian Arabic', label: 'Egyptian Arabic',
-    speakers: '~400 Million', globalRank: '5th Most Spoken',
-    regions: ['EGYPT', 'SAUDI ARABIA', 'UAE', 'JORDAN', 'LEBANON', 'IRAQ', 'KUWAIT', 'MOROCCO', 'SUDAN'],
-    culturalHubs: ['CAIRO', 'ALEXANDRIA', 'RIYADH', 'DUBAI'],
-    dots: [
-      { top: '42%', left: '57%', primary: true },
-      { top: '40%', left: '60%' },
-      { top: '38%', left: '55%' },
-    ],
-  },
-  {
-    id: 10, name: 'Irish Gaelic', label: 'Irish Gaelic',
-    speakers: '~1.7 Million', globalRank: '133rd Most Spoken',
-    regions: ['IRELAND', 'NORTHERN IRELAND', 'UNITED STATES', 'UNITED KINGDOM', 'CANADA', 'AUSTRALIA'],
-    culturalHubs: ['DUBLIN', 'GALWAY', 'BELFAST'],
-    dots: [
-      { top: '28%', left: '44%', primary: true },
-      { top: '29%', left: '43%' },
-    ],
-  },
-  {
-    id: 11, name: 'Thai', label: 'Thai',
-    speakers: '~60 Million', globalRank: '20th Most Spoken',
-    regions: ['THAILAND'],
-    culturalHubs: ['BANGKOK', 'CHIANG MAI', 'PHUKET'],
-    dots: [
-      { top: '48%', left: '78%', primary: true },
-    ],
-  },
-  {
-    id: 12, name: 'French', label: 'French',
-    speakers: '~320 Million', globalRank: '5th Most Spoken',
-    regions: ['FRANCE', 'CANADA (QC)', 'SENEGAL', 'BELGIUM', 'SWITZERLAND', 'CONGO', 'MOROCCO', 'VIETNAM', 'MADAGASCAR'],
-    culturalHubs: ['PARIS', 'MONTREAL', 'DAKAR', 'BRUSSELS', 'GENEVA', 'CASABLANCA'],
-    dots: [
-      { top: '33%', left: '48%', primary: true },
-      { top: '38%', left: '25%' },
-      { top: '50%', left: '42%' },
-      { top: '56%', left: '46%' },
-      { top: '60%', left: '53%' },
-    ],
-  },
-  {
-    id: 13, name: 'Hindi', label: 'Hindi',
-    speakers: '~600 Million', globalRank: '3rd Most Spoken',
-    regions: ['INDIA', 'FIJI', 'MAURITIUS', 'SURINAME', 'TRINIDAD', 'GUYANA', 'NEPAL'],
-    culturalHubs: ['MUMBAI', 'DELHI', 'KOLKATA', 'BANGALORE'],
-    dots: [
-      { top: '44%', left: '70%', primary: true },
-      { top: '40%', left: '71%' },
-      { top: '48%', left: '72%' },
-    ],
-  },
-  {
-    id: 14, name: 'Afrikaans', label: 'Afrikaans',
-    speakers: '~16 Million', globalRank: '75th Most Spoken',
-    regions: ['SOUTH AFRICA', 'NAMIBIA', 'BOTSWANA'],
-    culturalHubs: ['CAPE TOWN', 'JOHANNESBURG', 'PRETORIA'],
-    dots: [
-      { top: '78%', left: '53%', primary: true },
-      { top: '76%', left: '55%' },
-    ],
-  },
-  {
-    id: 15, name: 'Indonesian', label: 'Indonesian',
-    speakers: '~200 Million', globalRank: '10th Most Spoken',
-    regions: ['INDONESIA', 'EAST TIMOR', 'MALAYSIA', 'BRUNEI', 'SINGAPORE'],
-    culturalHubs: ['JAKARTA', 'BALI', 'SURABAYA'],
-    dots: [
-      { top: '60%', left: '82%', primary: true },
-      { top: '58%', left: '80%' },
-    ],
-  },
-  {
-    id: 16, name: 'Italian', label: 'Italian',
-    speakers: '~85 Million', globalRank: '21st Most Spoken',
-    regions: ['ITALY', 'SWITZERLAND', 'SAN MARINO', 'VATICAN CITY'],
-    culturalHubs: ['ROME', 'MILAN', 'NAPLES', 'FLORENCE'],
-    dots: [
-      { top: '35%', left: '50%', primary: true },
-      { top: '33%', left: '49%' },
-    ],
-  },
-  {
-    id: 17, name: 'Greek', label: 'Greek',
-    speakers: '~13 Million', globalRank: '74th Most Spoken',
-    regions: ['GREECE', 'CYPRUS', 'AUSTRALIA', 'UNITED STATES'],
-    culturalHubs: ['ATHENS', 'THESSALONIKI', 'NICOSIA'],
-    dots: [
-      { top: '36%', left: '53%', primary: true },
-      { top: '37%', left: '57%' },
-    ],
-  },
-  {
-    id: 18, name: 'Japanese', label: 'Japanese',
-    speakers: '~125 Million', globalRank: '13th Most Spoken',
-    regions: ['JAPAN'],
-    culturalHubs: ['TOKYO', 'OSAKA', 'KYOTO'],
-    dots: [
-      { top: '36%', left: '90%', primary: true },
-    ],
-  },
-  {
-    id: 19, name: 'Korean', label: 'Korean',
-    speakers: '~80 Million', globalRank: '17th Most Spoken',
-    regions: ['SOUTH KOREA', 'NORTH KOREA', 'UNITED STATES', 'CHINA', 'JAPAN'],
-    culturalHubs: ['SEOUL', 'BUSAN', 'INCHEON'],
-    dots: [
-      { top: '37%', left: '87%', primary: true },
-    ],
-  },
-  {
-    id: 20, name: 'Hebrew', label: 'Hebrew',
-    speakers: '~9 Million', globalRank: '64th Most Spoken',
-    regions: ['ISRAEL', 'UNITED STATES', 'FRANCE', 'CANADA', 'UNITED KINGDOM', 'ARGENTINA', 'AUSTRALIA'],
-    culturalHubs: ['TEL AVIV', 'JERUSALEM', 'HAIFA'],
-    dots: [
-      { top: '38%', left: '58%', primary: true },
-    ],
-  },
-  {
-    id: 21, name: 'Mandarin', label: 'Mandarin',
-    speakers: '~1.1 Billion', globalRank: '2nd Most Spoken',
-    regions: ['CHINA', 'TAIWAN', 'SINGAPORE', 'MALAYSIA'],
-    culturalHubs: ['BEIJING', 'SHANGHAI', 'TAIPEI', 'SHENZHEN'],
-    dots: [
-      { top: '38%', left: '82%', primary: true },
-      { top: '42%', left: '85%' },
-      { top: '44%', left: '83%' },
-    ],
-  },
-  {
-    id: 22, name: 'Dutch', label: 'Dutch',
-    speakers: '~25 Million', globalRank: '56th Most Spoken',
-    regions: ['NETHERLANDS', 'BELGIUM', 'SURINAME', 'ARUBA', 'CURACAO', 'SINT MAARTEN'],
-    culturalHubs: ['AMSTERDAM', 'ROTTERDAM', 'BRUSSELS'],
-    dots: [
-      { top: '30%', left: '47%', primary: true },
-      { top: '31%', left: '48%' },
-    ],
-  },
-  {
-    id: 23, name: 'Polish', label: 'Polish',
-    speakers: '~45 Million', globalRank: '25th Most Spoken',
-    regions: ['POLAND', 'UNITED KINGDOM', 'GERMANY', 'UNITED STATES', 'IRELAND', 'FRANCE', 'CANADA'],
-    culturalHubs: ['WARSAW', 'KRAKOW', 'GDANSK'],
-    dots: [
-      { top: '30%', left: '52%', primary: true },
-    ],
-  },
-  {
-    id: 24, name: 'Swedish', label: 'Swedish',
-    speakers: '~10 Million', globalRank: '89th Most Spoken',
-    regions: ['SWEDEN', 'FINLAND'],
-    culturalHubs: ['STOCKHOLM', 'GOTHENBURG', 'MALMÖ'],
-    dots: [
-      { top: '24%', left: '50%', primary: true },
-    ],
-  },
-  {
-    id: 25, name: 'Tagalog', label: 'Tagalog',
-    speakers: '~80 Million', globalRank: '19th Most Spoken',
-    regions: ['PHILIPPINES', 'UNITED STATES', 'SAUDI ARABIA', 'UAE', 'CANADA', 'AUSTRALIA'],
-    culturalHubs: ['MANILA', 'CEBU', 'DAVAO'],
-    dots: [
-      { top: '48%', left: '86%', primary: true },
-    ],
-  },
-  {
-    id: 26, name: 'Swahili', label: 'Swahili',
-    speakers: '~100 Million', globalRank: '15th Most Spoken',
-    regions: ['KENYA', 'TANZANIA', 'UGANDA', 'DR CONGO', 'RWANDA', 'BURUNDI', 'MOZAMBIQUE', 'MALAWI', 'SOMALIA'],
-    culturalHubs: ['NAIROBI', 'DAR ES SALAAM', 'MOMBASA'],
-    dots: [
-      { top: '58%', left: '60%', primary: true },
-      { top: '62%', left: '58%' },
-      { top: '56%', left: '62%' },
-    ],
-  },
-  {
-    id: 27, name: 'Russian', label: 'Russian',
-    speakers: '~250 Million', globalRank: '7th Most Spoken',
-    regions: ['RUSSIA', 'BELARUS', 'KAZAKHSTAN', 'KYRGYZSTAN', 'UKRAINE', 'MOLDOVA', 'LATVIA', 'ESTONIA', 'GEORGIA'],
-    culturalHubs: ['MOSCOW', 'ST PETERSBURG', 'NOVOSIBIRSK'],
-    dots: [
-      { top: '26%', left: '58%', primary: true },
-      { top: '24%', left: '55%' },
-      { top: '22%', left: '70%' },
-    ],
-  },
-  {
-    id: 28, name: 'Nigerian Pidgin', label: 'Nigerian Pidgin',
-    speakers: '~75 Million', globalRank: '22nd Most Spoken',
-    regions: ['NIGERIA', 'CAMEROON', 'GHANA', 'EQUATORIAL GUINEA'],
-    culturalHubs: ['LAGOS', 'PORT HARCOURT', 'ABUJA'],
-    dots: [
-      { top: '52%', left: '48%', primary: true },
-      { top: '50%', left: '50%' },
-    ],
-  },
-  {
-    id: 29, name: 'Vietnamese', label: 'Vietnamese',
-    speakers: '~85 Million', globalRank: '16th Most Spoken',
-    regions: ['VIETNAM', 'UNITED STATES', 'AUSTRALIA', 'FRANCE', 'CANADA', 'GERMANY'],
-    culturalHubs: ['HO CHI MINH CITY', 'HANOI', 'DA NANG'],
-    dots: [
-      { top: '46%', left: '80%', primary: true },
-      { top: '42%', left: '79%' },
-    ],
-  },
-  {
-    id: 30, name: 'Romanian', label: 'Romanian',
-    speakers: '~26 Million', globalRank: '36th Most Spoken',
-    regions: ['ROMANIA', 'MOLDOVA', 'ITALY', 'SPAIN', 'GERMANY'],
-    culturalHubs: ['BUCHAREST', 'CLUJ-NAPOCA', 'TIMISOARA'],
-    dots: [
-      { top: '32%', left: '54%', primary: true },
-    ],
-  },
+  { id: 'en-au', name: 'English', speakers: '~1.5 billion', globalRank: '1st most spoken', countries: ['Australia','United Kingdom','United States','Canada','New Zealand','Ireland','South Africa','Nigeria','India','Philippines','Singapore'], moreCountries: 50, lat: -37.81, lng: 144.96 },
+  { id: 'tr', name: 'Turkish', speakers: '~80 million', globalRank: '17th most spoken', countries: ['Turkey','Northern Cyprus','Germany (diaspora)','Netherlands (diaspora)'], moreCountries: 0, lat: 41.01, lng: 28.98 },
+  { id: 'es-cl', name: 'Chilean Spanish', speakers: '~550 million Spanish speakers', globalRank: '4th most spoken', countries: ['Chile'], moreCountries: 0, note: 'Understood across 20+ Spanish-speaking nations', lat: -33.45, lng: -70.67 },
+  { id: 'es-co', name: 'Colombian Spanish', speakers: '~550 million Spanish speakers', globalRank: '4th most spoken', countries: ['Colombia'], moreCountries: 0, note: 'Understood across 20+ Spanish-speaking nations', lat: 6.25, lng: -75.56 },
+  { id: 'es-mx', name: 'Mexican Spanish', speakers: '~550 million Spanish speakers', globalRank: '4th most spoken', countries: ['Mexico','United States (60M+ Spanish speakers)'], moreCountries: 0, note: 'Understood across 20+ Spanish-speaking nations', lat: 19.43, lng: -99.13 },
+  { id: 'es-es', name: 'Madrid Spanish', speakers: '~550 million Spanish speakers', globalRank: '4th most spoken', countries: ['Spain'], moreCountries: 0, note: 'Understood across 20+ Spanish-speaking nations', lat: 40.42, lng: -3.70 },
+  { id: 'pt-br', name: 'Brazilian Portuguese', speakers: '~260 million', globalRank: '6th most spoken', countries: ['Brazil','Portugal','Angola','Mozambique','Cape Verde','East Timor'], moreCountries: 5, lat: -23.55, lng: -46.63 },
+  { id: 'de', name: 'German', speakers: '~130 million', globalRank: '12th most spoken', countries: ['Germany','Austria','Switzerland','Liechtenstein','Luxembourg','Belgium'], moreCountries: 0, lat: 52.52, lng: 13.41 },
+  { id: 'ar-eg', name: 'Egyptian Arabic', speakers: '~400 million Arabic speakers', globalRank: '5th most spoken', countries: ['Egypt','Saudi Arabia','UAE','Jordan','Lebanon','Iraq','Kuwait'], moreCountries: 12, lat: 30.04, lng: 31.24 },
+  { id: 'ga', name: 'Irish Gaelic', speakers: '~1.7 million', globalRank: '\u2014', countries: ['Ireland','Northern Ireland','Irish diaspora in USA, UK, Canada, Australia'], moreCountries: 0, lat: 54.60, lng: -5.93 },
+  { id: 'th', name: 'Thai', speakers: '~60 million', globalRank: '20th most spoken', countries: ['Thailand'], moreCountries: 0, lat: 13.76, lng: 100.50 },
+  { id: 'fr', name: 'French', speakers: '~320 million', globalRank: '5th most spoken', countries: ['France','Belgium','Switzerland','Canada','Haiti','Senegal','DR Congo','Cameroon','Madagascar'], moreCountries: 23, lat: 48.86, lng: 2.35 },
+  { id: 'hi', name: 'Hindi', speakers: '~600 million', globalRank: '3rd most spoken', countries: ['India','Fiji','Mauritius','Suriname','Trinidad and Tobago'], moreCountries: 2, lat: 19.08, lng: 72.88 },
+  { id: 'af', name: 'Afrikaans', speakers: '~16 million', globalRank: '\u2014', countries: ['South Africa','Namibia'], note: 'Mutually intelligible with Dutch/Flemish', moreCountries: 0, lat: -26.20, lng: 28.04 },
+  { id: 'id', name: 'Indonesian', speakers: '~200 million', globalRank: '9th most spoken', countries: ['Indonesia'], note: 'Closely related to Malay in Malaysia, Brunei, Singapore', moreCountries: 3, lat: -8.34, lng: 115.09 },
+  { id: 'it', name: 'Italian', speakers: '~85 million', globalRank: '\u2014', countries: ['Italy','Switzerland','San Marino','Vatican City'], moreCountries: 8, lat: 45.46, lng: 9.19 },
+  { id: 'el', name: 'Greek', speakers: '~13 million', globalRank: '\u2014', countries: ['Greece','Cyprus'], moreCountries: 4, lat: 37.45, lng: 25.33 },
+  { id: 'ja', name: 'Japanese', speakers: '~125 million', globalRank: '13th most spoken', countries: ['Japan'], moreCountries: 0, lat: 35.68, lng: 139.69 },
+  { id: 'ko', name: 'Korean', speakers: '~80 million', globalRank: '\u2014', countries: ['South Korea','North Korea'], moreCountries: 5, lat: 37.57, lng: 126.98 },
+  { id: 'he', name: 'Hebrew', speakers: '~9 million', globalRank: '\u2014', countries: ['Israel'], moreCountries: 7, lat: 32.07, lng: 34.77 },
+  { id: 'zh', name: 'Mandarin', speakers: '~1.1 billion', globalRank: '2nd most spoken', countries: ['China','Taiwan','Singapore'], moreCountries: 3, lat: 31.23, lng: 121.47 },
+  { id: 'nl', name: 'Dutch', speakers: '~25 million', globalRank: '\u2014', countries: ['Netherlands','Belgium','Suriname','Aruba','Cura\u00e7ao'], moreCountries: 0, lat: 52.37, lng: 4.90 },
+  { id: 'pl', name: 'Polish', speakers: '~45 million', globalRank: '25th most spoken', countries: ['Poland','United Kingdom','Germany','USA','Ireland','France','Canada'], moreCountries: 0, lat: 52.23, lng: 21.01 },
+  { id: 'sv', name: 'Swedish', speakers: '~10 million', globalRank: '\u2014', countries: ['Sweden','Finland'], note: 'Mutually intelligible with Norwegian and Danish (~15M more)', moreCountries: 0, lat: 59.33, lng: 18.07 },
+  { id: 'tl', name: 'Tagalog', speakers: '~80 million', globalRank: '\u2014', countries: ['Philippines','USA','Saudi Arabia','UAE','Canada','Australia'], moreCountries: 6, lat: 14.60, lng: 120.98 },
+  { id: 'sw', name: 'Swahili', speakers: '~100 million', globalRank: '\u2014', countries: ['Kenya','Tanzania','Uganda','DR Congo','Rwanda','Burundi'], moreCountries: 4, lat: -1.29, lng: 36.82 },
+  { id: 'ru', name: 'Russian', speakers: '~250 million', globalRank: '7th most spoken', countries: ['Russia','Belarus','Kazakhstan','Kyrgyzstan'], moreCountries: 11, lat: 55.76, lng: 37.62 },
+  { id: 'pcm', name: 'Nigerian Pidgin', speakers: '~75 million', globalRank: '\u2014', countries: ['Nigeria','Cameroon','Ghana'], moreCountries: 2, lat: 6.52, lng: 3.38 },
+  { id: 'vi', name: 'Vietnamese', speakers: '~85 million', globalRank: '\u2014', countries: ['Vietnam'], moreCountries: 8, lat: 10.82, lng: 106.63 },
+  { id: 'ro', name: 'Romanian', speakers: '~26 million', globalRank: '\u2014', countries: ['Romania','Moldova'], moreCountries: 6, lat: 44.43, lng: 26.10 },
+  { id: 'bn', name: 'Bengali', speakers: '~270 million', globalRank: '7th most spoken', countries: ['Bangladesh','India (West Bengal)'], moreCountries: 3, lat: 23.81, lng: 90.41 },
+  { id: 'ur', name: 'Urdu', speakers: '~230 million', globalRank: '10th most spoken', countries: ['Pakistan','India'], moreCountries: 4, lat: 24.86, lng: 67.01 },
+  { id: 'fa', name: 'Farsi', speakers: '~110 million', globalRank: '\u2014', countries: ['Iran','Afghanistan','Tajikistan'], note: 'Major diaspora in USA, UK, Canada, Germany, UAE', moreCountries: 3, lat: 35.69, lng: 51.39 },
+  { id: 'kriol', name: 'Kriol', speakers: '~20,000', globalRank: '\u2014', countries: ['Australia (Northern Territory, Kimberley, Far North QLD)'], note: 'First Nations Australian creole language', moreCountries: 0, lat: -12.46, lng: 130.84, isIndigenous: true },
 ]

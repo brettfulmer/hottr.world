@@ -60,29 +60,7 @@ body {
   border-radius: 4px;
 }
 
-/* Globe */
-.globe-container {
-  mask-image: radial-gradient(circle at center, black 55%, transparent 72%);
-  -webkit-mask-image: radial-gradient(circle at center, black 55%, transparent 72%);
-}
-
-.globe-texture {
-  filter: grayscale(1) brightness(1.8) contrast(1.6);
-  mix-blend-mode: screen;
-}
-
-/* Globe Pink Glow — sits BEHIND the globe */
-.globe-glow {
-  background: radial-gradient(circle, rgba(255, 12, 182, 0.35) 0%, rgba(255, 12, 182, 0.15) 40%, transparent 70%);
-  animation: globe-pulse 3.5s ease-in-out infinite;
-}
-
-@keyframes globe-pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.7; }
-}
-
-/* City Pulse */
+/* City Pulse (used in non-3D contexts) */
 .city-pulse {
   box-shadow: 0 0 15px 4px rgba(255, 12, 182, 0.6), 0 0 30px 8px rgba(255, 12, 182, 0.2);
 }
@@ -115,6 +93,18 @@ body {
 @keyframes colon-pulse {
   0%, 100% { color: rgba(255, 12, 182, 0.4); }
   50% { color: rgba(255, 12, 182, 1); }
+}
+.countdown-colon {
+  animation: colon-pulse 3s ease-in-out infinite;
+}
+
+/* Listen Now button glow pulse */
+@keyframes listen-glow {
+  0%, 100% { box-shadow: 0 0 24px rgba(255, 12, 182, 0.4); }
+  50% { box-shadow: 0 0 24px rgba(255, 12, 182, 0.8); }
+}
+.listen-glow {
+  animation: listen-glow 3s ease-in-out infinite;
 }
 
 /* PIN Gate animations */
