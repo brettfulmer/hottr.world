@@ -62,18 +62,18 @@ body {
 
 /* Globe */
 .globe-container {
-  mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
-  -webkit-mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
+  mask-image: radial-gradient(circle at center, black 55%, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle at center, black 55%, transparent 72%);
 }
 
 .globe-texture {
-  filter: grayscale(1) brightness(1.8) contrast(1.6) drop-shadow(0 0 1px rgba(255,255,255,0.4));
+  filter: grayscale(1) brightness(1.8) contrast(1.6);
   mix-blend-mode: screen;
 }
 
-/* Globe Pink Glow */
+/* Globe Pink Glow — sits BEHIND the globe */
 .globe-glow {
-  box-shadow: 0 0 60px 20px rgba(255, 12, 182, 0.5), 0 0 120px 40px rgba(255, 12, 182, 0.25);
+  background: radial-gradient(circle, rgba(255, 12, 182, 0.35) 0%, rgba(255, 12, 182, 0.15) 40%, transparent 70%);
   animation: globe-pulse 3.5s ease-in-out infinite;
 }
 

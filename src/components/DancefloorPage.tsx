@@ -450,8 +450,8 @@ export default function DancefloorPage() {
 
           {/* Globe Visualizer with arrows */}
           <div className="relative w-[85vw] max-w-[700px] aspect-square flex items-center justify-center">
-            {/* Pink Glow (replaces white) */}
-            <div className="absolute inset-0 rounded-full globe-glow pointer-events-none" />
+            {/* Pink Glow — BEHIND globe, larger spread */}
+            <div className="absolute inset-[-25%] rounded-full globe-glow pointer-events-none" style={{ zIndex: 0 }} />
 
             {/* Left Arrow (desktop) */}
             <button
@@ -470,19 +470,22 @@ export default function DancefloorPage() {
             </button>
 
             {/* Globe */}
-            <div className="relative w-full h-full rounded-full overflow-hidden globe-container group">
+            <div className="relative w-full h-full rounded-full overflow-hidden globe-container group" style={{ zIndex: 1 }}>
               <img
                 alt="satellite view of earth at night"
-                className="w-full h-full object-cover scale-110 transition-transform duration-[20000ms] ease-linear group-hover:scale-125 globe-texture"
+                className="w-full h-full object-cover globe-texture"
                 src={GLOBE_IMG}
+                style={{
+                  transform: `scale(1.6) translate(${(50 - parseFloat(selected.dots.find(d => d.primary)?.left || '50%')) * 0.6}%, ${(50 - parseFloat(selected.dots.find(d => d.primary)?.top || '50%')) * 0.6}%)`,
+                  transition: 'transform 800ms cubic-bezier(0.4, 0, 0.2, 1)',
+                }}
               />
-              <div className="absolute inset-0 rounded-full shadow-[inset_0_0_80px_rgba(255,12,182,0.05)] pointer-events-none" />
 
               {/* City Dots */}
               {selected.dots.map((dot, i) => (
                 <div
                   key={`${selected.id}-${i}`}
-                  className="absolute transition-all duration-500"
+                  className="absolute transition-all duration-700"
                   style={{ top: dot.top, left: dot.left }}
                 >
                   {dot.primary ? (
@@ -497,9 +500,8 @@ export default function DancefloorPage() {
               ))}
             </div>
 
-            {/* Rotating Rings */}
-            <div className="absolute inset-[-20px] rounded-full border border-white/5 animate-[spin_80s_linear_infinite]" />
-            <div className="absolute inset-[-40px] rounded-full border border-[#FF0CB6]/5 animate-[spin_120s_linear_infinite_reverse]" />
+            {/* Rotating Ring — pink only, no white */}
+            <div className="absolute inset-[-40px] rounded-full border border-[#FF0CB6]/5 animate-[spin_120s_linear_infinite_reverse]" style={{ zIndex: 0 }} />
           </div>
         </main>
 
