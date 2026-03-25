@@ -366,23 +366,32 @@ export default function DancefloorPage() {
 
         {/* Globe */}
         <div className="relative z-10 w-full h-full flex items-center justify-center">
-          {/* Background Typography */}
+          {/* Background Typography — subtle pink */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
-            <h1 className="text-[20vw] font-black leading-none tracking-tighter text-white opacity-[0.02] uppercase">{selected.name}</h1>
+            <h1 className="text-[20vw] font-black leading-none tracking-tighter text-[#FF0CB6] opacity-[0.06] uppercase">{selected.name}</h1>
           </div>
 
           {/* Globe Container */}
           <div className="relative w-[85vw] max-w-[700px] aspect-square">
-            {/* Left Arrow (desktop) */}
+            {/* Left Arrow */}
             <button onClick={() => cycleLang(-1)}
-              className="hidden md:flex absolute -left-16 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center text-white/20 hover:text-white/60 transition-all duration-300 z-20 text-3xl">
+              className="absolute -left-4 md:-left-16 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white/30 hover:text-white/70 transition-all duration-300 z-20 text-3xl">
               &#8249;
             </button>
-            {/* Right Arrow (desktop) */}
+            {/* Right Arrow */}
             <button onClick={() => cycleLang(1)}
-              className="hidden md:flex absolute -right-16 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center text-white/20 hover:text-white/60 transition-all duration-300 z-20 text-3xl">
+              className="absolute -right-4 md:-right-16 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white/30 hover:text-white/70 transition-all duration-300 z-20 text-3xl">
               &#8250;
             </button>
+
+            {/* Navigation hint (below globe) */}
+            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 text-white/25 text-[10px] tracking-[0.15em] uppercase z-20" style={{ fontFamily: 'Poppins' }}>
+              <span className="hidden md:inline">&#8592;</span>
+              <span className="md:hidden">swipe</span>
+              <span className="hidden md:inline">click to explore</span>
+              <span className="hidden md:inline">&#8594;</span>
+              <span className="md:hidden">to explore</span>
+            </div>
 
             {/* Three.js Globe */}
             <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#FF0CB6]/30 border-t-[#FF0CB6] rounded-full animate-spin" /></div>}>
@@ -392,11 +401,11 @@ export default function DancefloorPage() {
         </div>
 
         {/* Language Info Card */}
-        <aside className="fixed md:left-12 bottom-20 left-4 right-4 md:right-auto md:w-[420px] rounded-sm bg-white/5 backdrop-blur-xl border border-white/10 p-6 md:p-8 z-30">
-          <div className="flex justify-between items-start mb-5">
-            <div className="space-y-1">
+        <aside className="fixed md:left-12 bottom-20 left-4 right-4 md:right-auto md:w-[440px] rounded-sm bg-white/5 backdrop-blur-xl border border-white/10 p-8 md:p-10 z-30">
+          <div className="flex justify-between items-start mb-7">
+            <div className="space-y-2">
               <p className="text-[10px] tracking-[0.2em] font-semibold text-[#FF0CB6] uppercase" style={{ fontFamily: 'Poppins' }}>Active Linguistic Region</p>
-              <h3 className="text-[28px] md:text-[36px] font-bold text-white tracking-tight uppercase" style={{ fontFamily: 'Poppins' }}>{selected.name}</h3>
+              <h3 className="text-[28px] md:text-[36px] font-bold text-white tracking-tight uppercase leading-none" style={{ fontFamily: 'Poppins' }}>{selected.name}</h3>
             </div>
             <button onClick={() => setGridOpen(true)}
               className="w-10 h-10 flex items-center justify-center rounded-sm bg-white/5 border border-white/10 hover:border-[#FF0CB6]/30 transition-colors cursor-pointer">
@@ -404,25 +413,25 @@ export default function DancefloorPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-5 border-t border-white/10 pt-5">
+          <div className="grid grid-cols-2 gap-x-10 gap-y-5 mb-7 border-t border-white/10 pt-7">
             <div>
-              <p className="text-[9px] tracking-[0.2em] font-semibold text-white/30 mb-1 uppercase">Native Speakers</p>
+              <p className="text-[9px] tracking-[0.2em] font-semibold text-white/30 mb-2 uppercase">Native Speakers</p>
               <p className="text-[14px] font-semibold text-white uppercase" style={{ fontFamily: 'Poppins' }}>{selected.speakers}</p>
             </div>
             <div>
-              <p className="text-[9px] tracking-[0.2em] font-semibold text-white/30 mb-1 uppercase">Global Rank</p>
+              <p className="text-[9px] tracking-[0.2em] font-semibold text-white/30 mb-2 uppercase">Global Rank</p>
               <p className="text-[14px] font-semibold text-white uppercase" style={{ fontFamily: 'Poppins' }}>{selected.globalRank}</p>
             </div>
           </div>
 
-          <div className="border-t border-white/10 pt-4 mb-6">
-            <p className="text-[9px] tracking-[0.2em] font-semibold text-white/30 mb-3 uppercase">Primary Regions / Nations</p>
-            <div className="grid grid-cols-3 gap-y-2">
+          <div className="border-t border-white/10 pt-6 mb-8">
+            <p className="text-[9px] tracking-[0.2em] font-semibold text-white/30 mb-4 uppercase">Primary Regions / Nations</p>
+            <div className="grid grid-cols-3 gap-y-3">
               {selected.countries.slice(0, 9).map(c => (
                 <div key={c} className="text-[11px] font-semibold text-white uppercase">{c}</div>
               ))}
             </div>
-            {moreCount > 0 && <p className="text-[11px] text-white/30 mt-2 uppercase">+{moreCount} more</p>}
+            {moreCount > 0 && <p className="text-[11px] text-white/30 mt-3 uppercase">+{moreCount} more</p>}
           </div>
 
           <button onClick={handlePlay}
