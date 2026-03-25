@@ -330,7 +330,7 @@ export default function DancefloorPage() {
           style={{ opacity: dotsVisible ? 1 : 0.2 }}>
           {[0, 1, 2, 3].map(i => (
             <button key={i} onClick={() => goToSection(i)}
-              className={`w-1 h-1 transition-all ${section === i ? 'bg-[#FF0CB6] shadow-[0_0_8px_rgba(255,12,182,0.6)]' : 'border border-white/20 bg-transparent'}`} />
+              className={`w-2 h-2 rounded-full transition-all ${section === i ? 'bg-[#FF0CB6] shadow-[0_0_8px_rgba(255,12,182,0.6)]' : 'border border-white/20 bg-transparent'}`} />
           ))}
         </div>
       )}
@@ -375,22 +375,23 @@ export default function DancefloorPage() {
           <div className="relative w-[85vw] max-w-[700px] aspect-square">
             {/* Left Arrow */}
             <button onClick={() => cycleLang(-1)}
-              className="absolute -left-4 md:-left-16 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white/30 hover:text-white/70 transition-all duration-300 z-20 text-3xl">
+              className="absolute left-1 md:-left-14 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-white/40 hover:text-[#FF0CB6] transition-all duration-200 z-20 text-xl select-none"
+              style={{ fontFamily: 'Poppins', fontWeight: 300 }}>
               &#8249;
             </button>
             {/* Right Arrow */}
             <button onClick={() => cycleLang(1)}
-              className="absolute -right-4 md:-right-16 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white/30 hover:text-white/70 transition-all duration-300 z-20 text-3xl">
+              className="absolute right-1 md:-right-14 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-white/40 hover:text-[#FF0CB6] transition-all duration-200 z-20 text-xl select-none"
+              style={{ fontFamily: 'Poppins', fontWeight: 300 }}>
               &#8250;
             </button>
 
             {/* Navigation hint (below globe) */}
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 text-white/25 text-[10px] tracking-[0.15em] uppercase z-20" style={{ fontFamily: 'Poppins' }}>
-              <span className="hidden md:inline">&#8592;</span>
-              <span className="md:hidden">swipe</span>
-              <span className="hidden md:inline">click to explore</span>
-              <span className="hidden md:inline">&#8594;</span>
-              <span className="md:hidden">to explore</span>
+            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 text-white/20 text-[9px] tracking-[0.2em] uppercase z-20" style={{ fontFamily: 'Poppins' }}>
+              <span>&#8592;</span>
+              <span className="md:hidden">swipe to explore</span>
+              <span className="hidden md:inline">click arrows to explore</span>
+              <span>&#8594;</span>
             </div>
 
             {/* Three.js Globe */}
