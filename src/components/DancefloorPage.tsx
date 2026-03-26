@@ -224,11 +224,6 @@ export default function DancefloorPage() {
         justifyContent: 'flex-start',
         alignItems: 'stretch',
       }}>
-        {/* DANCEFLOOR wordmark */}
-        <header className="fixed top-0 w-full z-50 flex items-center px-6 py-5">
-          <div className="text-xl font-extrabold tracking-[-0.04em] text-[#FF0CB6]" style={{ fontFamily: 'Poppins' }}>DANCEFLOOR</div>
-        </header>
-
         {/* Language Grid Overlay */}
         {gridOpen && (
           <div className="fixed inset-0 z-[60] bg-[#050608]/95 backdrop-blur-xl flex flex-col">
@@ -251,15 +246,38 @@ export default function DancefloorPage() {
           </div>
         )}
 
-        {/* Globe */}
-        <div className="w-full h-full flex items-center justify-center relative">
+        {/* Globe with chain suspension */}
+        <div className="w-full h-full flex flex-col items-center justify-start relative pt-6">
+          {/* DANCEFLOOR centered above ball */}
+          <div className="text-center z-20 relative">
+            <h1 className="text-[28px] md:text-[42px] font-extrabold tracking-[0.08em] text-[#FF0CB6] leading-none"
+              style={{ fontFamily: 'Poppins', textShadow: '0 0 30px rgba(255,12,182,0.4)' }}>
+              DANCEFLOOR
+            </h1>
+            {/* Countdown below title */}
+            {!countdown.launched && (
+              <div className="mt-2 flex items-center justify-center gap-1 font-mono text-[12px] text-white/30">
+                <span>{pad(countdown.days)}d</span>
+                <span className="text-[#FF0CB6]/40">:</span>
+                <span>{pad(countdown.hours)}h</span>
+                <span className="text-[#FF0CB6]/40">:</span>
+                <span>{pad(countdown.mins)}m</span>
+                <span className="text-[#FF0CB6]/40">:</span>
+                <span>{pad(countdown.secs)}s</span>
+              </div>
+            )}
+          </div>
+
+          {/* Chain — thin line from title to ball */}
+          <div className="w-[1px] h-[30px] md:h-[40px] bg-gradient-to-b from-white/20 to-white/5 z-20" />
+
           {/* Background Typography */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden z-0">
             <h1 className="text-[18vw] font-black leading-none tracking-tighter text-[#FF0CB6] opacity-[0.05] uppercase">{selected.name}</h1>
           </div>
 
-          {/* Globe Container */}
-          <div className="relative w-[80vw] max-w-[620px] aspect-square z-10">
+          {/* Mirror Ball Container */}
+          <div className="relative w-[75vw] max-w-[550px] aspect-square z-10 flex-shrink-0">
             <button onClick={() => cycleLang(-1)}
               className="absolute left-0 md:-left-14 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-white/30 hover:text-[#FF0CB6] transition-all duration-200 z-20 text-xl select-none"
               style={{ fontFamily: 'Poppins', fontWeight: 300 }}>

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 
 const PIN = '071179'
 const PIN_LENGTH = PIN.length
@@ -8,110 +8,96 @@ interface Props {
 }
 
 export default function PinGate({ onUnlock }: Props) {
-  const [digits, setDigits] = useState<string[]>(Array(PIN_LENGTH).fill(''))
+  const [digits, setDigits] = useState<string[]>([])
   const [error, setError] = useState(false)
-  const inputsRef = useRef<(HTMLInputElement | null)[]>([])
 
-  useEffect(() => {
-    inputsRef.current[0]?.focus()
-  }, [])
-
-  const handleChange = (index: number, value: string) => {
-    if (!/^\d?$/.test(value)) return
-
-    const next = [...digits]
-    next[index] = value
+  const handleDigit = (d: string) => {
+    if (digits.length >= PIN_LENGTH) return
+    const next = [...digits, d]
     setDigits(next)
     setError(false)
 
-    if (value && index < PIN_LENGTH - 1) {
-      inputsRef.current[index + 1]?.focus()
-    }
-
-    if (value && index === PIN_LENGTH - 1) {
-      const pin = next.join('')
-      if (pin === PIN) {
+    if (next.length === PIN_LENGTH) {
+      if (next.join('') === PIN) {
         onUnlock()
       } else {
         setError(true)
-        setTimeout(() => {
-          setDigits(Array(PIN_LENGTH).fill(''))
-          inputsRef.current[0]?.focus()
-        }, 600)
+        setTimeout(() => { setDigits([]); setError(false) }, 800)
       }
     }
   }
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !digits[index] && index > 0) {
-      inputsRef.current[index - 1]?.focus()
-    }
-  }
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault()
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, PIN_LENGTH)
-    if (!pasted) return
-
-    const next = Array(PIN_LENGTH).fill('')
-    for (let i = 0; i < pasted.length; i++) next[i] = pasted[i]
-    setDigits(next)
-
-    if (pasted.length === PIN_LENGTH) {
-      if (pasted === PIN) {
-        onUnlock()
-      } else {
-        setError(true)
-        setTimeout(() => {
-          setDigits(Array(PIN_LENGTH).fill(''))
-          inputsRef.current[0]?.focus()
-        }, 600)
-      }
-    } else {
-      inputsRef.current[pasted.length]?.focus()
-    }
+  const handleDelete = () => {
+    setDigits(prev => prev.slice(0, -1))
+    setError(false)
   }
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center bg-[#050608] px-6">
-      <p className="font-['Poppins'] text-[10px] font-semibold tracking-[0.3em] uppercase text-white/40 mb-6">
+      <p className="text-[10px] font-semibold tracking-[0.3em] uppercase text-white/40 mb-6"
+        style={{ fontFamily: 'Poppins' }}>
         HOTTR
       </p>
-      <h1 className="font-['Poppins'] text-[28px] sm:text-[36px] font-bold text-white tracking-tight mb-2">
+      <h1 className="text-[24px] sm:text-[32px] font-bold text-white tracking-tight mb-2"
+        style={{ fontFamily: 'Poppins' }}>
         ENTER ACCESS CODE
       </h1>
-      <p className="font-['Poppins'] text-[13px] text-white/40 mb-10">
+      <p className="text-[13px] text-white/40 mb-10" style={{ fontFamily: 'Poppins' }}>
         This experience is invite-only.
       </p>
 
-      <div className="flex gap-3">
-        {digits.map((digit, i) => (
-          <input
+      {/* PIN display */}
+      <div className="flex gap-3 mb-10">
+        {Array.from({ length: PIN_LENGTH }).map((_, i) => (
+          <div
             key={i}
-            ref={(el) => { inputsRef.current[i] = el }}
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            value={digit}
-            onChange={(e) => handleChange(i, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(i, e)}
-            onPaste={i === 0 ? handlePaste : undefined}
-            className={`
-              w-[44px] h-[56px] text-center font-mono text-[24px] text-white
-              bg-white/5 border rounded-sm outline-none
-              transition-all duration-300
-              focus:border-[#FF0CB6] focus:shadow-[0_0_12px_rgba(255,12,182,0.3)]
-              ${error
+            className={`w-[40px] h-[50px] flex items-center justify-center border rounded-sm text-[20px] font-mono transition-all duration-200 ${
+              error
                 ? 'border-red-500/60 animate-[shake_0.3s_ease-in-out]'
-                : 'border-white/15 hover:border-white/25'
-              }
-            `}
-          />
+                : digits[i]
+                  ? 'border-[#FF0CB6]/60 text-white shadow-[0_0_8px_rgba(255,12,182,0.2)]'
+                  : 'border-white/15'
+            }`}
+          >
+            {digits[i] ? (
+              <span className="text-white">{digits[i]}</span>
+            ) : (
+              <span className="w-2 h-2 rounded-full bg-white/10" />
+            )}
+          </div>
         ))}
       </div>
 
+      {/* Number pad */}
+      <div className="grid grid-cols-3 gap-3 max-w-[280px]">
+        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((key) => {
+          if (key === '') return <div key="blank" />
+          if (key === 'del') {
+            return (
+              <button
+                key="del"
+                onClick={handleDelete}
+                className="w-[80px] h-[56px] flex items-center justify-center rounded-sm bg-white/[0.03] border border-white/10 text-white/50 text-[13px] tracking-wider uppercase hover:bg-white/[0.06] hover:text-white/70 transition-all active:scale-95"
+                style={{ fontFamily: 'Poppins' }}
+              >
+                DEL
+              </button>
+            )
+          }
+          return (
+            <button
+              key={key}
+              onClick={() => handleDigit(key)}
+              className="w-[80px] h-[56px] flex items-center justify-center rounded-sm bg-white/[0.04] border border-white/10 text-white text-[20px] font-mono hover:bg-white/[0.08] hover:border-white/20 transition-all active:scale-95 active:bg-[#FF0CB6]/20"
+            >
+              {key}
+            </button>
+          )
+        })}
+      </div>
+
       {error && (
-        <p className="font-['Poppins'] text-[12px] text-red-400/80 mt-4 tracking-wider">
+        <p className="text-[12px] text-red-400/80 mt-6 tracking-wider" style={{ fontFamily: 'Poppins' }}>
           INVALID CODE
         </p>
       )}
