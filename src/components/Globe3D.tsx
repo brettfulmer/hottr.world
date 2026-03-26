@@ -2,24 +2,26 @@ import { useEffect, useRef, useCallback } from 'react'
 import * as THREE from 'three'
 import { feature } from 'topojson-client'
 import type { Topology, GeometryCollection } from 'topojson-specification'
-import type { FeatureCollection, Feature, Geometry, Position } from 'geojson'
+import type { FeatureCollection, Geometry, Position } from 'geojson'
 import type { Language } from '../data/languages'
 
 const RADIUS = 2
 const PI2 = Math.PI * 2
-const CW = 4096
-const CH = 2048
+const CW = 2048
+const CH = 1024
+const SPIN_SPEED = 0.002
+const DOT_STEP = 6 // pixels between dots on canvas
 
 const ALIASES: Record<string, string[]> = {
-  'United States of America': ['United States','USA','United States (60M+ Spanish speakers)'],
-  'United Kingdom': ['United Kingdom','UK'],
+  'United States of America': ['United States', 'USA', 'United States (60M+ Spanish speakers)'],
+  'United Kingdom': ['United Kingdom', 'UK'],
   'South Korea': ['South Korea'],
   'North Korea': ['North Korea'],
   'Democratic Republic of the Congo': ['DR Congo'],
   'Republic of the Congo': ['Republic of Congo'],
   "Côte d'Ivoire": ['Ivory Coast'],
   'Czechia': ['Czech Republic'],
-  'Turkey': ['Turkey','Türkiye'],
+  'Turkey': ['Turkey', 'Türkiye'],
   'Taiwan': ['Taiwan'],
 }
 
@@ -39,36 +41,23 @@ function matchesCountry(geoName: string, langCountries: string[]): boolean {
   return false
 }
 
-function drawRing(ctx: CanvasRenderingContext2D, coords: Position[], w: number, h: number) {
-  ctx.beginPath()
-  let prevX = -1
-  for (let i = 0; i < coords.length; i++) {
-    const [lng, lat] = coords[i]
-    const x = ((lng + 180) / 360) * w
-    const y = ((90 - lat) / 180) * h
-    // Break path at dateline wrap
-    if (i > 0 && Math.abs(x - prevX) > w * 0.5) {
-      ctx.moveTo(x, y)
-    } else if (i === 0) {
-      ctx.moveTo(x, y)
-    } else {
-      ctx.lineTo(x, y)
+// Point-in-polygon (ray casting) for a single ring
+function pointInRing(px: number, py: number, ring: Position[]): boolean {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i]
+    const [xj, yj] = ring[j]
+    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) {
+      inside = !inside
     }
-    prevX = x
   }
-  ctx.closePath()
+  return inside
 }
 
-function drawFeature(ctx: CanvasRenderingContext2D, feat: Feature, w: number, h: number, fill: boolean) {
-  const geom = feat.geometry as Geometry
-  const rings: Position[][] = []
-  if (geom.type === 'Polygon') rings.push(...geom.coordinates)
-  else if (geom.type === 'MultiPolygon') for (const p of geom.coordinates) rings.push(...p)
-  for (const ring of rings) {
-    drawRing(ctx, ring, w, h)
-    if (fill) ctx.fill()
-    ctx.stroke()
-  }
+interface LandPoint {
+  x: number
+  y: number
+  countryName: string
 }
 
 interface Props {
@@ -79,160 +68,203 @@ export default function Globe3D({ selected }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
   const globeRef = useRef<THREE.Group | null>(null)
-  const baseCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const baseTextureRef = useRef<THREE.CanvasTexture | null>(null)
   const hlCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const hlTextureRef = useRef<THREE.CanvasTexture | null>(null)
-  const geoDataRef = useRef<FeatureCollection | null>(null)
-  const dotsGroupRef = useRef<THREE.Group | null>(null)
-  const isDragging = useRef(false)
-  const prevMouse = useRef({ x: 0, y: 0 })
-  const velocity = useRef(0.0008) // gentle initial spin
-  const currentRotY = useRef(0)
+  const sparkleCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const sparkleTextureRef = useRef<THREE.CanvasTexture | null>(null)
+  const landPointsRef = useRef<LandPoint[]>([])
+  const allDotsRef = useRef<{ x: number; y: number; isLand: boolean }[]>([])
+  const atmoMatRef = useRef<THREE.ShaderMaterial | null>(null)
+  const glowFlash = useRef(0)
   const rafId = useRef(0)
+  const sparkleTimer = useRef(0)
 
-  // Draw the base globe texture — traditional globe look
-  const drawBaseMap = useCallback((geo: FeatureCollection) => {
-    const canvas = baseCanvasRef.current
-    const texture = baseTextureRef.current
-    if (!canvas || !texture) return
+  // Build land mask and dot grid from GeoJSON
+  const buildLandData = useCallback((geo: FeatureCollection) => {
+    const landPoints: LandPoint[] = []
+    const allDots: { x: number; y: number; isLand: boolean }[] = []
+
+    // Build a spatial index of features for faster lookups
+    const features = geo.features.map(f => {
+      const name = (f.properties as Record<string, string>)?.name || ''
+      const geom = f.geometry as Geometry
+      const rings: Position[][] = []
+      if (geom.type === 'Polygon') rings.push(...geom.coordinates)
+      else if (geom.type === 'MultiPolygon') for (const p of geom.coordinates) rings.push(...p)
+      return { name, rings }
+    })
+
+    // Iterate grid
+    for (let py = 0; py < CH; py += DOT_STEP) {
+      for (let px = 0; px < CW; px += DOT_STEP) {
+        const lng = (px / CW) * 360 - 180
+        const lat = 90 - (py / CH) * 180
+
+        let foundCountry = ''
+        for (const f of features) {
+          for (const ring of f.rings) {
+            if (pointInRing(lng, lat, ring)) {
+              foundCountry = f.name
+              break
+            }
+          }
+          if (foundCountry) break
+        }
+
+        const jx = px + (Math.random() - 0.5) * 3
+        const jy = py + (Math.random() - 0.5) * 3
+
+        if (foundCountry) {
+          landPoints.push({ x: jx, y: jy, countryName: foundCountry })
+          allDots.push({ x: jx, y: jy, isLand: true })
+        } else {
+          allDots.push({ x: jx, y: jy, isLand: false })
+        }
+      }
+    }
+
+    landPointsRef.current = landPoints
+    allDotsRef.current = allDots
+  }, [])
+
+  // Draw base disco ball texture
+  const drawBaseMap = useCallback(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = CW
+    canvas.height = CH
     const ctx = canvas.getContext('2d')!
-    const w = CW, h = CH
 
-    // Deep dark ocean
-    ctx.fillStyle = '#060810'
-    ctx.fillRect(0, 0, w, h)
+    // Near-black background
+    ctx.fillStyle = '#030305'
+    ctx.fillRect(0, 0, CW, CH)
 
-    // Subtle ocean gradient (darker at poles)
-    const grad = ctx.createLinearGradient(0, 0, 0, h)
-    grad.addColorStop(0, 'rgba(0,0,0,0.3)')
-    grad.addColorStop(0.3, 'rgba(0,0,0,0)')
-    grad.addColorStop(0.7, 'rgba(0,0,0,0)')
-    grad.addColorStop(1, 'rgba(0,0,0,0.3)')
-    ctx.fillStyle = grad
-    ctx.fillRect(0, 0, w, h)
+    const allDots = allDotsRef.current
 
-    // Grid lines — latitude (horizontal)
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)'
-    ctx.lineWidth = 1
-    for (let lat = -60; lat <= 60; lat += 15) {
-      const y = ((90 - lat) / 180) * h
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke()
+    for (const dot of allDots) {
+      if (dot.isLand) {
+        // Land = white/silver mirror dots
+        const brightness = 0.55 + Math.random() * 0.35
+        const v = Math.floor(180 * brightness + 30)
+        ctx.beginPath()
+        ctx.arc(dot.x, dot.y, 2.2, 0, PI2)
+        ctx.fillStyle = `rgba(${v + 10},${v + 15},${v + 20},${brightness})`
+        ctx.fill()
+      } else {
+        // Ocean = tiny dark dots
+        const brightness = 0.25 + Math.random() * 0.15
+        ctx.beginPath()
+        ctx.arc(dot.x, dot.y, 1.4, 0, PI2)
+        ctx.fillStyle = `rgba(25,25,40,${brightness})`
+        ctx.fill()
+      }
     }
 
-    // Grid lines — longitude (vertical)
-    for (let lng = -180; lng < 180; lng += 15) {
-      const x = ((lng + 180) / 360) * w
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke()
+    // Sparkle accents on land
+    const landPoints = landPointsRef.current
+    for (let i = 0; i < 300; i++) {
+      const lp = landPoints[Math.floor(Math.random() * landPoints.length)]
+      if (!lp) continue
+      ctx.beginPath()
+      ctx.arc(lp.x + (Math.random() - 0.5) * 4, lp.y + (Math.random() - 0.5) * 4, 1, 0, PI2)
+      ctx.fillStyle = `rgba(255,255,255,${0.7 + Math.random() * 0.3})`
+      ctx.fill()
     }
 
-    // Equator — pink accent
-    const eqY = h / 2
-    ctx.strokeStyle = 'rgba(255, 12, 182, 0.12)'
-    ctx.lineWidth = 2
-    ctx.beginPath(); ctx.moveTo(0, eqY); ctx.lineTo(w, eqY); ctx.stroke()
-
-    // Country landmasses — filled + outlined
-    // Fill (subtle dark land)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.07)'
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)'
-    ctx.lineWidth = 1.2
-    for (const feat of geo.features) {
-      drawFeature(ctx, feat, w, h, true)
-    }
-
-    // Second pass — brighter borders for definition
-    ctx.fillStyle = 'transparent'
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.13)'
-    ctx.lineWidth = 0.6
-    for (const feat of geo.features) {
-      drawFeature(ctx, feat, w, h, false)
-    }
-
-    texture.needsUpdate = true
+    return canvas
   }, [])
 
   // Highlight countries for selected language
   const updateHighlights = useCallback((lang: Language) => {
     const canvas = hlCanvasRef.current
     const texture = hlTextureRef.current
-    const geo = geoDataRef.current
     if (!canvas || !texture) return
     const ctx = canvas.getContext('2d')!
-    const w = CW, h = CH
-    ctx.clearRect(0, 0, w, h)
+    ctx.clearRect(0, 0, CW, CH)
+
+    const landPoints = landPointsRef.current
+    if (!landPoints.length) return
 
     if (lang.isIndigenous) {
-      drawKriolOverlay(ctx, w, h, lang)
-    } else if (geo) {
-      // Filled pink highlight
-      ctx.fillStyle = 'rgba(255, 12, 182, 0.30)'
-      ctx.strokeStyle = 'rgba(255, 12, 182, 0.70)'
-      ctx.lineWidth = 2
-
-      for (const feat of geo.features) {
-        const name = (feat.properties as Record<string, string>)?.name || ''
-        if (!matchesCountry(name, lang.countries)) continue
-        drawFeature(ctx, feat, w, h, true)
+      // Kriol: pink variations across Australia
+      const pinks = ['#FF0CB6', '#ff4dcc', '#ff8ce0', '#b30880']
+      for (const lp of landPoints) {
+        if (lp.countryName !== 'Australia') continue
+        const color = pinks[Math.floor(Math.random() * pinks.length)]
+        ctx.beginPath()
+        ctx.arc(lp.x, lp.y, 2.8, 0, PI2)
+        ctx.fillStyle = color
+        ctx.globalAlpha = 0.5 + Math.random() * 0.4
+        ctx.fill()
       }
+      ctx.globalAlpha = 1
+    } else {
+      // Standard: pink mirror dots for matching countries
+      ctx.shadowColor = 'rgba(255,12,182,0.8)'
+      ctx.shadowBlur = 6
 
-      // Second pass — brighter glow border
-      ctx.fillStyle = 'transparent'
-      ctx.strokeStyle = 'rgba(255, 12, 182, 0.45)'
-      ctx.lineWidth = 1
-      ctx.shadowColor = 'rgba(255, 12, 182, 0.6)'
-      ctx.shadowBlur = 8
-      for (const feat of geo.features) {
-        const name = (feat.properties as Record<string, string>)?.name || ''
-        if (!matchesCountry(name, lang.countries)) continue
-        drawFeature(ctx, feat, w, h, false)
+      for (const lp of landPoints) {
+        if (!matchesCountry(lp.countryName, lang.countries)) continue
+        const bright = Math.random()
+        const r = bright > 0.9 ? 3.2 : 2.5
+        const alpha = 0.6 + bright * 0.4
+        ctx.beginPath()
+        ctx.arc(lp.x, lp.y, r, 0, PI2)
+        ctx.fillStyle = `rgba(255,12,182,${alpha})`
+        ctx.fill()
       }
       ctx.shadowBlur = 0
     }
     texture.needsUpdate = true
   }, [])
 
-  const drawKriolOverlay = (ctx: CanvasRenderingContext2D, w: number, h: number, lang: Language) => {
-    const cx = ((lang.lng + 180) / 360) * w
-    const cy = ((90 - lang.lat) / 180) * h
-    const ochres = ['#C4722F', '#8B4513', '#E8D5B7', '#FF0CB6']
-    const maxR = Math.min(w, h) * 0.08
-    for (let ring = 0; ring < 8; ring++) {
-      const r = (ring + 1) * (maxR / 8)
-      const dots = Math.floor(r * 0.8)
-      for (let d = 0; d < dots; d++) {
-        const angle = (d / dots) * PI2 + ring * 0.3
-        const jitter = (Math.random() - 0.5) * 4
-        ctx.beginPath()
-        ctx.arc(cx + Math.cos(angle) * (r + jitter), cy + Math.sin(angle) * (r + jitter), 2 + Math.random(), 0, PI2)
-        ctx.fillStyle = ochres[Math.floor(Math.random() * ochres.length)]
-        ctx.globalAlpha = 0.6 + Math.random() * 0.3
-        ctx.fill()
-      }
-    }
-    ctx.globalAlpha = 1
-  }
+  // Animated sparkle layer
+  const updateSparkles = useCallback(() => {
+    const canvas = sparkleCanvasRef.current
+    const texture = sparkleTextureRef.current
+    if (!canvas || !texture) return
+    const ctx = canvas.getContext('2d')!
+    ctx.clearRect(0, 0, CW, CH)
 
-  const updateDots = useCallback((_lang: Language, globe: THREE.Group) => {
-    // Country-only highlighting — no city dots or markers
-    if (dotsGroupRef.current) {
-      globe.remove(dotsGroupRef.current)
-      dotsGroupRef.current.traverse(c => { if ((c as THREE.Mesh).geometry) (c as THREE.Mesh).geometry.dispose() })
-      dotsGroupRef.current = null
+    const landPoints = landPointsRef.current
+    if (!landPoints.length) return
+
+    // Place 8 random bright flashes on land
+    for (let i = 0; i < 8; i++) {
+      const lp = landPoints[Math.floor(Math.random() * landPoints.length)]
+      if (!lp) continue
+      const isPink = Math.random() > 0.6
+      ctx.beginPath()
+      ctx.arc(lp.x + (Math.random() - 0.5) * 6, lp.y + (Math.random() - 0.5) * 6, 2 + Math.random() * 1.5, 0, PI2)
+      ctx.fillStyle = isPink ? `rgba(255,12,182,${0.8 + Math.random() * 0.2})` : `rgba(255,255,255,${0.8 + Math.random() * 0.2})`
+      ctx.fill()
     }
+    texture.needsUpdate = true
   }, [])
 
+  // Load GeoJSON and init everything
   const loadGeoData = useCallback(async () => {
     try {
       const topoModule = await import('world-atlas/countries-110m.json')
       const topo = topoModule.default as unknown as Topology<{ countries: GeometryCollection }>
       const geo = feature(topo, topo.objects.countries) as FeatureCollection
-      geoDataRef.current = geo
-      drawBaseMap(geo)
+
+      // Build land data
+      buildLandData(geo)
+
+      // Draw base texture
+      const baseCanvas = drawBaseMap()
+      if (baseTextureRef.current) {
+        baseTextureRef.current.image = baseCanvas
+        baseTextureRef.current.needsUpdate = true
+      }
+
+      // Draw initial highlights
       updateHighlights(selected)
     } catch { /* graceful fallback */ }
-  }, [drawBaseMap, updateHighlights])
+  }, [buildLandData, drawBaseMap, updateHighlights])
 
+  // Three.js scene setup
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
@@ -255,100 +287,89 @@ export default function Globe3D({ selected }: Props) {
     globeRef.current = globe
     scene.add(globe)
 
-    // Base map canvas
-    const baseCanvas = document.createElement('canvas')
-    baseCanvas.width = CW; baseCanvas.height = CH
-    baseCanvasRef.current = baseCanvas
-    const bctx = baseCanvas.getContext('2d')!
-    bctx.fillStyle = '#060810'
-    bctx.fillRect(0, 0, CW, CH)
+    // Base sphere — placeholder dark until GeoJSON loads
+    const placeholderCanvas = document.createElement('canvas')
+    placeholderCanvas.width = CW
+    placeholderCanvas.height = CH
+    const pctx = placeholderCanvas.getContext('2d')!
+    pctx.fillStyle = '#030305'
+    pctx.fillRect(0, 0, CW, CH)
 
-    const baseTex = new THREE.CanvasTexture(baseCanvas)
+    const baseTex = new THREE.CanvasTexture(placeholderCanvas)
     baseTex.colorSpace = THREE.SRGBColorSpace
     baseTextureRef.current = baseTex
+    globe.add(new THREE.Mesh(
+      new THREE.SphereGeometry(RADIUS, 96, 96),
+      new THREE.MeshBasicMaterial({ map: baseTex })
+    ))
 
-    const earthGeo = new THREE.SphereGeometry(RADIUS, 96, 96)
-    const earthMat = new THREE.MeshBasicMaterial({ map: baseTex })
-    globe.add(new THREE.Mesh(earthGeo, earthMat))
-
-    // Highlight overlay
+    // Highlight overlay sphere
     const hlCanvas = document.createElement('canvas')
-    hlCanvas.width = CW; hlCanvas.height = CH
+    hlCanvas.width = CW
+    hlCanvas.height = CH
     hlCanvasRef.current = hlCanvas
-
     const hlTex = new THREE.CanvasTexture(hlCanvas)
     hlTextureRef.current = hlTex
+    globe.add(new THREE.Mesh(
+      new THREE.SphereGeometry(RADIUS + 0.003, 96, 96),
+      new THREE.MeshBasicMaterial({ map: hlTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })
+    ))
 
-    const hlMat = new THREE.MeshBasicMaterial({
-      map: hlTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    })
-    globe.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS + 0.003, 96, 96), hlMat))
+    // Sparkle overlay sphere
+    const sparkCanvas = document.createElement('canvas')
+    sparkCanvas.width = CW
+    sparkCanvas.height = CH
+    sparkleCanvasRef.current = sparkCanvas
+    const sparkTex = new THREE.CanvasTexture(sparkCanvas)
+    sparkleTextureRef.current = sparkTex
+    globe.add(new THREE.Mesh(
+      new THREE.SphereGeometry(RADIUS + 0.006, 96, 96),
+      new THREE.MeshBasicMaterial({ map: sparkTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })
+    ))
 
-    // Inner shadow for depth (like real globe under glass)
-    const innerGeo = new THREE.SphereGeometry(RADIUS + 0.006, 64, 64)
-    const innerMat = new THREE.ShaderMaterial({
-      vertexShader: `
-        varying vec3 vNormal;
-        void main() {
-          vNormal = normalize(normalMatrix * normal);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vNormal;
-        void main() {
-          float rim = 1.0 - max(0.0, dot(vNormal, vec3(0.0, 0.0, 1.0)));
-          float edge = smoothstep(0.4, 1.0, rim);
-          gl_FragColor = vec4(0.0, 0.0, 0.0, edge * 0.6);
-        }
-      `,
-      transparent: true,
-      depthWrite: false,
-      side: THREE.FrontSide,
-    })
-    globe.add(new THREE.Mesh(innerGeo, innerMat))
+    // Inner rim shadow for glass depth
+    globe.add(new THREE.Mesh(
+      new THREE.SphereGeometry(RADIUS + 0.009, 64, 64),
+      new THREE.ShaderMaterial({
+        vertexShader: `varying vec3 vNormal; void main() { vNormal = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: `varying vec3 vNormal; void main() { float rim = 1.0 - max(0.0, dot(vNormal, vec3(0.0, 0.0, 1.0))); float edge = smoothstep(0.4, 1.0, rim); gl_FragColor = vec4(0.0, 0.0, 0.0, edge * 0.5); }`,
+        transparent: true, depthWrite: false, side: THREE.FrontSide,
+      })
+    ))
 
-    // Pink atmospheric glow (behind)
+    // Pink atmosphere glow
     const atmoMat = new THREE.ShaderMaterial({
-      vertexShader: `
-        varying vec3 vNormal;
-        void main() {
-          vNormal = normalize(normalMatrix * normal);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vNormal;
-        uniform float uOpacity;
-        void main() {
-          float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.0);
-          gl_FragColor = vec4(1.0, 0.047, 0.714, 1.0) * intensity * uOpacity;
-        }
-      `,
+      vertexShader: `varying vec3 vNormal; void main() { vNormal = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `varying vec3 vNormal; uniform float uOpacity; void main() { float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.0); gl_FragColor = vec4(1.0, 0.047, 0.714, 1.0) * intensity * uOpacity; }`,
       uniforms: { uOpacity: { value: 0.5 } },
-      side: THREE.BackSide,
-      blending: THREE.AdditiveBlending,
-      transparent: true,
-      depthWrite: false,
+      side: THREE.BackSide, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false,
     })
+    atmoMatRef.current = atmoMat
     scene.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS * 1.12, 64, 64), atmoMat))
 
-    updateDots(selected, globe)
     loadGeoData()
 
+    // Animation loop
     const animate = () => {
       rafId.current = requestAnimationFrame(animate)
       const now = Date.now()
 
-      // Free-spin: apply velocity, gentle friction
-      if (!isDragging.current) {
-        velocity.current *= 0.997 // very slow friction — spins freely
-        currentRotY.current += velocity.current
-      }
-      globe.rotation.y = currentRotY.current
+      // Constant spin
+      globe.rotation.y += SPIN_SPEED
 
-      // Pulse atmosphere
-      atmoMat.uniforms.uOpacity.value = 0.15 * Math.sin(now * 0.001 * (PI2 / 3.5)) + 0.45
+      // Atmosphere pulse + glow flash
+      const basePulse = 0.15 * Math.sin(now * 0.001 * (PI2 / 3.5)) + 0.45
+      if (glowFlash.current > 0) {
+        glowFlash.current *= 0.96
+        if (glowFlash.current < 0.01) glowFlash.current = 0
+      }
+      atmoMat.uniforms.uOpacity.value = basePulse + glowFlash.current
+
+      // Update sparkles every ~200ms
+      if (now - sparkleTimer.current > 200) {
+        sparkleTimer.current = now
+        updateSparkles()
+      }
 
       renderer.render(scene, camera)
     }
@@ -362,40 +383,19 @@ export default function Globe3D({ selected }: Props) {
     }
     window.addEventListener('resize', onResize)
 
-    const onDown = (e: PointerEvent) => {
-      isDragging.current = true
-      velocity.current = 0
-      prevMouse.current = { x: e.clientX, y: e.clientY }
-    }
-    const onMove = (e: PointerEvent) => {
-      if (!isDragging.current) return
-      const dx = (e.clientX - prevMouse.current.x) * 0.005
-      currentRotY.current += dx
-      velocity.current = dx // last frame's delta becomes release velocity
-      prevMouse.current = { x: e.clientX, y: e.clientY }
-    }
-    const onUp = () => { isDragging.current = false }
-
-    renderer.domElement.addEventListener('pointerdown', onDown)
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-
     return () => {
       cancelAnimationFrame(rafId.current)
       window.removeEventListener('resize', onResize)
-      renderer.domElement.removeEventListener('pointerdown', onDown)
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
       renderer.dispose()
       if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement)
     }
   }, [])
 
+  // Language change → flash + update highlights
   useEffect(() => {
-    if (!globeRef.current) return
-    updateDots(selected, globeRef.current)
     updateHighlights(selected)
-  }, [selected, updateDots, updateHighlights])
+    glowFlash.current = 1.5
+  }, [selected, updateHighlights])
 
-  return <div ref={containerRef} className="w-full h-full" style={{ touchAction: 'none', cursor: 'grab' }} />
+  return <div ref={containerRef} className="w-full h-full" style={{ pointerEvents: 'none' }} />
 }
