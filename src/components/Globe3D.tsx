@@ -7,10 +7,9 @@ import type { Language } from '../data/languages'
 
 const RADIUS = 2
 const PI2 = Math.PI * 2
-const CW = 2048
-const CH = 1024
 const SPIN_SPEED = 0.002
-const DOT_STEP = 6
+const PARTICLE_COUNT = 28000
+const PINK = new THREE.Color(0xFF0CB6)
 
 const ALIASES: Record<string, string[]> = {
   'United States of America': ['United States', 'USA', 'United States (60M+ Spanish speakers)'],
@@ -51,26 +50,37 @@ function pointInRing(px: number, py: number, ring: Position[]): boolean {
   return inside
 }
 
-interface DotInfo { x: number; y: number; isLand: boolean; countryName: string }
+function latLngToXYZ(lat: number, lng: number, r: number): [number, number, number] {
+  const phi = (90 - lat) * (Math.PI / 180)
+  const theta = (lng + 180) * (Math.PI / 180)
+  return [
+    -r * Math.sin(phi) * Math.cos(theta),
+    r * Math.cos(phi),
+    r * Math.sin(phi) * Math.sin(theta),
+  ]
+}
+
+interface ParticleData {
+  isLand: boolean
+  countryName: string
+}
+
 interface Props { selected: Language }
 
 export default function Globe3D({ selected }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
   const globeRef = useRef<THREE.Group | null>(null)
-  const baseTextureRef = useRef<THREE.CanvasTexture | null>(null)
-  const hlCanvasRef = useRef<HTMLCanvasElement | null>(null)
-  const hlTextureRef = useRef<THREE.CanvasTexture | null>(null)
-  const sparkleCanvasRef = useRef<HTMLCanvasElement | null>(null)
-  const sparkleTextureRef = useRef<THREE.CanvasTexture | null>(null)
-  const dotsRef = useRef<DotInfo[]>([])
+  const pointsRef = useRef<THREE.Points | null>(null)
+  const particleDataRef = useRef<ParticleData[]>([])
+  const colorsRef = useRef<Float32Array | null>(null)
+  const sizesRef = useRef<Float32Array | null>(null)
   const atmoMatRef = useRef<THREE.ShaderMaterial | null>(null)
   const glowFlash = useRef(0)
   const rafId = useRef(0)
-  const sparkleTimer = useRef(0)
 
-  const buildDotGrid = useCallback((geo: FeatureCollection) => {
-    const dots: DotInfo[] = []
+  // Build particle positions from GeoJSON
+  const buildParticles = useCallback((geo: FeatureCollection) => {
     const features = geo.features.map(f => {
       const name = (f.properties as Record<string, string>)?.name || ''
       const geom = f.geometry as Geometry
@@ -79,125 +89,115 @@ export default function Globe3D({ selected }: Props) {
       else if (geom.type === 'MultiPolygon') for (const p of geom.coordinates) rings.push(...p)
       return { name, rings }
     })
-    for (let py = 0; py < CH; py += DOT_STEP) {
-      for (let px = 0; px < CW; px += DOT_STEP) {
-        const lng = (px / CW) * 360 - 180
-        const lat = 90 - (py / CH) * 180
-        let country = ''
-        for (const f of features) {
-          for (const ring of f.rings) {
-            if (pointInRing(lng, lat, ring)) { country = f.name; break }
-          }
-          if (country) break
+
+    const positions = new Float32Array(PARTICLE_COUNT * 3)
+    const colors = new Float32Array(PARTICLE_COUNT * 3)
+    const sizes = new Float32Array(PARTICLE_COUNT)
+    const data: ParticleData[] = []
+
+    // Golden-angle Fibonacci sphere distribution for uniform coverage
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5))
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const y = 1 - (i / (PARTICLE_COUNT - 1)) * 2 // -1 to 1
+      const radiusAtY = Math.sqrt(1 - y * y)
+      const theta = goldenAngle * i
+
+      const px = radiusAtY * Math.cos(theta)
+      const pz = radiusAtY * Math.sin(theta)
+
+      // Jitter slightly for organic mirror-tile feel
+      const jitter = 0.003
+      const x = (px + (Math.random() - 0.5) * jitter) * RADIUS
+      const yy = (y + (Math.random() - 0.5) * jitter) * RADIUS
+      const z = (pz + (Math.random() - 0.5) * jitter) * RADIUS
+
+      positions[i * 3] = x
+      positions[i * 3 + 1] = yy
+      positions[i * 3 + 2] = z
+
+      // Convert 3D position to lat/lng for country lookup
+      const r = Math.sqrt(x * x + yy * yy + z * z)
+      const lat = Math.asin(yy / r) * (180 / Math.PI)
+      const lng = Math.atan2(z, -x) * (180 / Math.PI) - 180
+      const normLng = ((lng % 360) + 540) % 360 - 180
+
+      // Check country
+      let country = ''
+      for (const f of features) {
+        for (const ring of f.rings) {
+          if (pointInRing(normLng, lat, ring)) { country = f.name; break }
         }
-        dots.push({
-          x: px + (Math.random() - 0.5) * 2,
-          y: py + (Math.random() - 0.5) * 2,
-          isLand: !!country, countryName: country,
-        })
+        if (country) break
       }
-    }
-    dotsRef.current = dots
-  }, [])
 
-  // Base texture: 3 colors only — BLACK (ocean), WHITE (land), sparkle
-  const drawBaseMap = useCallback(() => {
-    const canvas = document.createElement('canvas')
-    canvas.width = CW; canvas.height = CH
-    const ctx = canvas.getContext('2d')!
-    ctx.fillStyle = '#000000'
-    ctx.fillRect(0, 0, CW, CH)
+      data.push({ isLand: !!country, countryName: country })
 
-    for (const dot of dotsRef.current) {
-      if (dot.isLand) {
-        // White mirror tile — random brightness for sparkle facet effect
-        const b = 0.5 + Math.random() * 0.5
-        const v = Math.floor(255 * b)
-        ctx.beginPath()
-        ctx.arc(dot.x, dot.y, 2.2, 0, PI2)
-        ctx.fillStyle = `rgb(${v},${v},${v})`
-        ctx.fill()
+      // Default color: WHITE for land, DARK for ocean
+      if (country) {
+        const brightness = 0.6 + Math.random() * 0.4
+        colors[i * 3] = brightness
+        colors[i * 3 + 1] = brightness
+        colors[i * 3 + 2] = brightness
+        sizes[i] = 2.5 + Math.random() * 1.5
       } else {
-        // Black mirror tile — very subtle, just enough to show it's a faceted surface
-        const b = Math.random() * 0.12
-        const v = Math.floor(255 * b)
-        ctx.beginPath()
-        ctx.arc(dot.x, dot.y, 1.8, 0, PI2)
-        ctx.fillStyle = `rgb(${v},${v},${v})`
-        ctx.fill()
+        const b = 0.04 + Math.random() * 0.06
+        colors[i * 3] = b
+        colors[i * 3 + 1] = b
+        colors[i * 3 + 2] = b
+        sizes[i] = 1.5 + Math.random() * 0.8
       }
     }
 
-    // Scattered sparkle highlights on land — pure white bright flashes
-    const landDots = dotsRef.current.filter(d => d.isLand)
-    for (let i = 0; i < 400; i++) {
-      const d = landDots[Math.floor(Math.random() * landDots.length)]
-      if (!d) continue
-      ctx.beginPath()
-      ctx.arc(d.x + (Math.random() - 0.5) * 3, d.y + (Math.random() - 0.5) * 3, 0.6 + Math.random() * 0.4, 0, PI2)
-      ctx.fillStyle = '#FFFFFF'
-      ctx.fill()
-    }
+    particleDataRef.current = data
+    colorsRef.current = colors
+    sizesRef.current = sizes
 
-    return canvas
+    return { positions, colors, sizes }
   }, [])
 
+  // Update particle colors for selected language
   const updateHighlights = useCallback((lang: Language) => {
-    const canvas = hlCanvasRef.current
-    const texture = hlTextureRef.current
-    if (!canvas || !texture) return
-    const ctx = canvas.getContext('2d')!
-    ctx.clearRect(0, 0, CW, CH)
-    const dots = dotsRef.current
-    if (!dots.length) return
+    const points = pointsRef.current
+    const data = particleDataRef.current
+    const colors = colorsRef.current
+    if (!points || !data.length || !colors) return
 
-    if (lang.isIndigenous) {
-      // Kriol: pink variations across Australia
-      const pinks = ['#FF0CB6', '#ff4dcc', '#ff8ce0', '#b30880']
-      for (const d of dots) {
-        if (d.countryName !== 'Australia') continue
-        ctx.beginPath()
-        ctx.arc(d.x, d.y, 2.6, 0, PI2)
-        ctx.fillStyle = pinks[Math.floor(Math.random() * pinks.length)]
-        ctx.globalAlpha = 0.5 + Math.random() * 0.45
-        ctx.fill()
+    const geom = points.geometry
+    const colorAttr = geom.getAttribute('color') as THREE.BufferAttribute
+    const colorArr = colorAttr.array as Float32Array
+
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i]
+      const i3 = i * 3
+
+      if (d.isLand) {
+        let highlighted = false
+
+        if (lang.isIndigenous) {
+          highlighted = d.countryName === 'Australia'
+        } else {
+          highlighted = matchesCountry(d.countryName, lang.countries)
+        }
+
+        if (highlighted) {
+          // Neon pink with slight brightness variation
+          const b = 0.8 + Math.random() * 0.2
+          colorArr[i3] = PINK.r * b
+          colorArr[i3 + 1] = PINK.g * b
+          colorArr[i3 + 2] = PINK.b * b
+        } else {
+          // White (default land)
+          const b = 0.6 + Math.random() * 0.4
+          colorArr[i3] = b
+          colorArr[i3 + 1] = b
+          colorArr[i3 + 2] = b
+        }
       }
-      ctx.globalAlpha = 1
-    } else {
-      for (const d of dots) {
-        if (!d.isLand || !matchesCountry(d.countryName, lang.countries)) continue
-        const bright = Math.random()
-        ctx.beginPath()
-        ctx.arc(d.x, d.y, bright > 0.85 ? 3.0 : 2.3, 0, PI2)
-        ctx.fillStyle = `rgba(255,12,182,${0.6 + bright * 0.4})`
-        ctx.fill()
-      }
+      // Ocean particles stay as-is (DARK)
     }
-    texture.needsUpdate = true
-  }, [])
 
-  // Sparkle: random bright flashes across ALL tiles — the mirror ball catching light
-  const updateSparkles = useCallback(() => {
-    const canvas = sparkleCanvasRef.current
-    const texture = sparkleTextureRef.current
-    if (!canvas || !texture) return
-    const ctx = canvas.getContext('2d')!
-    ctx.clearRect(0, 0, CW, CH)
-    const dots = dotsRef.current
-    if (!dots.length) return
-
-    for (let i = 0; i < 15; i++) {
-      const d = dots[Math.floor(Math.random() * dots.length)]
-      if (!d) continue
-      const isPink = d.isLand && Math.random() > 0.5
-      ctx.beginPath()
-      ctx.arc(d.x, d.y, 1.5 + Math.random() * 2, 0, PI2)
-      ctx.fillStyle = isPink ? '#FF0CB6' : '#FFFFFF'
-      ctx.globalAlpha = 0.4 + Math.random() * 0.6
-      ctx.fill()
-    }
-    ctx.globalAlpha = 1
-    texture.needsUpdate = true
+    colorAttr.needsUpdate = true
   }, [])
 
   const loadGeoData = useCallback(async () => {
@@ -205,15 +205,19 @@ export default function Globe3D({ selected }: Props) {
       const topoModule = await import('world-atlas/countries-110m.json')
       const topo = topoModule.default as unknown as Topology<{ countries: GeometryCollection }>
       const geo = feature(topo, topo.objects.countries) as FeatureCollection
-      buildDotGrid(geo)
-      const baseCanvas = drawBaseMap()
-      if (baseTextureRef.current) {
-        baseTextureRef.current.image = baseCanvas
-        baseTextureRef.current.needsUpdate = true
+
+      const { positions, colors, sizes } = buildParticles(geo)
+
+      if (pointsRef.current && globeRef.current) {
+        // Update existing geometry
+        const geom = pointsRef.current.geometry
+        geom.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+        geom.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+        geom.setAttribute('size', new THREE.BufferAttribute(sizes, 1))
+        updateHighlights(selected)
       }
-      updateHighlights(selected)
     } catch { /* graceful */ }
-  }, [buildDotGrid, drawBaseMap, updateHighlights])
+  }, [buildParticles, updateHighlights])
 
   useEffect(() => {
     const container = containerRef.current
@@ -235,50 +239,70 @@ export default function Globe3D({ selected }: Props) {
     globeRef.current = globe
     scene.add(globe)
 
-    // Base sphere
-    const pCanvas = document.createElement('canvas')
-    pCanvas.width = CW; pCanvas.height = CH
-    const pctx = pCanvas.getContext('2d')!
-    pctx.fillStyle = '#000'
-    pctx.fillRect(0, 0, CW, CH)
-    const baseTex = new THREE.CanvasTexture(pCanvas)
-    baseTex.colorSpace = THREE.SRGBColorSpace
-    baseTextureRef.current = baseTex
-    globe.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS, 96, 96), new THREE.MeshBasicMaterial({ map: baseTex })))
+    // Particle system
+    const geometry = new THREE.BufferGeometry()
+    const initPos = new Float32Array(PARTICLE_COUNT * 3)
+    const initColors = new Float32Array(PARTICLE_COUNT * 3)
+    const initSizes = new Float32Array(PARTICLE_COUNT)
+    // Fill with default positions on sphere (will be replaced by GeoJSON data)
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const [x, y, z] = latLngToXYZ(
+        Math.random() * 180 - 90,
+        Math.random() * 360 - 180,
+        RADIUS
+      )
+      initPos[i * 3] = x; initPos[i * 3 + 1] = y; initPos[i * 3 + 2] = z
+      initColors[i * 3] = 0.05; initColors[i * 3 + 1] = 0.05; initColors[i * 3 + 2] = 0.06
+      initSizes[i] = 1.5
+    }
+    geometry.setAttribute('position', new THREE.BufferAttribute(initPos, 3))
+    geometry.setAttribute('color', new THREE.BufferAttribute(initColors, 3))
+    geometry.setAttribute('size', new THREE.BufferAttribute(initSizes, 1))
 
-    // Highlight overlay
-    const hlCanvas = document.createElement('canvas')
-    hlCanvas.width = CW; hlCanvas.height = CH
-    hlCanvasRef.current = hlCanvas
-    const hlTex = new THREE.CanvasTexture(hlCanvas)
-    hlTextureRef.current = hlTex
-    globe.add(new THREE.Mesh(
-      new THREE.SphereGeometry(RADIUS + 0.003, 96, 96),
-      new THREE.MeshBasicMaterial({ map: hlTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })
-    ))
+    const material = new THREE.ShaderMaterial({
+      vertexShader: `
+        attribute float size;
+        varying vec3 vColor;
+        void main() {
+          vColor = color;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = size * (300.0 / -mvPosition.z);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        void main() {
+          // Soft circular point with sparkle
+          float d = length(gl_PointCoord - vec2(0.5));
+          if (d > 0.5) discard;
+          float alpha = smoothstep(0.5, 0.2, d);
+          // Sparkle: bright center
+          float sparkle = smoothstep(0.3, 0.0, d) * 0.5;
+          gl_FragColor = vec4(vColor + sparkle, alpha);
+        }
+      `,
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
 
-    // Sparkle overlay
-    const sparkCanvas = document.createElement('canvas')
-    sparkCanvas.width = CW; sparkCanvas.height = CH
-    sparkleCanvasRef.current = sparkCanvas
-    const sparkTex = new THREE.CanvasTexture(sparkCanvas)
-    sparkleTextureRef.current = sparkTex
-    globe.add(new THREE.Mesh(
-      new THREE.SphereGeometry(RADIUS + 0.006, 96, 96),
-      new THREE.MeshBasicMaterial({ map: sparkTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })
-    ))
+    const points = new THREE.Points(geometry, material)
+    pointsRef.current = points
+    globe.add(points)
 
     // Inner rim shadow
     globe.add(new THREE.Mesh(
       new THREE.SphereGeometry(RADIUS + 0.01, 64, 64),
       new THREE.ShaderMaterial({
         vertexShader: `varying vec3 vNormal; void main() { vNormal = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-        fragmentShader: `varying vec3 vNormal; void main() { float rim = 1.0 - max(0.0, dot(vNormal, vec3(0.0, 0.0, 1.0))); float edge = smoothstep(0.35, 1.0, rim); gl_FragColor = vec4(0.0, 0.0, 0.0, edge * 0.5); }`,
+        fragmentShader: `varying vec3 vNormal; void main() { float rim = 1.0 - max(0.0, dot(vNormal, vec3(0.0, 0.0, 1.0))); float edge = smoothstep(0.35, 1.0, rim); gl_FragColor = vec4(0.0, 0.0, 0.0, edge * 0.45); }`,
         transparent: true, depthWrite: false, side: THREE.FrontSide,
       })
     ))
 
-    // Pink atmosphere — NO spotlight
+    // Pink atmosphere
     const atmoMat = new THREE.ShaderMaterial({
       vertexShader: `varying vec3 vNormal; void main() { vNormal = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
       fragmentShader: `varying vec3 vNormal; uniform float uOpacity; void main() { float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.0); gl_FragColor = vec4(1.0, 0.047, 0.714, 1.0) * intensity * uOpacity; }`,
@@ -290,12 +314,16 @@ export default function Globe3D({ selected }: Props) {
 
     loadGeoData()
 
+    // Sparkle animation via random size pulses
+    let sparkleFrame = 0
+
     const animate = () => {
       rafId.current = requestAnimationFrame(animate)
       const now = Date.now()
       const t = now * 0.001
       globe.rotation.y += SPIN_SPEED
 
+      // Atmosphere pulse + language flash
       const basePulse = 0.12 * Math.sin(t * (PI2 / 3.5)) + 0.4
       if (glowFlash.current > 0) {
         glowFlash.current *= 0.96
@@ -303,10 +331,26 @@ export default function Globe3D({ selected }: Props) {
       }
       atmoMat.uniforms.uOpacity.value = basePulse + glowFlash.current
 
-      if (now - sparkleTimer.current > 180) {
-        sparkleTimer.current = now
-        updateSparkles()
+      // Sparkle: randomly pulse a few particle sizes every few frames
+      sparkleFrame++
+      if (sparkleFrame % 8 === 0 && pointsRef.current) {
+        const sizeAttr = pointsRef.current.geometry.getAttribute('size') as THREE.BufferAttribute
+        const sArr = sizeAttr.array as Float32Array
+        const data = particleDataRef.current
+        for (let i = 0; i < 30; i++) {
+          const idx = Math.floor(Math.random() * data.length)
+          if (data[idx]?.isLand) {
+            sArr[idx] = 3.5 + Math.random() * 2 // flash bright
+          }
+        }
+        // Decay all sizes back toward base
+        for (let i = 0; i < sArr.length; i++) {
+          const base = data[i]?.isLand ? (2.5 + (i % 3) * 0.5) : (1.5 + (i % 2) * 0.3)
+          sArr[i] += (base - sArr[i]) * 0.1
+        }
+        sizeAttr.needsUpdate = true
       }
+
       renderer.render(scene, camera)
     }
     animate()
@@ -326,6 +370,7 @@ export default function Globe3D({ selected }: Props) {
     }
   }, [])
 
+  // Language change → update particle colors + flash atmosphere
   useEffect(() => {
     updateHighlights(selected)
     glowFlash.current = 1.5
