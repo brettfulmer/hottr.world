@@ -113,6 +113,7 @@ body {
   100% { transform: translateX(-50%); }
 }
 .ticker-marquee {
+  width: max-content;
   animation: ticker-scroll 60s linear infinite;
 }
 

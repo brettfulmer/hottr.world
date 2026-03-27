@@ -62,7 +62,7 @@ export default function PinGate({ onUnlock }: Props) {
             {digits[i] ? (
               <span className="text-white">{digits[i]}</span>
             ) : (
-              <span className="w-2 h-2 rounded-full bg-white/10" />
+              <span className="w-2 h-2 rounded-sm bg-white/10" />
             )}
           </div>
         ))}

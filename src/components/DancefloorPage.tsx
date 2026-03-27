@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react'
 import { languages } from '../data/languages'
+import { streamingLinks } from '../data/streamingLinks'
 import type { Language } from '../data/languages'
 
 const Globe3D = lazy(() => import('./Globe3D'))
@@ -32,21 +33,18 @@ function GrainOverlay() {
     const canvas = ref.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')!
-    let raf: number
-    const draw = () => {
-      canvas.width = window.innerWidth; canvas.height = window.innerHeight
-      const img = ctx.createImageData(canvas.width, canvas.height)
-      const d = img.data
-      for (let i = 0; i < d.length; i += 4) {
-        const v = Math.random() * 16; d[i] = v; d[i+1] = v; d[i+2] = v; d[i+3] = 8
-      }
-      ctx.putImageData(img, 0, 0)
-      raf = requestAnimationFrame(draw)
+    // Generate grain texture once, reuse via CSS tiling
+    const size = 256
+    canvas.width = size; canvas.height = size
+    const img = ctx.createImageData(size, size)
+    const d = img.data
+    for (let i = 0; i < d.length; i += 4) {
+      const v = Math.random() * 20; d[i] = v; d[i+1] = v; d[i+2] = v; d[i+3] = 10
     }
-    draw()
-    return () => cancelAnimationFrame(raf)
+    ctx.putImageData(img, 0, 0)
   }, [])
-  return <canvas ref={ref} className="fixed inset-0 pointer-events-none z-[100] mix-blend-overlay" />
+  return <canvas ref={ref} className="fixed inset-0 pointer-events-none z-[100] mix-blend-overlay"
+    style={{ width: '100vw', height: '100vh', imageRendering: 'pixelated' }} />
 }
 
 export default function DancefloorPage() {
@@ -319,7 +317,7 @@ export default function DancefloorPage() {
               className="absolute -right-6 sm:-right-10 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-white/20 hover:text-[#FF0CB6] transition-colors z-20 text-xl select-none">
               &#8250;
             </button>
-            <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#FF0CB6]/30 border-t-[#FF0CB6] rounded-full animate-spin" /></div>}>
+            <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-5 h-5 border-2 border-[#FF0CB6]/30 border-t-[#FF0CB6] rounded-sm animate-spin" /></div>}>
               <Globe3D selected={selected} />
             </Suspense>
           </div>
@@ -359,11 +357,23 @@ export default function DancefloorPage() {
                   {moreCount > 0 && <p className="text-[8px] text-white/18 mt-1 uppercase">+{moreCount} more</p>}
                 </div>
                 {countdown.launched ? (
-                  <button onClick={handlePlay}
-                    className="w-full bg-[#FF0CB6] text-white py-2.5 rounded-sm font-semibold text-[9px] tracking-[0.15em] uppercase hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(255,12,182,0.2)]">
-                    {playing ? 'PAUSE' : 'LISTEN NOW'}
-                    <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>{playing ? 'pause' : 'play_arrow'}</span>
-                  </button>
+                  <>
+                    <button onClick={handlePlay}
+                      className="w-full bg-[#FF0CB6] text-white py-2.5 rounded-sm font-semibold text-[9px] tracking-[0.15em] uppercase hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(255,12,182,0.2)]">
+                      {playing ? 'PAUSE' : 'LISTEN NOW'}
+                      <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>{playing ? 'pause' : 'play_arrow'}</span>
+                    </button>
+                    {/* Streaming platform links */}
+                    <div className="flex items-center justify-center gap-3 mt-3 flex-wrap">
+                      {streamingLinks.filter(l => l.url).map(link => (
+                        <a key={link.platform} href={link.url} target="_blank" rel="noopener noreferrer"
+                          className="text-[7px] tracking-[0.1em] text-white/30 uppercase hover:text-[#FF0CB6] transition-colors"
+                          style={{ fontFamily: 'Poppins' }}>
+                          {link.platform}
+                        </a>
+                      ))}
+                    </div>
+                  </>
                 ) : (
                   <div className="w-full bg-white/[0.015] border border-white/[0.04] text-white/25 py-2.5 rounded-sm font-bold text-[8px] tracking-[0.12em] uppercase flex items-center justify-center gap-2 cursor-not-allowed">
                     <span className="material-symbols-outlined text-xs text-white/20" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
