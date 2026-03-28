@@ -1,8 +1,7 @@
-import type { ReactNode, ElementType } from 'react'
+import type { ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
-  as?: ElementType
   size?: 'xl' | 'lg' | 'md' | 'sm'
   className?: string
 }
@@ -14,17 +13,10 @@ const sizes = {
   sm: 'text-[clamp(1.25rem,4vw,1.75rem)]',
 }
 
-export default function NoirHeading({
-  children,
-  as: Tag = 'h2',
-  size = 'lg',
-  className = '',
-}: Props) {
+export default function NoirHeading({ children, size = 'lg', className = '' }: Props) {
   return (
-    <Tag
-      className={`font-headline font-black uppercase leading-[0.95] tracking-tight text-noir-text ${sizes[size]} ${className}`}
-    >
+    <h2 className={`font-headline font-black uppercase leading-[0.95] tracking-tight text-noir-text ${sizes[size]} ${className}`}>
       {children}
-    </Tag>
+    </h2>
   )
 }

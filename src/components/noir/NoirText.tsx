@@ -1,8 +1,7 @@
-import type { ReactNode, ElementType, CSSProperties } from 'react'
+import type { ReactNode, CSSProperties } from 'react'
 
 interface Props {
   children: ReactNode
-  as?: ElementType
   muted?: boolean
   size?: 'base' | 'sm' | 'xs'
   className?: string
@@ -15,20 +14,10 @@ const sizes = {
   xs: 'text-[11px]',
 }
 
-export default function NoirText({
-  children,
-  as: Tag = 'p',
-  muted = false,
-  size = 'base',
-  className = '',
-  style,
-}: Props) {
+export default function NoirText({ children, muted = false, size = 'base', className = '', style }: Props) {
   return (
-    <Tag
-      className={`font-body leading-relaxed ${sizes[size]} ${muted ? 'text-noir-text-muted' : 'text-noir-text'} ${className}`}
-      style={style}
-    >
+    <p className={`font-body leading-relaxed ${sizes[size]} ${muted ? 'text-noir-text-muted' : 'text-noir-text'} ${className}`} style={style}>
       {children}
-    </Tag>
+    </p>
   )
 }
