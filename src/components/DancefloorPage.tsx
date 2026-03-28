@@ -8,9 +8,7 @@ import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
 import { feature } from 'topojson-client'
 import type { Topology, GeometryCollection } from 'topojson-specification'
 
-/* ═══════════════════════════════════════════════════════════════
-   GEOSPATIAL ENGINE — async batched country detection
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══ GEO ENGINE ═══ */
 interface CrystalPoint { lat: number; lng: number; country: string }
 
 function pointInRing(px: number, py: number, ring: number[][]): boolean {
@@ -54,59 +52,55 @@ async function loadGeoData(points: CrystalPoint[], onComplete: () => void) {
   } catch { onComplete() }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   LANGUAGES
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══ LANGUAGES — sorted most spoken → least spoken ═══ */
 const LANGS = [
-  { id: 'af', name: 'Afrikaans', speakers: '~16M', countries: ['South Africa', 'Namibia'] },
-  { id: 'bn', name: 'Bengali', speakers: '~270M', countries: ['Bangladesh', 'India'] },
-  { id: 'pt-br', name: 'Brazilian Portuguese', speakers: '~260M', countries: ['Brazil', 'Portugal', 'Angola', 'Mozambique'] },
-  { id: 'zh', name: 'Mandarin', speakers: '~1.1B', countries: ['China', 'Taiwan', 'Singapore'] },
-  { id: 'nl', name: 'Dutch', speakers: '~25M', countries: ['Netherlands', 'Belgium', 'Suriname'] },
-  { id: 'ar-eg', name: 'Egyptian Arabic', speakers: '~400M', countries: ['Egypt', 'Saudi Arabia', 'Iraq', 'Jordan', 'Lebanon'] },
-  { id: 'en', name: 'English', speakers: '~1.5B', countries: ['Australia', 'United Kingdom', 'United States of America', 'Canada', 'New Zealand', 'Ireland', 'South Africa', 'Nigeria', 'India'] },
-  { id: 'fr', name: 'French', speakers: '~320M', countries: ['France', 'Belgium', 'Switzerland', 'Canada', 'Senegal', 'Dem. Rep. Congo', 'Cameroon'] },
-  { id: 'de', name: 'German', speakers: '~130M', countries: ['Germany', 'Austria', 'Switzerland'] },
-  { id: 'el', name: 'Greek', speakers: '~13M', countries: ['Greece', 'Cyprus'] },
-  { id: 'hi', name: 'Hindi', speakers: '~600M', countries: ['India', 'Fiji', 'Mauritius'] },
-  { id: 'id', name: 'Indonesian', speakers: '~200M', countries: ['Indonesia'] },
-  { id: 'it', name: 'Italian', speakers: '~85M', countries: ['Italy', 'Switzerland'] },
-  { id: 'ja', name: 'Japanese', speakers: '~125M', countries: ['Japan'] },
-  { id: 'ko', name: 'Korean', speakers: '~80M', countries: ['South Korea', 'North Korea'] },
-  { id: 'es-mx', name: 'Mexican Spanish', speakers: '~550M', countries: ['Mexico', 'United States of America'] },
-  { id: 'pl', name: 'Polish', speakers: '~45M', countries: ['Poland'] },
-  { id: 'ro', name: 'Romanian', speakers: '~26M', countries: ['Romania', 'Moldova'] },
-  { id: 'ru', name: 'Russian', speakers: '~250M', countries: ['Russia', 'Belarus', 'Kazakhstan', 'Kyrgyzstan'] },
-  { id: 'es', name: 'Spanish', speakers: '~550M', countries: ['Spain'] },
-  { id: 'sw', name: 'Swahili', speakers: '~100M', countries: ['Kenya', 'Tanzania', 'Uganda'] },
-  { id: 'sv', name: 'Swedish', speakers: '~10M', countries: ['Sweden', 'Finland'] },
-  { id: 'tl', name: 'Tagalog', speakers: '~80M', countries: ['Philippines'] },
-  { id: 'th', name: 'Thai', speakers: '~60M', countries: ['Thailand'] },
-  { id: 'tr', name: 'Turkish', speakers: '~80M', countries: ['Turkey'] },
-  { id: 'ur', name: 'Urdu', speakers: '~230M', countries: ['Pakistan', 'India'] },
-  { id: 'vi', name: 'Vietnamese', speakers: '~85M', countries: ['Vietnam'] },
+  { id: 'en', name: 'English', speakers: '~1.5 billion', countries: ['Australia', 'United Kingdom', 'United States of America', 'Canada', 'New Zealand', 'Ireland', 'South Africa', 'Nigeria', 'India', 'Philippines', 'Singapore'] },
+  { id: 'zh', name: 'Mandarin', speakers: '~1.1 billion', countries: ['China', 'Taiwan', 'Singapore'] },
+  { id: 'hi', name: 'Hindi', speakers: '~600 million', countries: ['India', 'Fiji', 'Mauritius', 'Suriname', 'Trinidad and Tobago'] },
+  { id: 'es-mx', name: 'Mexican Spanish', speakers: '~550 million', countries: ['Mexico', 'United States of America'] },
+  { id: 'es', name: 'Spanish', speakers: '~550 million', countries: ['Spain'] },
+  { id: 'ar-eg', name: 'Egyptian Arabic', speakers: '~400 million', countries: ['Egypt', 'Saudi Arabia', 'Iraq', 'Jordan', 'Lebanon', 'UAE', 'Kuwait'] },
+  { id: 'fr', name: 'French', speakers: '~320 million', countries: ['France', 'Belgium', 'Switzerland', 'Canada', 'Haiti', 'Senegal', 'Dem. Rep. Congo', 'Cameroon', 'Madagascar'] },
+  { id: 'bn', name: 'Bengali', speakers: '~270 million', countries: ['Bangladesh', 'India'] },
+  { id: 'pt-br', name: 'Brazilian Portuguese', speakers: '~260 million', countries: ['Brazil', 'Portugal', 'Angola', 'Mozambique', 'Cape Verde', 'East Timor'] },
+  { id: 'ru', name: 'Russian', speakers: '~250 million', countries: ['Russia', 'Belarus', 'Kazakhstan', 'Kyrgyzstan'] },
+  { id: 'ur', name: 'Urdu', speakers: '~230 million', countries: ['Pakistan', 'India'] },
+  { id: 'id', name: 'Indonesian', speakers: '~200 million', countries: ['Indonesia'] },
+  { id: 'de', name: 'German', speakers: '~130 million', countries: ['Germany', 'Austria', 'Switzerland', 'Liechtenstein', 'Luxembourg', 'Belgium'] },
+  { id: 'ja', name: 'Japanese', speakers: '~125 million', countries: ['Japan'] },
+  { id: 'sw', name: 'Swahili', speakers: '~100 million', countries: ['Kenya', 'Tanzania', 'Uganda', 'Dem. Rep. Congo', 'Rwanda', 'Burundi'] },
+  { id: 'it', name: 'Italian', speakers: '~85 million', countries: ['Italy', 'Switzerland', 'San Marino'] },
+  { id: 'vi', name: 'Vietnamese', speakers: '~85 million', countries: ['Vietnam'] },
+  { id: 'ko', name: 'Korean', speakers: '~80 million', countries: ['South Korea', 'North Korea'] },
+  { id: 'tl', name: 'Tagalog', speakers: '~80 million', countries: ['Philippines', 'United States of America'] },
+  { id: 'tr', name: 'Turkish', speakers: '~80 million', countries: ['Turkey'] },
+  { id: 'th', name: 'Thai', speakers: '~60 million', countries: ['Thailand'] },
+  { id: 'pl', name: 'Polish', speakers: '~45 million', countries: ['Poland'] },
+  { id: 'ro', name: 'Romanian', speakers: '~26 million', countries: ['Romania', 'Moldova'] },
+  { id: 'nl', name: 'Dutch', speakers: '~25 million', countries: ['Netherlands', 'Belgium', 'Suriname'] },
+  { id: 'af', name: 'Afrikaans', speakers: '~16 million', countries: ['South Africa', 'Namibia'] },
+  { id: 'el', name: 'Greek', speakers: '~13 million', countries: ['Greece', 'Cyprus'] },
+  { id: 'sv', name: 'Swedish', speakers: '~10 million', countries: ['Sweden', 'Finland'] },
 ]
 
-/* ═══════════════════════════════════════════════════════════════
-   COMPONENT
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══ COMPONENT ═══ */
 export default function DancefloorPage() {
   const canvasRef = useRef<HTMLDivElement>(null)
   const flashRef = useRef<HTMLDivElement>(null)
   const [slide, setSlide] = useState(0)
   const [showUI, setShowUI] = useState(false)
   const [langIdx, setLangIdx] = useState(0)
+  const slideRef = useRef(0)
   const locked = useRef(false)
+  const autoTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  // Three.js refs exposed to callbacks
   const threeRef = useRef<{
     choreo: number; morphStart: number; textDropStart: number
     bloom: UnrealBloomPass; mesh: THREE.InstancedMesh
     curCols: THREE.Color[]; globeCols: THREE.Color[]; pts: CrystalPoint[]
     geoReady: boolean; textMesh3D: THREE.Mesh | null
     langTrans: { targets: THREE.Color[]; startCols: THREE.Color[]; start: number; duration: number } | null
-    COUNT: number; bScales: Float32Array; tilts: Float32Array
-    globeGroup: THREE.Group
+    COUNT: number; bScales: Float32Array; tilts: Float32Array; globeGroup: THREE.Group
   } | null>(null)
 
   const TOTAL = 4
@@ -115,14 +109,13 @@ export default function DancefloorPage() {
   const PINK = new THREE.Color('#FF0CB6')
   const LAND = new THREE.Color('#FFFFFF')
   const OCEAN = new THREE.Color('#050608')
+  const AUTO_DELAYS = [6000, 4000, 3000, 4000] // auto-advance per slide
 
-  // Highlight language
   const highlightLang = useCallback((idx: number) => {
     const t = threeRef.current
     if (!t || !t.geoReady) return
     const lang = LANGS[idx]
-    const targets: THREE.Color[] = []
-    const startCols: THREE.Color[] = []
+    const targets: THREE.Color[] = [], startCols: THREE.Color[] = []
     for (let i = 0; i < t.COUNT; i++) {
       startCols[i] = t.curCols[i].clone()
       const c = t.pts[i].country
@@ -139,18 +132,19 @@ export default function DancefloorPage() {
     })
   }, [highlightLang])
 
-  // Advance slide
+  // Advance — uses ref so no stale closure
   const advance = useCallback(() => {
-    if (locked.current || slide >= TOTAL) return
+    if (locked.current || slideRef.current >= TOTAL) return
     locked.current = true
-    const next = slide + 1
+    clearTimeout(autoTimer.current)
+    const next = slideRef.current + 1
+    slideRef.current = next
     setSlide(next)
     if (next >= TOTAL) {
       const t = threeRef.current
       if (t) {
         setTimeout(() => { t.choreo = 1 }, 200)
         setTimeout(() => {
-          // THE DROP
           t.choreo = 2
           if (flashRef.current) flashRef.current.classList.add('fire')
           t.bloom.strength = 3.0
@@ -162,12 +156,19 @@ export default function DancefloorPage() {
         }, 2500)
       }
     }
-    setTimeout(() => { locked.current = false }, 600)
-  }, [slide])
+    setTimeout(() => { locked.current = false }, 500)
+  }, [])
+
+  // Auto-advance timer
+  useEffect(() => {
+    if (slide >= TOTAL) return
+    autoTimer.current = setTimeout(advance, AUTO_DELAYS[slide])
+    return () => clearTimeout(autoTimer.current)
+  }, [slide, advance])
 
   // Input handlers
   useEffect(() => {
-    if (slide >= TOTAL) return
+    if (slideRef.current >= TOTAL) return
     const onWheel = (e: WheelEvent) => { e.preventDefault(); if (Math.abs(e.deltaY) > 8) advance() }
     window.addEventListener('wheel', onWheel, { passive: false })
     return () => window.removeEventListener('wheel', onWheel)
@@ -176,15 +177,15 @@ export default function DancefloorPage() {
   useEffect(() => {
     let ty: number | null = null
     const onStart = (e: TouchEvent) => { ty = e.touches[0].clientY }
-    const onEnd = (e: TouchEvent) => { if (ty !== null && slide < TOTAL && e.changedTouches[0].clientY - ty < -25) advance(); ty = null }
+    const onEnd = (e: TouchEvent) => { if (ty !== null && slideRef.current < TOTAL && e.changedTouches[0].clientY - ty < -25) advance(); ty = null }
     window.addEventListener('touchstart', onStart, { passive: true })
     window.addEventListener('touchend', onEnd, { passive: true })
     return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd) }
-  }, [slide, advance])
+  }, [advance])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (slide < TOTAL && (e.key === 'ArrowDown' || e.key === ' ')) { e.preventDefault(); advance() }
+      if (slideRef.current < TOTAL && (e.key === 'ArrowDown' || e.key === ' ')) { e.preventDefault(); advance() }
       if (threeRef.current?.choreo === 4) {
         if (e.key === 'ArrowLeft') cycleLang(-1)
         if (e.key === 'ArrowRight') cycleLang(1)
@@ -192,7 +193,7 @@ export default function DancefloorPage() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [slide, advance, cycleLang])
+  }, [advance, cycleLang])
 
   // Countdown
   const [cd, setCd] = useState({ d: '00', h: '00', m: '00', s: '00' })
@@ -202,57 +203,41 @@ export default function DancefloorPage() {
       const p = (n: number) => String(n).padStart(2, '0')
       setCd({ d: p(Math.floor(diff / 864e5)), h: p(Math.floor(diff % 864e5 / 36e5)), m: p(Math.floor(diff % 36e5 / 6e4)), s: p(Math.floor(diff % 6e4 / 1e3)) })
     }
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
+    tick(); const id = setInterval(tick, 1000); return () => clearInterval(id)
   }, [])
 
-  /* ═══════════════════════════════════════════════════════════════
-     THREE.JS SCENE — mounted once via useEffect
-     ═══════════════════════════════════════════════════════════════ */
+  /* ═══ THREE.JS SCENE ═══ */
   useEffect(() => {
     const container = canvasRef.current
     if (!container) return
-
     const W = container.clientWidth, H = container.clientHeight
-    const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x000000)
-    const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100)
-    camera.position.set(0, 0, 6)
+    const scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000)
+    const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100); camera.position.set(0, 0, 6)
     const renderer = new THREE.WebGLRenderer({ antialias: true })
-    renderer.setSize(W, H)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1.2
+    renderer.setSize(W, H); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.2
     container.appendChild(renderer.domElement)
 
-    // Env map
-    const pmrem = new THREE.PMREMGenerator(renderer)
-    pmrem.compileEquirectangularShader()
-    const envScene = new THREE.Scene()
-    envScene.background = new THREE.Color(0x020204)
+    const pmrem = new THREE.PMREMGenerator(renderer); pmrem.compileEquirectangularShader()
+    const envScene = new THREE.Scene(); envScene.background = new THREE.Color(0x020204)
     const sg = new THREE.SphereGeometry(0.5, 16, 16)
-    ;([[5, 5, 5, 0xffffff, 8], [-5, 3, -5, 0xFF0CB6, 6], [3, -4, 6, 0xffffff, 4], [-4, -2, -3, 0xFF0CB6, 3]] as [number, number, number, number, number][]).forEach(([x, y, z, c, intensity]) => {
-      const mat = new THREE.MeshBasicMaterial({ color: c })
-      mat.color.multiplyScalar(intensity)
-      const m = new THREE.Mesh(sg, mat)
-      m.position.set(x, y, z)
-      envScene.add(m)
+    ;([[5,5,5,0xffffff,8],[-5,3,-5,0xFF0CB6,6],[3,-4,6,0xffffff,4],[-4,-2,-3,0xFF0CB6,3]] as [number,number,number,number,number][]).forEach(([x,y,z,c,intensity]) => {
+      const mat = new THREE.MeshBasicMaterial({ color: c }); mat.color.multiplyScalar(intensity)
+      const m = new THREE.Mesh(sg, mat); m.position.set(x,y,z); envScene.add(m)
     })
     const envMap = pmrem.fromScene(envScene, 0.04).texture
     envScene.traverse(c => { if ((c as THREE.Mesh).geometry) (c as THREE.Mesh).geometry.dispose(); if ((c as THREE.Mesh).material) ((c as THREE.Mesh).material as THREE.Material).dispose() })
     scene.environment = envMap
 
-    // Crystal grid
     const R = 2
     const ll2v = (lat: number, lng: number) => {
-      const phi = (90 - lat) * Math.PI / 180, theta = (lng + 180) * Math.PI / 180
-      return new THREE.Vector3(-R * Math.sin(phi) * Math.cos(theta), R * Math.cos(phi), R * Math.sin(phi) * Math.sin(theta))
+      const phi = (90-lat)*Math.PI/180, theta = (lng+180)*Math.PI/180
+      return new THREE.Vector3(-R*Math.sin(phi)*Math.cos(theta), R*Math.cos(phi), R*Math.sin(phi)*Math.sin(theta))
     }
 
     const pts: CrystalPoint[] = []
     for (let lat = -85; lat <= 85; lat += 2) {
-      const s = 2 / Math.max(Math.cos(lat * Math.PI / 180), 0.2)
+      const s = 2 / Math.max(Math.cos(lat*Math.PI/180), 0.2)
       for (let lng = -180; lng < 180; lng += s) pts.push({ lat, lng, country: '' })
     }
     const COUNT = pts.length
@@ -266,36 +251,33 @@ export default function DancefloorPage() {
     const mesh = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.014, 0), crystalMat, COUNT)
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
 
-    const dPal = [new THREE.Color('#080810'), new THREE.Color('#1a1a22'), new THREE.Color('#2a2a35'), new THREE.Color('#FFFFFF'), new THREE.Color('#FF0CB6')]
+    const dPal = [new THREE.Color('#080810'),new THREE.Color('#1a1a22'),new THREE.Color('#2a2a35'),new THREE.Color('#FFFFFF'),new THREE.Color('#FF0CB6')]
     const dW = [0.35, 0.6, 0.75, 0.9, 1.0]
     const dummy = new THREE.Object3D()
     const bScales = new Float32Array(COUNT), tilts = new Float32Array(COUNT)
-    const discoCols: THREE.Color[] = [], globeCols: THREE.Color[] = [], curCols: THREE.Color[] = []
+    const globeCols: THREE.Color[] = [], curCols: THREE.Color[] = []
 
     for (let i = 0; i < COUNT; i++) {
       const pos = ll2v(pts[i].lat, pts[i].lng)
-      dummy.position.copy(pos); dummy.lookAt(0, 0, 0); dummy.rotateZ(Math.random() * Math.PI * 2)
-      const sc = 0.9 + Math.random() * 0.2; bScales[i] = sc; tilts[i] = Math.random() * Math.PI * 2
+      dummy.position.copy(pos); dummy.lookAt(0,0,0); dummy.rotateZ(Math.random()*Math.PI*2)
+      const sc = 0.9 + Math.random()*0.2; bScales[i] = sc; tilts[i] = Math.random()*Math.PI*2
       dummy.scale.setScalar(sc); dummy.updateMatrix(); mesh.setMatrixAt(i, dummy.matrix)
       let r = Math.random(), ci = 0
       for (let j = 0; j < dW.length; j++) { if (r < dW[j]) { ci = j; break } }
-      discoCols[i] = dPal[ci].clone(); globeCols[i] = new THREE.Color('#050608')
-      curCols[i] = discoCols[i].clone(); mesh.setColorAt(i, curCols[i])
+      globeCols[i] = new THREE.Color('#050608')
+      curCols[i] = dPal[ci].clone(); mesh.setColorAt(i, curCols[i])
     }
     mesh.instanceColor!.needsUpdate = true
 
-    const inner = new THREE.Mesh(new THREE.SphereGeometry(R - 0.01, 48, 48), new THREE.MeshBasicMaterial({ color: 0x050608, transparent: true, opacity: 0.4 }))
-    const globeGroup = new THREE.Group()
-    globeGroup.add(mesh); globeGroup.add(inner); scene.add(globeGroup)
+    const inner = new THREE.Mesh(new THREE.SphereGeometry(R-0.01,48,48), new THREE.MeshBasicMaterial({color:0x050608,transparent:true,opacity:0.4}))
+    const globeGroup = new THREE.Group(); globeGroup.add(mesh); globeGroup.add(inner); scene.add(globeGroup)
 
     // 3D Text
     let textMesh3D: THREE.Mesh | null = null
     const textMat = new THREE.MeshPhysicalMaterial({
       color: 0xFF0CB6, emissive: 0xFF0CB6, emissiveIntensity: 0.4,
-      metalness: 0.9, roughness: 0.1, envMap, envMapIntensity: 3.0,
-      clearcoat: 1, clearcoatRoughness: 0.1,
+      metalness: 0.9, roughness: 0.1, envMap, envMapIntensity: 3.0, clearcoat: 1, clearcoatRoughness: 0.1,
     })
-
     const fontLoader = new FontLoader()
     fontLoader.load('https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_bold.typeface.json', (font) => {
       const textGeo = new TextGeometry('DANCEFLOOR   \u2022   DANCEFLOOR   \u2022   DANCEFLOOR   \u2022', {
@@ -303,40 +285,31 @@ export default function DancefloorPage() {
         bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.01, bevelSegments: 4,
       })
       textGeo.computeBoundingBox()
-      let width = textGeo.boundingBox!.max.x - textGeo.boundingBox!.min.x
-      width += 1.2
+      let width = textGeo.boundingBox!.max.x - textGeo.boundingBox!.min.x; width += 1.2
       const wrapRadius = R + 0.4
       const posAttr = textGeo.attributes.position
       for (let i = 0; i < posAttr.count; i++) {
         const x = posAttr.getX(i), y = posAttr.getY(i), z = posAttr.getZ(i)
         const theta = (x / width) * Math.PI * 2
-        const currentRadius = wrapRadius + z
-        posAttr.setX(i, currentRadius * Math.sin(theta))
-        posAttr.setY(i, y)
-        posAttr.setZ(i, currentRadius * Math.cos(theta))
+        const cr = wrapRadius + z
+        posAttr.setX(i, cr * Math.sin(theta)); posAttr.setY(i, y); posAttr.setZ(i, cr * Math.cos(theta))
       }
-      posAttr.needsUpdate = true
-      textGeo.computeVertexNormals()
-      textMesh3D = new THREE.Mesh(textGeo, textMat)
-      textMesh3D.visible = false
-      textMesh3D.scale.setScalar(2.0)
+      posAttr.needsUpdate = true; textGeo.computeVertexNormals()
+      textMesh3D = new THREE.Mesh(textGeo, textMat); textMesh3D.visible = false; textMesh3D.scale.setScalar(2.0)
       globeGroup.add(textMesh3D)
       if (threeRef.current) threeRef.current.textMesh3D = textMesh3D
     })
 
-    // Lights
     scene.add(new THREE.AmbientLight(0x111111, 0.3))
-    const kL = new THREE.PointLight(0xffffff, 40, 20); kL.position.set(4, 3, 4); scene.add(kL)
-    const pL = new THREE.PointLight(0xFF0CB6, 30, 20); pL.position.set(-3, -2, 4); scene.add(pL)
-    const fL = new THREE.PointLight(0xffffff, 10, 15); fL.position.set(0, 0, -5); scene.add(fL)
+    const kL = new THREE.PointLight(0xffffff, 40, 20); kL.position.set(4,3,4); scene.add(kL)
+    const pL = new THREE.PointLight(0xFF0CB6, 30, 20); pL.position.set(-3,-2,4); scene.add(pL)
+    scene.add(new THREE.PointLight(0xffffff, 10, 15).translateZ(-5))
 
-    // Post-processing
     const composer = new EffectComposer(renderer)
     composer.addPass(new RenderPass(scene, camera))
     const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.6, 0.4, 0.85)
     composer.addPass(bloom)
 
-    // Geo data
     let geoReady = false
     loadGeoData(pts, () => {
       for (let i = 0; i < COUNT; i++) globeCols[i] = pts[i].country ? LAND.clone() : OCEAN.clone()
@@ -344,14 +317,11 @@ export default function DancefloorPage() {
       if (threeRef.current) threeRef.current.geoReady = true
     })
 
-    // Expose state to React callbacks
     threeRef.current = {
-      choreo: 0, morphStart: 0, textDropStart: 0,
-      bloom, mesh, curCols, globeCols, pts, geoReady, textMesh3D: null,
-      langTrans: null, COUNT, bScales, tilts, globeGroup,
+      choreo: 0, morphStart: 0, textDropStart: 0, bloom, mesh, curCols, globeCols, pts,
+      geoReady, textMesh3D: null, langTrans: null, COUNT, bScales, tilts, globeGroup,
     }
 
-    // Animation
     const tM = new THREE.Matrix4(), tP = new THREE.Vector3(), tQ = new THREE.Quaternion(), tS = new THREE.Vector3()
     let rafId = 0
 
@@ -361,46 +331,38 @@ export default function DancefloorPage() {
       const now = Date.now(), time = now * 0.001
 
       globeGroup.rotation.y += (t.choreo === 1 ? 0.04 : 0.002)
-      kL.position.set(Math.sin(time * 0.3) * 5, Math.sin(time * 0.2) * 2 + 2, Math.cos(time * 0.4) * 5)
-      pL.position.set(Math.cos(time * 0.25) * 4, Math.cos(time * 0.15) * 2 - 1, Math.sin(time * 0.35) * 4)
+      kL.position.set(Math.sin(time*0.3)*5, Math.sin(time*0.2)*2+2, Math.cos(time*0.4)*5)
+      pL.position.set(Math.cos(time*0.25)*4, Math.cos(time*0.15)*2-1, Math.sin(time*0.35)*4)
 
       // 3D text slam
       if (t.textMesh3D && t.textMesh3D.visible && t.choreo >= 2) {
         const elapsed = now - t.textDropStart
         if (elapsed < TEXT_SLAM_MS) {
           const p = Math.min(elapsed / TEXT_SLAM_MS, 1)
-          const ease = 1 - Math.pow(1 - p, 3)
-          t.textMesh3D.scale.setScalar(2.0 * (1 - ease) + 1.0 * ease)
-        } else {
-          t.textMesh3D.position.y = 0
-          t.textMesh3D.scale.setScalar(1.0)
-        }
+          t.textMesh3D.scale.setScalar(2.0 * (1 - (1 - Math.pow(1 - p, 3))) + 1.0 * (1 - Math.pow(1 - p, 3)))
+        } else { t.textMesh3D.position.y = 0; t.textMesh3D.scale.setScalar(1.0) }
       }
 
       // Morph
       if (t.choreo === 3) {
         const elapsed = now - t.morphStart, p = Math.min(elapsed / MORPH_MS, 1), ease = 1 - Math.pow(1 - p, 3)
-        bloom.strength = 3.0 * (1 - ease) + 0.6 * ease
-        bloom.threshold = 0.85 * (1 - ease) + 0.2 * ease
+        bloom.strength = 3.0*(1-ease)+0.6*ease; bloom.threshold = 0.85*(1-ease)+0.2*ease
         const white = new THREE.Color('#FFFFFF')
         for (let i = 0; i < COUNT; i++) { t.curCols[i].copy(white).lerp(t.globeCols[i], ease); mesh.setColorAt(i, t.curCols[i]) }
         mesh.instanceColor!.needsUpdate = true
         if (p >= 1) {
-          t.choreo = 4; bloom.strength = 0.6; bloom.threshold = 0.2
-          setShowUI(true)
-          // Highlight first language
+          t.choreo = 4; bloom.strength = 0.6; bloom.threshold = 0.2; setShowUI(true)
           const lang = LANGS[0]
           const targets: THREE.Color[] = [], startCols: THREE.Color[] = []
           for (let i = 0; i < COUNT; i++) {
             startCols[i] = t.curCols[i].clone()
-            const c = t.pts[i].country
-            targets[i] = (c && lang.countries.includes(c)) ? PINK.clone() : t.globeCols[i].clone()
+            targets[i] = (t.pts[i].country && lang.countries.includes(t.pts[i].country)) ? PINK.clone() : t.globeCols[i].clone()
           }
           t.langTrans = { targets, startCols, start: Date.now(), duration: 600 }
         }
       }
 
-      // Language transition
+      // Language transition — ONLY way colors change in settled state
       if (t.langTrans && t.choreo === 4) {
         const elapsed = now - t.langTrans.start, p = Math.min(elapsed / t.langTrans.duration, 1), ease = 1 - Math.pow(1 - p, 2)
         for (let i = 0; i < COUNT; i++) { t.curCols[i].copy(t.langTrans.startCols[i]).lerp(t.langTrans.targets[i], ease); mesh.setColorAt(i, t.curCols[i]) }
@@ -408,8 +370,8 @@ export default function DancefloorPage() {
         if (p >= 1) t.langTrans = null
       }
 
-      // Twinkle
-      const twSpeed = t.choreo === 1 ? 3.0 : 1.5, twRange = t.choreo === 1 ? 0.15 : 0.05, twCount = t.choreo === 1 ? 200 : 80
+      // Twinkle — ONLY scale shimmer, NO color changes
+      const twSpeed = t.choreo === 1 ? 3.0 : 1.5, twRange = t.choreo === 1 ? 0.15 : 0.05, twCount = t.choreo === 1 ? 200 : 60
       for (let n = 0; n < twCount; n++) {
         const i = Math.floor(Math.random() * COUNT)
         mesh.getMatrixAt(i, tM); tM.decompose(tP, tQ, tS)
@@ -419,14 +381,7 @@ export default function DancefloorPage() {
       }
       mesh.instanceMatrix.needsUpdate = true
 
-      // Settled sparkle
-      if (t.choreo === 4 && !t.langTrans) {
-        for (let i = 0; i < COUNT; i++) {
-          if (Math.random() < 0.0008) mesh.setColorAt(i, t.curCols[i].clone().multiplyScalar(1.5))
-          else mesh.setColorAt(i, t.curCols[i])
-        }
-        mesh.instanceColor!.needsUpdate = true
-      }
+      // NO settled sparkle color loop — colors are strictly controlled by langTrans only
 
       composer.render()
     }
@@ -434,42 +389,45 @@ export default function DancefloorPage() {
 
     const onResize = () => {
       const w = container.clientWidth, h = container.clientHeight
-      camera.aspect = w / h; camera.updateProjectionMatrix()
+      camera.aspect = w/h; camera.updateProjectionMatrix()
       renderer.setSize(w, h); composer.setSize(w, h)
     }
     window.addEventListener('resize', onResize)
-
-    return () => {
-      cancelAnimationFrame(rafId)
-      window.removeEventListener('resize', onResize)
-      renderer.dispose()
-      if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement)
-    }
+    return () => { cancelAnimationFrame(rafId); window.removeEventListener('resize', onResize); renderer.dispose(); if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement) }
   }, [])
 
   const lang = LANGS[langIdx]
 
+  // Cinematic fade-in style
+  const fadeIn = (delay: number): React.CSSProperties => ({
+    opacity: 0, animation: `fadeInUp 1s ease ${delay}s forwards`,
+  })
+
   const panelCls = (idx: number) =>
-    `fixed inset-0 z-10 flex flex-col items-center justify-center pointer-events-none transition-all duration-500 ${
+    `fixed inset-0 z-10 flex flex-col items-center justify-center pointer-events-none transition-all duration-700 ${
       slide === idx ? 'opacity-100 pointer-events-auto translate-y-0' :
-      slide > idx ? 'opacity-0 -translate-y-2' : 'opacity-0 translate-y-1'
+      slide > idx ? 'opacity-0 -translate-y-3' : 'opacity-0 translate-y-2'
     }`
 
   return (
     <div className="w-full h-screen overflow-hidden bg-black" style={{ fontFamily: "'Sora', sans-serif" }}>
-      {/* Three.js canvas */}
-      <div ref={canvasRef} className="fixed inset-0 z-0" />
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
 
-      {/* Flash overlay */}
+      <div ref={canvasRef} className="fixed inset-0 z-0" />
       <div ref={flashRef} id="flash" className="fixed inset-0 z-[5] bg-white opacity-0 pointer-events-none" />
 
       {/* ═══ BEAT 1 ═══ */}
       <div className={panelCls(0)} onClick={advance}>
         <div className="w-[90%] max-w-[880px] px-6 text-center">
-          <h1 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.08, letterSpacing: '-0.02em', color: '#e2e2e2', fontSize: 'clamp(1.6rem, 6.5vw, 3.2rem)' }}>
+          <h1 style={{ ...fadeIn(0.3), fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.08, letterSpacing: '-0.02em', color: '#e2e2e2', fontSize: 'clamp(1.6rem, 6.5vw, 3.2rem)' }}>
             Music has always been the thing that brings strangers together<span style={{ color: '#FF0CB6' }}>.</span>
           </h1>
-          <p style={{ fontFamily: "'Sora', sans-serif", fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#919090', fontSize: 'clamp(0.7rem, 2vw, 0.95rem)', lineHeight: 1.8, marginTop: '2rem' }}>
+          <p style={{ ...fadeIn(1.5), fontFamily: "'Sora', sans-serif", fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#919090', fontSize: 'clamp(0.7rem, 2vw, 0.95rem)', lineHeight: 1.8, marginTop: '2rem' }}>
             Across borders<span style={{ color: '#FF0CB6' }}>.</span> Across cultures<span style={{ color: '#FF0CB6' }}>.</span><br />
             Across languages you&apos;ve never spoken<span style={{ color: '#FF0CB6' }}>.</span>
           </p>
@@ -479,7 +437,7 @@ export default function DancefloorPage() {
       {/* ═══ BEAT 2 ═══ */}
       <div className={panelCls(1)} onClick={advance}>
         <div className="w-[90%] max-w-[750px] px-6 text-center">
-          <p style={{ fontFamily: "'Sora', sans-serif", fontWeight: 400, color: '#919090', fontSize: 'clamp(1.05rem, 3.2vw, 1.4rem)', lineHeight: 1.85 }}>
+          <p style={{ ...fadeIn(0.3), fontFamily: "'Sora', sans-serif", fontWeight: 400, color: '#919090', fontSize: 'clamp(1.05rem, 3.2vw, 1.4rem)', lineHeight: 1.85 }}>
             The beat crosses every border. The words never could.
           </p>
         </div>
@@ -488,8 +446,8 @@ export default function DancefloorPage() {
       {/* ═══ BEAT 3 ═══ */}
       <div className={panelCls(2)} onClick={advance}>
         <div className="w-[90%] max-w-[900px] text-center">
-          <p style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#FF0CB6', fontSize: 'clamp(2.5rem, 12vw, 5.5rem)', lineHeight: 0.95 }}>
-            Not anymore<span style={{ color: '#FF0CB6' }}>.</span>
+          <p style={{ ...fadeIn(0.2), fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#FF0CB6', fontSize: 'clamp(2.5rem, 12vw, 5.5rem)', lineHeight: 0.95 }}>
+            Not anymore<span>.</span>
           </p>
         </div>
       </div>
@@ -497,16 +455,20 @@ export default function DancefloorPage() {
       {/* ═══ BEAT 4 ═══ */}
       <div className={panelCls(3)} onClick={advance}>
         <div className="w-[90%] max-w-[880px] px-6 text-center">
-          <p style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#e2e2e2', fontSize: 'clamp(1.4rem, 5vw, 2.8rem)', lineHeight: 1.1 }}>
-            One track<span style={{ color: '#FF0CB6' }}>.</span> 27 languages<span style={{ color: '#FF0CB6' }}>.</span> 5 billion voices<span style={{ color: '#FF0CB6' }}>.</span>
+          <p style={{ ...fadeIn(0.2), fontFamily: "'Sora', sans-serif", fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#919090', fontSize: 'clamp(0.75rem, 2vw, 1rem)', marginBottom: '1.5rem' }}>
+            In a world first for a commercial dance track.
           </p>
-          <p style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#FF0CB6', fontSize: 'clamp(1rem, 3.5vw, 1.8rem)', marginTop: '1.5rem' }}>
+          <p style={{ ...fadeIn(0.8), fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#e2e2e2', fontSize: 'clamp(1.4rem, 5vw, 2.8rem)', lineHeight: 1.1 }}>
+            One track<span style={{ color: '#FF0CB6' }}>.</span> 27 languages<span style={{ color: '#FF0CB6' }}>.</span>{' '}
+            <span style={{ whiteSpace: 'nowrap' }}>5 billion</span> voices<span style={{ color: '#FF0CB6' }}>.</span>
+          </p>
+          <p style={{ ...fadeIn(1.8), fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#FF0CB6', fontSize: 'clamp(1rem, 3.5vw, 1.8rem)', marginTop: '1.5rem' }}>
             17 April 2026
           </p>
         </div>
       </div>
 
-      {/* NEXT button */}
+      {/* NEXT */}
       {slide < TOTAL && (
         <button onClick={advance} className="fixed bottom-8 right-6 z-50 text-[10px] font-medium tracking-[0.25em] uppercase" style={{ fontFamily: "'Sora', sans-serif", color: '#FF0CB6', background: 'none', border: 'none', cursor: 'pointer' }}>
           NEXT
@@ -517,9 +479,9 @@ export default function DancefloorPage() {
       {slide < TOTAL && (
         <div className="fixed left-5 bottom-8 z-50 flex flex-col items-center gap-1.5">
           <div className="w-[2px] h-14 rounded-full overflow-hidden" style={{ background: 'rgba(48,48,48,0.3)' }}>
-            <div className="w-full rounded-full transition-all duration-1000 ease-out" style={{ height: `${((slide + 1) / TOTAL) * 100}%`, background: 'rgba(255,12,182,0.5)' }} />
+            <div className="w-full rounded-full transition-all duration-1000 ease-out" style={{ height: `${((slide+1)/TOTAL)*100}%`, background: 'rgba(255,12,182,0.5)' }} />
           </div>
-          <span className="text-[7px] tracking-widest" style={{ fontFamily: "'Sora', sans-serif", color: 'rgba(145,144,144,0.25)' }}>{slide + 1}/{TOTAL}</span>
+          <span className="text-[7px] tracking-widest" style={{ fontFamily: "'Sora', sans-serif", color: 'rgba(145,144,144,0.25)' }}>{slide+1}/{TOTAL}</span>
         </div>
       )}
 
@@ -536,16 +498,43 @@ export default function DancefloorPage() {
         </div>
       )}
 
-      {/* Language card */}
+      {/* Language card — substantial, all countries, big speaker count */}
       {showUI && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[95] w-[90%] max-w-[340px] rounded-[4px] p-5" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#FF0CB6' }}>Active Linguistic Region</div>
-          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 24, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#e2e2e2', marginTop: 4 }}>{lang.name.toUpperCase()}</div>
-          <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 12, color: '#919090', marginTop: 8 }}>{lang.speakers} speakers</div>
-          <div className="flex items-center gap-3 mt-3 justify-center">
-            <button onClick={() => cycleLang(-1)} className="w-9 h-9 rounded-[4px] flex items-center justify-center text-base cursor-pointer" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(226,226,226,0.5)' }}>&#8249;</button>
-            <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: 'rgba(226,226,226,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', minWidth: 100, textAlign: 'center' }}>{langIdx + 1} / {LANGS.length}</span>
-            <button onClick={() => cycleLang(1)} className="w-9 h-9 rounded-[4px] flex items-center justify-center text-base cursor-pointer" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(226,226,226,0.5)' }}>&#8250;</button>
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[95] w-[92%] max-w-[400px] rounded-[4px]" style={{ background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          {/* Pink top edge */}
+          <div className="absolute top-0 left-[10%] right-[10%] h-[1px]" style={{ background: 'linear-gradient(to right, transparent, rgba(255,12,182,0.25), transparent)' }} />
+
+          <div className="px-5 pt-5 pb-4">
+            {/* Header + arrows */}
+            <div className="flex items-center justify-between mb-2">
+              <button onClick={() => cycleLang(-1)} className="w-10 h-10 rounded-[4px] flex items-center justify-center text-lg cursor-pointer" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(226,226,226,0.5)' }}>&#8249;</button>
+              <div className="text-center flex-1 px-3">
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#FF0CB6' }}>Active Linguistic Region</div>
+                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 'clamp(1.4rem, 5vw, 1.8rem)', textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#e2e2e2', marginTop: 2 }}>{lang.name.toUpperCase()}</div>
+              </div>
+              <button onClick={() => cycleLang(1)} className="w-10 h-10 rounded-[4px] flex items-center justify-center text-lg cursor-pointer" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(226,226,226,0.5)' }}>&#8250;</button>
+            </div>
+
+            {/* BIG speaker count */}
+            <div className="text-center mt-1 mb-3">
+              <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 'clamp(1.8rem, 6vw, 2.4rem)', color: '#FF0CB6', letterSpacing: '-0.02em' }}>{lang.speakers}</span>
+              <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: '#919090', marginLeft: 8, textTransform: 'uppercase', letterSpacing: '0.1em' }}>speakers</span>
+            </div>
+
+            {/* Countries grid */}
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#919090', marginBottom: 8 }}>Countries &amp; Regions</div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                {lang.countries.map(c => (
+                  <div key={c} style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 500, color: '#e2e2e2', textTransform: 'uppercase' }}>{c}</div>
+                ))}
+              </div>
+            </div>
+
+            {/* Position counter */}
+            <div className="text-center mt-3" style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, color: 'rgba(226,226,226,0.3)', letterSpacing: '0.1em' }}>
+              {langIdx + 1} / {LANGS.length}
+            </div>
           </div>
         </div>
       )}
