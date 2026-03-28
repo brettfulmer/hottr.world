@@ -52,36 +52,8 @@ async function loadGeoData(points: CrystalPoint[], onComplete: () => void) {
   } catch { onComplete() }
 }
 
-/* ═══ LANGUAGES — sorted most spoken → least spoken ═══ */
-const LANGS = [
-  { id: 'en', name: 'English', speakers: '~1.5 billion', countries: ['Australia', 'United Kingdom', 'United States of America', 'Canada', 'New Zealand', 'Ireland', 'South Africa', 'Nigeria', 'India', 'Philippines', 'Singapore'] },
-  { id: 'zh', name: 'Mandarin', speakers: '~1.1 billion', countries: ['China', 'Taiwan', 'Singapore'] },
-  { id: 'hi', name: 'Hindi', speakers: '~600 million', countries: ['India', 'Fiji', 'Mauritius', 'Suriname', 'Trinidad and Tobago'] },
-  { id: 'es-mx', name: 'Mexican Spanish', speakers: '~550 million', countries: ['Mexico', 'United States of America'] },
-  { id: 'es', name: 'Spanish', speakers: '~550 million', countries: ['Spain'] },
-  { id: 'ar-eg', name: 'Egyptian Arabic', speakers: '~400 million', countries: ['Egypt', 'Saudi Arabia', 'Iraq', 'Jordan', 'Lebanon', 'UAE', 'Kuwait'] },
-  { id: 'fr', name: 'French', speakers: '~320 million', countries: ['France', 'Belgium', 'Switzerland', 'Canada', 'Haiti', 'Senegal', 'Dem. Rep. Congo', 'Cameroon', 'Madagascar'] },
-  { id: 'bn', name: 'Bengali', speakers: '~270 million', countries: ['Bangladesh', 'India'] },
-  { id: 'pt-br', name: 'Brazilian Portuguese', speakers: '~260 million', countries: ['Brazil', 'Portugal', 'Angola', 'Mozambique', 'Cape Verde', 'East Timor'] },
-  { id: 'ru', name: 'Russian', speakers: '~250 million', countries: ['Russia', 'Belarus', 'Kazakhstan', 'Kyrgyzstan'] },
-  { id: 'ur', name: 'Urdu', speakers: '~230 million', countries: ['Pakistan', 'India'] },
-  { id: 'id', name: 'Indonesian', speakers: '~200 million', countries: ['Indonesia'] },
-  { id: 'de', name: 'German', speakers: '~130 million', countries: ['Germany', 'Austria', 'Switzerland', 'Liechtenstein', 'Luxembourg', 'Belgium'] },
-  { id: 'ja', name: 'Japanese', speakers: '~125 million', countries: ['Japan'] },
-  { id: 'sw', name: 'Swahili', speakers: '~100 million', countries: ['Kenya', 'Tanzania', 'Uganda', 'Dem. Rep. Congo', 'Rwanda', 'Burundi'] },
-  { id: 'it', name: 'Italian', speakers: '~85 million', countries: ['Italy', 'Switzerland', 'San Marino'] },
-  { id: 'vi', name: 'Vietnamese', speakers: '~85 million', countries: ['Vietnam'] },
-  { id: 'ko', name: 'Korean', speakers: '~80 million', countries: ['South Korea', 'North Korea'] },
-  { id: 'tl', name: 'Tagalog', speakers: '~80 million', countries: ['Philippines', 'United States of America'] },
-  { id: 'tr', name: 'Turkish', speakers: '~80 million', countries: ['Turkey'] },
-  { id: 'th', name: 'Thai', speakers: '~60 million', countries: ['Thailand'] },
-  { id: 'pl', name: 'Polish', speakers: '~45 million', countries: ['Poland'] },
-  { id: 'ro', name: 'Romanian', speakers: '~26 million', countries: ['Romania', 'Moldova'] },
-  { id: 'nl', name: 'Dutch', speakers: '~25 million', countries: ['Netherlands', 'Belgium', 'Suriname'] },
-  { id: 'af', name: 'Afrikaans', speakers: '~16 million', countries: ['South Africa', 'Namibia'] },
-  { id: 'el', name: 'Greek', speakers: '~13 million', countries: ['Greece', 'Cyprus'] },
-  { id: 'sv', name: 'Swedish', speakers: '~10 million', countries: ['Sweden', 'Finland'] },
-]
+/* ═══ 50 LANGUAGES — sorted most spoken → least spoken ═══ */
+import { languages as LANGS } from '../data/languages-50'
 
 /* ═══ COMPONENT ═══ */
 export default function DancefloorPage() {
@@ -459,8 +431,8 @@ export default function DancefloorPage() {
             In a world first for a commercial dance track.
           </p>
           <p style={{ ...fadeIn(0.8), fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#e2e2e2', fontSize: 'clamp(1.4rem, 5vw, 2.8rem)', lineHeight: 1.1 }}>
-            One track<span style={{ color: '#FF0CB6' }}>.</span> 27 languages<span style={{ color: '#FF0CB6' }}>.</span>{' '}
-            <span style={{ whiteSpace: 'nowrap' }}>5 billion</span> voices<span style={{ color: '#FF0CB6' }}>.</span>
+            One track<span style={{ color: '#FF0CB6' }}>.</span> 50 languages<span style={{ color: '#FF0CB6' }}>.</span>{' '}
+            <span style={{ whiteSpace: 'nowrap' }}>5.8 billion</span> voices<span style={{ color: '#FF0CB6' }}>.</span>
           </p>
           <p style={{ ...fadeIn(1.8), fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#FF0CB6', fontSize: 'clamp(1rem, 3.5vw, 1.8rem)', marginTop: '1.5rem' }}>
             17 April 2026
