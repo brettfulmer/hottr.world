@@ -1,0 +1,13 @@
+{
+  "name": "Dancefloor Breaker",
+  "short_name": "Dancefloor",
+  "description": "Illuminate the world, one beat at a time. Made for Elaine.",
+  "start_url": "/play/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
