@@ -470,41 +470,61 @@ export default function DancefloorPage() {
         </div>
       )}
 
-      {/* Language card — substantial, all countries, big speaker count */}
+      {/* Language card — enriched glassmorphic info card */}
       {showUI && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[95] w-[92%] max-w-[400px] rounded-[4px]" style={{ background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-[95] w-[92%] max-w-[400px] rounded-[4px] overflow-y-auto" style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', maxHeight: '70vh' }}>
           {/* Pink top edge */}
           <div className="absolute top-0 left-[10%] right-[10%] h-[1px]" style={{ background: 'linear-gradient(to right, transparent, rgba(255,12,182,0.25), transparent)' }} />
 
           <div className="px-5 pt-5 pb-4">
             {/* Header + arrows */}
             <div className="flex items-center justify-between mb-2">
-              <button onClick={() => cycleLang(-1)} className="w-10 h-10 rounded-[4px] flex items-center justify-center text-lg cursor-pointer" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(226,226,226,0.5)' }}>&#8249;</button>
+              <button onClick={() => cycleLang(-1)} className="w-10 h-10 rounded-[4px] flex items-center justify-center text-lg cursor-pointer flex-shrink-0" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(226,226,226,0.5)' }}>&#8249;</button>
               <div className="text-center flex-1 px-3">
                 <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#FF0CB6' }}>Active Linguistic Region</div>
-                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 'clamp(1.4rem, 5vw, 1.8rem)', textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#e2e2e2', marginTop: 2 }}>{lang.name.toUpperCase()}</div>
+                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 'clamp(1.3rem, 4.5vw, 1.7rem)', textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#e2e2e2', marginTop: 2 }}>{lang.name.toUpperCase()}</div>
               </div>
-              <button onClick={() => cycleLang(1)} className="w-10 h-10 rounded-[4px] flex items-center justify-center text-lg cursor-pointer" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(226,226,226,0.5)' }}>&#8250;</button>
+              <button onClick={() => cycleLang(1)} className="w-10 h-10 rounded-[4px] flex items-center justify-center text-lg cursor-pointer flex-shrink-0" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(226,226,226,0.5)' }}>&#8250;</button>
             </div>
 
-            {/* BIG speaker count */}
-            <div className="text-center mt-1 mb-3">
-              <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 'clamp(1.8rem, 6vw, 2.4rem)', color: '#FF0CB6', letterSpacing: '-0.02em' }}>{lang.speakers}</span>
+            {/* Rank + speakers */}
+            <div className="text-center mt-1 mb-2">
+              {lang.rank && <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 12, color: '#FF0CB6', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>{lang.rank} most spoken</div>}
+              <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 'clamp(1.5rem, 5vw, 2rem)', color: '#FF0CB6', letterSpacing: '-0.02em' }}>{lang.speakers}</span>
               <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: '#919090', marginLeft: 8, textTransform: 'uppercase', letterSpacing: '0.1em' }}>speakers</span>
             </div>
 
-            {/* Countries grid */}
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
-              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#919090', marginBottom: 8 }}>Countries &amp; Regions</div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+            {/* City */}
+            <div className="text-center mb-2" style={{ fontFamily: "'Sora', sans-serif", fontSize: 12, color: '#919090' }}>{lang.city}</div>
+
+            {/* Dialect info */}
+            {lang.dialect && (
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10, marginBottom: 10 }}>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#FF0CB6', marginBottom: 6 }}>Dialect</div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: 'rgba(226,226,226,0.6)', lineHeight: 1.6, fontStyle: 'italic' }}>{lang.dialect}</div>
+              </div>
+            )}
+
+            {/* Why this city */}
+            {lang.whyThisCity && (
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10, marginBottom: 10 }}>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#919090', marginBottom: 6 }}>Why {lang.city.split(',')[0]}</div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: 'rgba(226,226,226,0.5)', lineHeight: 1.6 }}>{lang.whyThisCity}</div>
+              </div>
+            )}
+
+            {/* Countries */}
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#919090', marginBottom: 6 }}>Countries &amp; Regions</div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                 {lang.countries.map(c => (
-                  <div key={c} style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 500, color: '#e2e2e2', textTransform: 'uppercase' }}>{c}</div>
+                  <div key={c} style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 500, color: '#e2e2e2', textTransform: 'uppercase' }}>{c}</div>
                 ))}
               </div>
             </div>
 
-            {/* Position counter */}
-            <div className="text-center mt-3" style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, color: 'rgba(226,226,226,0.3)', letterSpacing: '0.1em' }}>
+            {/* Counter */}
+            <div className="text-center mt-3" style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, color: 'rgba(226,226,226,0.25)', letterSpacing: '0.1em' }}>
               {langIdx + 1} / {LANGS.length}
             </div>
           </div>

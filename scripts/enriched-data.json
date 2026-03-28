@@ -1,0 +1,252 @@
+{
+  "af": {
+    "rank": "#93",
+    "dialect": "Afrikaans evolved from 17th-century Dutch spoken by colonists, blended with Malay, Portuguese, and Khoisan influences. It dropped grammatical gender entirely — one of the few Ge...",
+    "why": "Johannesburg is South Africa's economic engine and nightlife capital. The version uses casual Joburg Afrikaans with natural English code-switching — how young Afrikaners actuall..."
+  },
+  "am": {
+    "rank": "#46",
+    "dialect": "Amharic uses the Ge'ez script, one of the oldest alphabets still in use — dating back to the 5th century BC. Unlike Arabic and Hebrew, it reads left-to-right.",
+    "why": "Addis Ababa is the diplomatic capital of Africa (home of the African Union) and has a rapidly growing club scene. The version uses spoken Addis Amharic — more casual than formal..."
+  },
+  "ar-eg": {
+    "rank": "#5",
+    "dialect": "Egyptian Arabic is the most widely understood Arabic dialect globally — thanks to decades of Egyptian cinema, TV, and music exports. Cairo Arabic drops the \"qaf\" to a glottal st...",
+    "why": "Cairo is the cultural capital of the Arab world. This version uses street Cairo Arabic — not Modern Standard Arabic (fusha)."
+  },
+  "ar-lv": {
+    "rank": "#5",
+    "dialect": "Levantine Arabic uses the progressive marker \"عم\" (am) before verbs — absent in Egyptian and Gulf Arabic. The \"qaf\" becomes a glottal stop (like Egyptian) but the \"jeem\" stays a...",
+    "why": "Beirut was chosen as the anchor city — historically the nightlife capital of the Middle East. This version uses Levantine Arabic that reads Damascus/Beirut, distinct from Egyptian."
+  },
+  "ar-ma": {
+    "rank": "#5",
+    "dialect": "Darija is so different from Eastern Arabic that Egyptian and Levantine speakers genuinely struggle to understand it. It retains heavy Amazigh (Berber), French, and Spanish vocab...",
+    "why": "Casablanca is Morocco's commercial and nightlife hub. This version uses Moroccan Darija — which is effectively a separate language from Eastern Arabic."
+  },
+  "bn": {
+    "rank": "#7",
+    "dialect": "Bengali has two distinct literary registers: \"sadhu bhasha\" (elegant language) and \"cholito bhasha\" (current language). Dhaka Bengali and Kolkata Bengali differ significantly — ...",
+    "why": "Dhaka Bengali, not Kolkata literary Bengali. The version uses conversational Dhaka register with informal imperatives and natural contractions — how young Bangladeshis actually ..."
+  },
+  "my": {
+    "rank": "#38",
+    "dialect": "Burmese is a tonal language with four tones — and crucially, spoken Burmese and written Burmese are almost different languages. The written form retains archaic particles and fo...",
+    "why": "Yangon (formerly Rangoon) has an emerging club scene despite political challenges. This version uses casual spoken Burmese — not literary written form."
+  },
+  "yue": {
+    "rank": "#21",
+    "dialect": "Cantonese has 6-9 tones (depending on the analysis) compared to Mandarin's 4. It preserves many features of Middle Chinese that Mandarin has lost, making it closer to Tang Dynas...",
+    "why": "Hong Kong's LKF and Wan Chai districts are legendary nightlife zones. Having Cantonese alongside Mandarin proves the localization is real — they are mutually unintelligible lang..."
+  },
+  "ca": {
+    "rank": "#75",
+    "dialect": "Catalan is NOT a dialect of Spanish — it evolved independently from Vulgar Latin and is closer to Occitan (southern France) than to Castilian. It has 8 vowel sounds compared to ...",
+    "why": "Barcelona — specifically Poble Nou and Eixample nightlife. Central Catalan dialect, not Valencian or Balearic."
+  },
+  "nl": {
+    "rank": "#52",
+    "dialect": "Amsterdam Dutch absorbs English at a rate that horrifies language purists. In club contexts, Dutch speakers naturally drop English words mid-sentence — \"ready,\" \"go,\" \"floor,\" \"...",
+    "why": "Amsterdam — specifically the club scene around Leidseplein and Rembrandtplein. Uses Amsterdam spoken Dutch with natural English code-switching, not formal ABN (Algemeen Beschaaf..."
+  },
+  "en": {
+    "rank": "#1",
+    "dialect": "This is the original version — written in Melbourne, Australia. Australian English in a club context is indistinguishable from international English.",
+    "why": "The original. No country or city qualifier needed — English is the global baseline."
+  },
+  "fa": {
+    "rank": "#29",
+    "dialect": "Spoken Tehran Farsi and formal/literary Persian are practically different languages. Tehranis contract everything.",
+    "why": "Tehran colloquial Farsi — not formal literary Persian, not Afghan Dari, not Tajik. Uses spoken Tehran contractions and street register."
+  },
+  "fr": {
+    "rank": "#5",
+    "dialect": "Parisian French drops syllables and elides constantly in speech — \"je suis\" becomes \"j'suis,\" \"je ne sais pas\" becomes \"chais pas.\" In Paris club culture, English words like \"fl...",
+    "why": "Parisian French with heavy spoken elision throughout. Not Quebecois, not formal literary French, not African French."
+  },
+  "de": {
+    "rank": "#12",
+    "dialect": "Berlin is the global capital of electronic music — Berghain, Tresor, and Watergate are pilgrimage sites. Berlin German absorbs English club vocabulary wholesale.",
+    "why": "Berlin spoken German — not Bavarian, not Swiss German, not formal Hochdeutsch. Uses casual contractions, English club vocabulary left untranslated, and the direct Berlin register."
+  },
+  "el": {
+    "rank": "#74",
+    "dialect": "Modern Greek is the oldest continuously spoken language in Europe — 3,400 years of unbroken use. The Greek word for dancefloor is \"pista,\" borrowed from Italian.",
+    "why": "Casual Athenian spoken Greek — not archaic katharevousa. Uses modern demotic register with natural contractions."
+  },
+  "ha": {
+    "rank": "#14",
+    "dialect": "Hausa uses \"hooked\" letters in its Latin-script writing — representing implosive consonants where air is sucked inward during pronunciation. These sounds don't exist in any Euro...",
+    "why": "Kano is the commercial and cultural capital of northern Nigeria. This version uses conversational Kano Hausa with proper hooked letter orthography — distinct from the Nigerian P..."
+  },
+  "he": {
+    "rank": "#64",
+    "dialect": "Modern Hebrew is the only successfully revived dead language in history. It was extinct as a spoken language for ~1,700 years and was resurrected in the late 19th century.",
+    "why": "Tel Aviv spoken Hebrew — not biblical or liturgical Hebrew. Uses \"rachava\" for dancefloor (how Israelis actually say it), Arabic loan words like \"yalla,\" and English loans like ..."
+  },
+  "hi": {
+    "rank": "#3",
+    "dialect": "Mumbai Hindi (sometimes called \"Bambaiya\") is a distinctive urban dialect that freely mixes Hindi with English, Marathi, and Urdu. Mumbai Hindi uses English words for club vocab...",
+    "why": "Mumbai spoken Hindi — not formal Sanskritized Hindi, not Delhi Hindi. Uses the Bambaiya Hinglish cadence natural to Mumbai's club scene with English words integrated seamlessly."
+  },
+  "id": {
+    "rank": "#9",
+    "dialect": "Indonesian was deliberately created as a unifying national language for 270+ million people speaking 700+ local languages. Formal \"bahasa baku\" and casual \"bahasa gaul\" (slang) ...",
+    "why": "Bali anchors this version — Seminyak and Canggu have world-class club scenes. Uses casual \"bahasa gaul\" with Jakarta/Bali slang."
+  },
+  "ga": {
+    "rank": "#98",
+    "dialect": "Irish Gaelic has three major dialects — Munster, Connacht, and Ulster — that are significantly different from each other. It uses VSO (verb-subject-object) word order, unusual a...",
+    "why": "Modern spoken Irish as used by Dublin Irish speakers and Gaeltacht communities. Not overly archaic."
+  },
+  "it": {
+    "rank": "#25",
+    "dialect": "Standard Italian is based on the Tuscan dialect, but regional differences are enormous — Milanese, Neapolitan, and Sicilian are often considered separate languages. Milan is Ita...",
+    "why": "Milan — Italy's nightlife and fashion capital. Uses casual Milanese Italian with Northern slang like \"beccato\" (spotted)."
+  },
+  "ja": {
+    "rank": "#13",
+    "dialect": "Japanese uses three writing systems simultaneously — hiragana, katakana, and kanji. This version deliberately uses katakana for \"body\" instead of the standard kanji — giving it ...",
+    "why": "Casual Shibuya/Roppongi Tokyo Japanese. Uses casual pronouns and katakana stylization for emphasis."
+  },
+  "ko": {
+    "rank": "#22",
+    "dialect": "Korean has seven speech levels ranging from extremely formal to intimate. This version uses banmal — the casual/intimate speech level used in club settings.",
+    "why": "Casual Seoul banmal, not formal jondaenmal. Uses Gangnam/Itaewon nightlife register."
+  },
+  "kriol": {
+    "rank": "N/A",
+    "dialect": "Kriol is an English-lexified creole language — it uses English-derived vocabulary but has its own distinct grammar system with features from Aboriginal languages. It's a real la...",
+    "why": "This is the bonus track. Kriol gets special treatment: a dot painting globe overlay instead of standard country highlighting."
+  },
+  "ms": {
+    "rank": "#36",
+    "dialect": "Malay and Indonesian share common roots but have diverged significantly — like British and American English but more extreme. Malaysian Malay retains more English loanwords.",
+    "why": "Kuala Lumpur spoken Malay (\"bahasa pasar\") — distinct from Indonesian despite shared roots. Uses KL slang."
+  },
+  "zh": {
+    "rank": "#2",
+    "dialect": "Mandarin has 4 tones — the same syllable \"ma\" means mother, hemp, horse, or scold depending on tone. Shanghai's club scene uses the word for \"high\" as the go-to word for \"party....",
+    "why": "Mainland club Mandarin in simplified characters. Uses casual spoken register."
+  },
+  "pcm": {
+    "rank": "N/A (creole)",
+    "dialect": "Nigerian Pidgin is the most widely spoken language in Nigeria — more than any indigenous language. It's an English-based creole with its own grammar.",
+    "why": "Lagos street Pidgin as spoken in Lekki and Victoria Island clubs. Not formal English, not Yoruba, not Hausa — its own language with its own grammar system."
+  },
+  "pl": {
+    "rank": "#26",
+    "dialect": "Polish has 7 grammatical cases and consonant clusters that terrify non-native speakers. The Polish word for dancefloor is \"parkiet\" — which also means parquet flooring, a litera...",
+    "why": "Warsaw spoken Polish — conversational, not formal literary. Uses \"parkiet\" for dancefloor, \"dawaj\" for let's go, \"kop\" for rush/kick."
+  },
+  "pt-br": {
+    "rank": "#6",
+    "dialect": "Brazilian Portuguese uses the gerund for ongoing actions while European Portuguese uses \"estar a + infinitive\" — making them sound fundamentally different when sung. Brazilians ...",
+    "why": "Sao Paulo spoken Brazilian Portuguese. Uses universal Brazilian contractions."
+  },
+  "pt-eu": {
+    "rank": "#6",
+    "dialect": "European Portuguese sounds radically different from Brazilian — Brazilians often say Portuguese sounds like \"a drunk Russian speaking Spanish.\" European PT swallows vowels and u...",
+    "why": "Spoken Lisbon Portuguese from Bairro Alto nightlife. European grammar constructions throughout."
+  },
+  "pn": {
+    "rank": "#10",
+    "dialect": "Punjabi is the language of bhangra — literally club music in its DNA. It's the most spoken language in Pakistan (but not the national language — that's Urdu) and the third most ...",
+    "why": "Chandigarh/Ludhiana Punjabi in Gurmukhi script. Distinct from Hindi in grammar, vocabulary, and script."
+  },
+  "ro": {
+    "rank": "#36",
+    "dialect": "Romanian is the closest living language to Latin — more so than Italian, Spanish, or French. It preserved Latin's case system (unique among Romance languages) and the definite a...",
+    "why": "Spoken Bucharest Romanian from Centrul Vechi nightlife. Uses casual register."
+  },
+  "ru": {
+    "rank": "#8",
+    "dialect": "Russian uses \"kaif\" for rush/high — originally from Arabic \"kayf\" (pleasure), it's become the universal Russian word for euphoria. The Cyrillic alphabet was created in the 9th c...",
+    "why": "Moscow spoken Russian — not formal literary. Having Ukrainian alongside Russian is important — they're closely related but distinct languages with enormous political significance."
+  },
+  "sr": {
+    "rank": "#55",
+    "dialect": "Serbian is one of the few languages that officially uses TWO scripts — Cyrillic and Latin. This version uses Latin script (standard for casual/urban communication in Belgrade).",
+    "why": "Belgrade spoken Serbian in Latin script. Uses \"podijum\" for dancefloor, \"ajde\" (come on)."
+  },
+  "es-ar": {
+    "rank": "#4",
+    "dialect": "Argentine Spanish uses \"voseo\" with its own verb conjugations. The \"ll\" and \"y\" are pronounced \"sh\" (sheismo).",
+    "why": "Buenos Aires voseo — no written accents on imperatives (correct Argentine orthography). Uses \"metele\" (go for it), \"prendida fuego\" (on fire), \"re\" as intensifier."
+  },
+  "es-cl": {
+    "rank": "#4",
+    "dialect": "Chilean Spanish is considered the hardest Spanish dialect for other Spanish speakers to understand. Chileans drop the final \"s\" from almost every word, use voseo inconsistently,...",
+    "why": "Santiago Chilean from Bellavista/Lastarria nightlife. Uses Chilean-specific slang."
+  },
+  "es-co": {
+    "rank": "#4",
+    "dialect": "Colombian Spanish is often considered the \"clearest\" Spanish — commonly used for Latin American dubbing and voiceover. But street Colombian, especially from Medellin (\"paisa\" cu...",
+    "why": "Medellin/Bogota club register. Uses paisa slang."
+  },
+  "es-es": {
+    "rank": "#4",
+    "dialect": "Castilian Spanish distinguishes between \"s\" and \"z/c\" (the \"distincion\"). Madrid's \"subidon\" (rush/high) is quintessential club slang.",
+    "why": "Malasana/Chueca nightlife register. Uses \"venga\" (come on), \"subidon\" (rush), formal imperative (Castilian style)."
+  },
+  "es-mx": {
+    "rank": "#4",
+    "dialect": "Mexican Spanish is the most-spoken variety of Spanish globally. The word \"orale\" is untranslatable — it simultaneously means \"hell yeah,\" \"let's go,\" \"wow,\" and \"okay\" depending...",
+    "why": "Mexico City from Condesa/Roma Norte nightlife. Uses Mexican-specific vocabulary."
+  },
+  "sw": {
+    "rank": "#15",
+    "dialect": "Swahili is a Bantu language with significant Arabic vocabulary — roughly 20-30% from Arabic due to centuries of Indian Ocean trade. The noun class system has 18 classes.",
+    "why": "Nairobi street Swahili with Sheng touches. Not formal coastal Kiswahili sanifu."
+  },
+  "sv": {
+    "rank": "#54",
+    "dialect": "Swedish has a pitch accent system — the word \"anden\" means \"the duck\" or \"the spirit\" depending on tone pattern. Swedish club culture uses \"kor\" (drive) as the universal verb fo...",
+    "why": "Stockholm spoken Swedish from Stureplan/Sodermalm nightlife. Uses English loans with Swedish grammar."
+  },
+  "tl": {
+    "rank": "#20",
+    "dialect": "Tagalog/Filipino is the world's most naturally code-switching language — \"Taglish\" is not slang, it's the standard mode of communication in Manila. A normal sentence might be 60...",
+    "why": "Manila Taglish — heavy natural code-switching between Tagalog and English throughout. BGC/Makati nightlife register."
+  },
+  "ta": {
+    "rank": "#17",
+    "dialect": "Tamil is one of the oldest continuously spoken languages in the world — classical Tamil literature dates to the 3rd century BC. Tamil script is one of the most rounded scripts g...",
+    "why": "Chennai spoken Tamil — not formal Senthamil, not Sri Lankan Tamil. Uses casual Chennai contractions."
+  },
+  "th": {
+    "rank": "#24",
+    "dialect": "Thai has 5 tones. Thai uses sentence-final particles that carry emotional nuance.",
+    "why": "Bangkok spoken Thai from Thonglor/Sukhumvit nightlife. Uses casual emphasis particles."
+  },
+  "tr": {
+    "rank": "#18",
+    "dialect": "Turkish is an agglutinative language — you build meaning by stacking suffixes. Istanbul Turkish uses \"hadi\" (let's go) constantly — borrowed from Arabic.",
+    "why": "Istanbul spoken Turkish from Beyoglu/Karakoy nightlife. Uses \"hadi\" (come on), \"pist\" for dancefloor."
+  },
+  "uk": {
+    "rank": "#27",
+    "dialect": "Ukrainian and Russian are about 62% mutually intelligible — roughly as similar as Spanish and Portuguese. Ukrainian has the letter pronounced as a voiced glottal fricative (like...",
+    "why": "Kyiv spoken Ukrainian — not Lviv western dialect, not Russian-influenced surzhyk. Uses distinctly Ukrainian constructions."
+  },
+  "ur": {
+    "rank": "#11",
+    "dialect": "Urdu and Hindi are grammatically almost identical in spoken form — but Urdu uses Nastaliq (Arabic-derived) script while Hindi uses Devanagari. Urdu draws its literary vocabulary...",
+    "why": "Karachi Urdu in Nastaliq script — distinct from the Hindi version in script, vocabulary, and register. Clifton/DHA nightlife register."
+  },
+  "vi": {
+    "rank": "#16",
+    "dialect": "Vietnamese has 6 tones — and Northern (Hanoi) and Southern (Saigon) Vietnamese differ so much in pronunciation that they can sometimes struggle to understand each other. Vietnam...",
+    "why": "Southern Vietnamese from District 1/Thao Dien nightlife. Not Hanoi Northern dialect."
+  },
+  "yo": {
+    "rank": "#30",
+    "dialect": "Yoruba is a tonal language with 3 tones (high, mid, low) — tonal marks are essential for meaning. Yoruba culture has profoundly influenced diaspora religions: Candomble (Brazil)...",
+    "why": "Lagos spoken Yoruba from Victoria Island/Lekki nightlife. Full tonal marks throughout."
+  },
+  "zu": {
+    "rank": "#35",
+    "dialect": "Zulu has 3 click consonants (c, q, x) — sounds borrowed from the Khoisan languages that don't exist in any other language family. \"Kuyavutha\" (it's burning) is THE amapiano expr...",
+    "why": "Durban spoken Zulu from uMhlanga/Florida Road nightlife — amapiano country. Having Zulu alongside Afrikaans is the South Africa story told properly."
+  }
+}
