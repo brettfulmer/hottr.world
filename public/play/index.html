@@ -96,6 +96,15 @@ h3{font-size:clamp(1rem,3.5vw,1.4rem);line-height:1.3;margin-bottom:0.25rem;font
 .result-score{font-family:'Poppins',sans-serif;font-weight:900;font-size:clamp(1.5rem,5vw,2.2rem);color:#FF0CB6;margin:0.5rem 0}
 .result-label{font-family:'Sora',sans-serif;font-weight:500;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;color:#919090}
 
+/* ═══ LYRIC BAR ═══ */
+#lyricBar{position:absolute;bottom:50px;left:50%;transform:translateX(-50%);z-index:22;pointer-events:none;font-family:'Poppins',sans-serif;font-weight:900;font-size:clamp(0.7rem,2.5vw,1rem);color:rgba(255,12,182,0.15);text-transform:uppercase;letter-spacing:0.08em;text-align:center;white-space:nowrap;transition:color 0.5s,text-shadow 0.5s}
+#lyricBar.revealed{color:#FF0CB6;text-shadow:0 0 20px rgba(255,12,182,0.5)}
+
+/* ═══ MUSIC TOGGLE ═══ */
+#musicToggle{position:absolute;top:max(env(safe-area-inset-top,12px),12px);right:3.5rem;z-index:25;background:none;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);font-size:1rem;width:32px;height:32px;border-radius:4px;cursor:pointer;display:none}
+#musicToggle.visible{display:flex;align-items:center;justify-content:center}
+#musicToggle.muted{opacity:0.3}
+
 /* ═══ ANIMATIONS ═══ */
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes shimmer{0%,100%{opacity:0.6}50%{opacity:1}}
@@ -110,7 +119,11 @@ h3{font-size:clamp(1rem,3.5vw,1.4rem);line-height:1.3;margin-bottom:0.25rem;font
 <!-- Combo popup -->
 <div id="comboPopup"></div>
 
-<!-- Elaine performer removed from gameplay -->
+<!-- Lyric reveal bar -->
+<div id="lyricBar"></div>
+
+<!-- Music toggle -->
+<button id="musicToggle" title="Toggle music">♫</button>
 
 <!-- HUD -->
 <div id="hud">
@@ -148,6 +161,16 @@ h3{font-size:clamp(1rem,3.5vw,1.4rem);line-height:1.3;margin-bottom:0.25rem;font
     <div class="result-score" id="completeScore"></div>
     <p class="muted" style="margin-top:0.25rem">The crowd went wild.</p>
     <button class="btn" id="nextLevelBtn">Next City</button>
+  </div>
+
+  <!-- LEG COMPLETE -->
+  <div class="screen result-screen" id="legCompleteScreen">
+    <img class="result-img" src="/elaine_pink.webp" alt="Elaine" style="width:min(160px,40vw)">
+    <div class="result-label" id="legCompleteName"></div>
+    <h2 class="glow" id="legCompleteTitle"></h2>
+    <div class="result-score" id="legCompleteScore"></div>
+    <p class="muted" style="margin-top:0.5rem" id="legCompleteNext"></p>
+    <button class="btn" id="legContinueBtn">Continue Tour</button>
   </div>
 
   <!-- GAME OVER -->
@@ -192,65 +215,65 @@ const TOUR_LEGS = [
 ];
 
 const LEVELS = [
-  // LEG 1 — OPENING NIGHT (Oceania, South Asia, Middle East, Africa)
-  { name:'English', city:'Melbourne, Australia', phrase:'"Mate, the night is calling"', color:'#FFFFFF', bg:'/gameplay_melbourne.webp', leg:0 },
-  { name:'Hindi', city:'Mumbai, India', phrase:'"Yaar, raat bula rahi hai"', color:'#FF7F11', bg:'/gameplay_mumbai.webp', leg:0 },
-  { name:'Bengali', city:'Dhaka, Bangladesh', phrase:'"Chal, raat dakche"', color:'#44CF6C', bg:'/gameplay_dhaka.webp', leg:0 },
-  { name:'Urdu', city:'Karachi, Pakistan', phrase:'"Yaar, raat bula rahi hai"', color:'#F0C808', bg:'/gameplay_karachi.webp', leg:0 },
-  { name:'Tamil', city:'Chennai, India', phrase:'"Machaan, iravu azhaikkuthu"', color:'#E84855', bg:'/gameplay_chennai.webp', leg:0 },
-  { name:'Punjabi', city:'Chandigarh, India', phrase:'"Yaar, raat saddi hai"', color:'#FF7F11', bg:'/gameplay_chandigarh.webp', leg:0 },
-  { name:'Egyptian Arabic', city:'Cairo, Egypt', phrase:'"يالا يا حبيبي الليل بيناديك"', color:'#F0C808', bg:'/gameplay_cairo.webp', leg:0 },
-  { name:'Farsi', city:'Tehran, Iran', phrase:'"Biya, shab seda mikonad"', color:'#3185FC', bg:'/gameplay_tehran.webp', leg:0 },
-  { name:'Swahili', city:'Nairobi, Kenya', phrase:'"Buda, usiku unaita"', color:'#44CF6C', bg:'/gameplay_nairobi.webp', leg:0 },
-  { name:'Amharic', city:'Addis Ababa, Ethiopia', phrase:'"Ene, lelit yikeralehu"', color:'#E84855', bg:'/gameplay_addis_ababa.webp', leg:0 },
+  // LEG 1 — OPENING NIGHT
+  { name:'English', city:'Melbourne, Australia', phrase:'"Mate, the night is calling"', lyric:'The night is calling', color:'#FFFFFF', bg:'/gameplay_melbourne.webp', leg:0 },
+  { name:'Hindi', city:'Mumbai, India', phrase:'"Yaar, raat bula rahi hai"', lyric:'Raat bula rahi hai', color:'#FF7F11', bg:'/gameplay_mumbai.webp', leg:0 },
+  { name:'Bengali', city:'Dhaka, Bangladesh', phrase:'"Chal, raat dakche"', lyric:'Raat dakche toke', color:'#44CF6C', bg:'/gameplay_dhaka.webp', leg:0 },
+  { name:'Urdu', city:'Karachi, Pakistan', phrase:'"Yaar, raat bula rahi hai"', lyric:'Raat bula rahi hai', color:'#F0C808', bg:'/gameplay_karachi.webp', leg:0 },
+  { name:'Tamil', city:'Chennai, India', phrase:'"Machaan, iravu azhaikkuthu"', lyric:'Iravu azhaikkuthu', color:'#E84855', bg:'/gameplay_chennai.webp', leg:0 },
+  { name:'Punjabi', city:'Chandigarh, India', phrase:'"Yaar, raat saddi hai"', lyric:'Raat saddi hai', color:'#FF7F11', bg:'/gameplay_chandigarh.webp', leg:0 },
+  { name:'Egyptian Arabic', city:'Cairo, Egypt', phrase:'"يالا يا حبيبي الليل بيناديك"', lyric:'الليل بيناديك', color:'#F0C808', bg:'/gameplay_cairo.webp', leg:0 },
+  { name:'Farsi', city:'Tehran, Iran', phrase:'"Biya, shab seda mikonad"', lyric:'Shab seda mikonad', color:'#3185FC', bg:'/gameplay_tehran.webp', leg:0 },
+  { name:'Swahili', city:'Nairobi, Kenya', phrase:'"Buda, usiku unaita"', lyric:'Usiku unaita', color:'#44CF6C', bg:'/gameplay_nairobi.webp', leg:0 },
+  { name:'Amharic', city:'Addis Ababa, Ethiopia', phrase:'"Ene, lelit yikeralehu"', lyric:'Lelit yikeralehu', color:'#E84855', bg:'/gameplay_addis_ababa.webp', leg:0 },
 
   // LEG 2 — EUROPEAN TOUR
-  { name:'French', city:'Paris, France', phrase:'"Mec, la nuit nous appelle"', color:'#3185FC', bg:'/gameplay_paris.webp', leg:1 },
-  { name:'German', city:'Berlin, Germany', phrase:'"Alter, die Nacht ruft"', color:'#F0C808', bg:'/gameplay_berlin.webp', leg:1 },
-  { name:'Italian', city:'Milan, Italy', phrase:'"Fra, la notte ci chiama"', color:'#44CF6C', bg:'/gameplay_milan.webp', leg:1 },
-  { name:'Madrid Spanish', city:'Madrid, Spain', phrase:'"Tío, la noche nos llama"', color:'#E84855', bg:'/gameplay_madrid.webp', leg:1 },
-  { name:'Catalan', city:'Barcelona, Spain', phrase:'"Tio, la nit ens crida"', color:'#FF7F11', bg:'/gameplay_barcelona.webp', leg:1 },
-  { name:'Dutch', city:'Amsterdam, Netherlands', phrase:'"Maat, de nacht roept"', color:'#3185FC', bg:'/gameplay_amsterdam.webp', leg:1 },
-  { name:'Swedish', city:'Stockholm, Sweden', phrase:'"Kompis, natten kallar"', color:'#F0C808', bg:'/gameplay_stockholm.webp', leg:1 },
-  { name:'Polish', city:'Warsaw, Poland', phrase:'"Stary, noc woła"', color:'#44CF6C', bg:'/gameplay_warsaw.webp', leg:1 },
-  { name:'Greek', city:'Athens, Greece', phrase:'"Ρε, η νύχτα σε φωνάζει"', color:'#E84855', bg:'/gameplay_athens.webp', leg:1 },
-  { name:'Turkish', city:'Istanbul, Turkey', phrase:'"Kanka, gece çağırıyor"', color:'#FF7F11', bg:'/gameplay_istanbul.webp', leg:1 },
+  { name:'French', city:'Paris, France', phrase:'"Mec, la nuit nous appelle"', lyric:'La nuit nous appelle', color:'#3185FC', bg:'/gameplay_paris.webp', leg:1 },
+  { name:'German', city:'Berlin, Germany', phrase:'"Alter, die Nacht ruft"', lyric:'Die Nacht ruft', color:'#F0C808', bg:'/gameplay_berlin.webp', leg:1 },
+  { name:'Italian', city:'Milan, Italy', phrase:'"Fra, la notte ci chiama"', lyric:'La notte ci chiama', color:'#44CF6C', bg:'/gameplay_milan.webp', leg:1 },
+  { name:'Madrid Spanish', city:'Madrid, Spain', phrase:'"Tío, la noche nos llama"', lyric:'La noche nos llama', color:'#E84855', bg:'/gameplay_madrid.webp', leg:1 },
+  { name:'Catalan', city:'Barcelona, Spain', phrase:'"Tio, la nit ens crida"', lyric:'La nit ens crida', color:'#FF7F11', bg:'/gameplay_barcelona.webp', leg:1 },
+  { name:'Dutch', city:'Amsterdam, Netherlands', phrase:'"Maat, de nacht roept"', lyric:'De nacht roept', color:'#3185FC', bg:'/gameplay_amsterdam.webp', leg:1 },
+  { name:'Swedish', city:'Stockholm, Sweden', phrase:'"Kompis, natten kallar"', lyric:'Natten kallar', color:'#F0C808', bg:'/gameplay_stockholm.webp', leg:1 },
+  { name:'Polish', city:'Warsaw, Poland', phrase:'"Stary, noc woła"', lyric:'Noc wola ciebie', color:'#44CF6C', bg:'/gameplay_warsaw.webp', leg:1 },
+  { name:'Greek', city:'Athens, Greece', phrase:'"Ρε, η νύχτα σε φωνάζει"', lyric:'Η νύχτα φωνάζει', color:'#E84855', bg:'/gameplay_athens.webp', leg:1 },
+  { name:'Turkish', city:'Istanbul, Turkey', phrase:'"Kanka, gece çağırıyor"', lyric:'Gece cagiriyor', color:'#FF7F11', bg:'/gameplay_istanbul.webp', leg:1 },
 
   // LEG 3 — ASIAN TOUR
-  { name:'Mandarin', city:'Shanghai, China', phrase:'"走吧，夜晚在召唤你"', color:'#E84855', bg:'/gameplay_shanghai.webp', leg:2 },
-  { name:'Cantonese', city:'Hong Kong', phrase:'"喂，夜晚叫緊你"', color:'#FF7F11', bg:'/gameplay_hongkong.webp', leg:2 },
-  { name:'Japanese', city:'Tokyo, Japan', phrase:'"よう、夜が呼んでるぜ"', color:'#FF6B8A', bg:'/gameplay_tokyo.webp', leg:2 },
-  { name:'Korean', city:'Seoul, South Korea', phrase:'"야, 밤이 부르고 있어"', color:'#44CF6C', bg:'/gameplay_seoul.webp', leg:2 },
-  { name:'Thai', city:'Bangkok, Thailand', phrase:'"เฮ้ย กลางคืนเรียกแล้ว"', color:'#F0C808', bg:'/gameplay_bangkok.webp', leg:2 },
-  { name:'Vietnamese', city:'Ho Chi Minh City, Vietnam', phrase:'"Ê, đêm đang gọi mày"', color:'#3185FC', bg:'/gameplay_hochiminh.webp', leg:2 },
-  { name:'Indonesian', city:'Bali, Indonesia', phrase:'"Bro, malam memanggil"', color:'#44CF6C', bg:'/gameplay_bali.webp', leg:2 },
-  { name:'Malay', city:'Kuala Lumpur, Malaysia', phrase:'"Wei, malam panggil kau"', color:'#E84855', bg:'/gameplay_kualalumpur.webp', leg:2 },
-  { name:'Tagalog', city:'Manila, Philippines', phrase:'"Pre, tinatawag ka ng gabi"', color:'#FF7F11', bg:'/gameplay_manila.webp', leg:2 },
-  { name:'Burmese', city:'Yangon, Myanmar', phrase:'"ညက ခေါ်နေတယ်"', color:'#F0C808', bg:'/gameplay_yangon.webp', leg:2 },
+  { name:'Mandarin', city:'Shanghai, China', phrase:'"走吧，夜晚在召唤你"', lyric:'夜晚在召唤你', color:'#E84855', bg:'/gameplay_shanghai.webp', leg:2 },
+  { name:'Cantonese', city:'Hong Kong', phrase:'"喂，夜晚叫緊你"', lyric:'夜晚叫緊你', color:'#FF7F11', bg:'/gameplay_hongkong.webp', leg:2 },
+  { name:'Japanese', city:'Tokyo, Japan', phrase:'"よう、夜が呼んでるぜ"', lyric:'夜が呼んでるぜ', color:'#FF6B8A', bg:'/gameplay_tokyo.webp', leg:2 },
+  { name:'Korean', city:'Seoul, South Korea', phrase:'"야, 밤이 부르고 있어"', lyric:'밤이 부르고 있어', color:'#44CF6C', bg:'/gameplay_seoul.webp', leg:2 },
+  { name:'Thai', city:'Bangkok, Thailand', phrase:'"เฮ้ย กลางคืนเรียกแล้ว"', lyric:'กลางคืนเรียกแล้ว', color:'#F0C808', bg:'/gameplay_bangkok.webp', leg:2 },
+  { name:'Vietnamese', city:'Ho Chi Minh City, Vietnam', phrase:'"Ê, đêm đang gọi mày"', lyric:'Dem dang goi may', color:'#3185FC', bg:'/gameplay_hochiminh.webp', leg:2 },
+  { name:'Indonesian', city:'Bali, Indonesia', phrase:'"Bro, malam memanggil"', lyric:'Malam memanggil', color:'#44CF6C', bg:'/gameplay_bali.webp', leg:2 },
+  { name:'Malay', city:'Kuala Lumpur, Malaysia', phrase:'"Wei, malam panggil kau"', lyric:'Malam panggil kau', color:'#E84855', bg:'/gameplay_kualalumpur.webp', leg:2 },
+  { name:'Tagalog', city:'Manila, Philippines', phrase:'"Pre, tinatawag ka ng gabi"', lyric:'Gabi tinatawag ka', color:'#FF7F11', bg:'/gameplay_manila.webp', leg:2 },
+  { name:'Burmese', city:'Yangon, Myanmar', phrase:'"ညက ခေါ်နေတယ်"', lyric:'ညက ခေါ်နေတယ်', color:'#F0C808', bg:'/gameplay_yangon.webp', leg:2 },
 
   // LEG 4 — AMERICAS TOUR
-  { name:'Mexican Spanish', city:'Mexico City, Mexico', phrase:'"Güey, la noche está llamando"', color:'#E84855', bg:'/gameplay_mexicocity.webp', leg:3 },
-  { name:'Brazilian Portuguese', city:'São Paulo, Brazil', phrase:'"Mano, a noite tá chamando"', color:'#44CF6C', bg:'/gameplay_saopaulo.webp', leg:3 },
-  { name:'Argentine Spanish', city:'Buenos Aires, Argentina', phrase:'"Che, la noche nos llama"', color:'#3185FC', bg:'/gameplay_buenosaires.webp', leg:3 },
-  { name:'Colombian Spanish', city:'Medellín, Colombia', phrase:'"Parce, la noche está llamando"', color:'#FF7F11', bg:'/gameplay_medellin.webp', leg:3 },
-  { name:'Chilean Spanish', city:'Santiago, Chile', phrase:'"Weón, la noche está llamando po"', color:'#F0C808', bg:'/gameplay_santiago.webp', leg:3 },
-  { name:'Nigerian Pidgin', city:'Lagos, Nigeria', phrase:'"Guy, night don dey call o"', color:'#44CF6C', bg:'/gameplay_lagos.webp', leg:3 },
-  { name:'Hausa', city:'Kano, Nigeria', phrase:'"Dan uwa, dare yana kira"', color:'#E84855', bg:'/gameplay_kano.webp', leg:3 },
-  { name:'Yoruba', city:'Lagos, Nigeria', phrase:'"Ọrẹ, alẹ ń pe ọ"', color:'#3185FC', bg:'/gameplay_lagos.webp', leg:3 },
-  { name:'Levantine Arabic', city:'Beirut, Lebanon', phrase:'"يلا حبيبي الليل عم يندهلك"', color:'#FF7F11', bg:'/gameplay_beirut.webp', leg:3 },
-  { name:'Maghrebi Arabic', city:'Casablanca, Morocco', phrase:'"يلاه الليل كيقرا عليك"', color:'#F0C808', bg:'/gameplay_casablanca.webp', leg:3 },
+  { name:'Mexican Spanish', city:'Mexico City, Mexico', phrase:'"Güey, la noche está llamando"', lyric:'La noche llamando', color:'#E84855', bg:'/gameplay_mexicocity.webp', leg:3 },
+  { name:'Brazilian Portuguese', city:'São Paulo, Brazil', phrase:'"Mano, a noite tá chamando"', lyric:'A noite ta chamando', color:'#44CF6C', bg:'/gameplay_saopaulo.webp', leg:3 },
+  { name:'Argentine Spanish', city:'Buenos Aires, Argentina', phrase:'"Che, la noche nos llama"', lyric:'La noche nos llama', color:'#3185FC', bg:'/gameplay_buenosaires.webp', leg:3 },
+  { name:'Colombian Spanish', city:'Medellín, Colombia', phrase:'"Parce, la noche está llamando"', lyric:'La noche llamando', color:'#FF7F11', bg:'/gameplay_medellin.webp', leg:3 },
+  { name:'Chilean Spanish', city:'Santiago, Chile', phrase:'"Weón, la noche está llamando po"', lyric:'La noche llamando', color:'#F0C808', bg:'/gameplay_santiago.webp', leg:3 },
+  { name:'Nigerian Pidgin', city:'Lagos, Nigeria', phrase:'"Guy, night don dey call o"', lyric:'Night don dey call', color:'#44CF6C', bg:'/gameplay_lagos.webp', leg:3 },
+  { name:'Hausa', city:'Kano, Nigeria', phrase:'"Dan uwa, dare yana kira"', lyric:'Dare yana kira', color:'#E84855', bg:'/gameplay_kano.webp', leg:3 },
+  { name:'Yoruba', city:'Lagos, Nigeria', phrase:'"Ọrẹ, alẹ ń pe ọ"', lyric:'Ale n pe o', color:'#3185FC', bg:'/gameplay_lagos.webp', leg:3 },
+  { name:'Levantine Arabic', city:'Beirut, Lebanon', phrase:'"يلا حبيبي الليل عم يندهلك"', lyric:'الليل عم يندهلك', color:'#FF7F11', bg:'/gameplay_beirut.webp', leg:3 },
+  { name:'Maghrebi Arabic', city:'Casablanca, Morocco', phrase:'"يلاه الليل كيقرا عليك"', lyric:'الليل كيقرا عليك', color:'#F0C808', bg:'/gameplay_casablanca.webp', leg:3 },
 
-  // LEG 5 — HOMECOMING (Final stops)
-  { name:'Russian', city:'Moscow, Russia', phrase:'"Братан, ночь зовёт"', color:'#E84855', bg:'/gameplay_moscow.webp', leg:4 },
-  { name:'Ukrainian', city:'Kyiv, Ukraine', phrase:'"Друже, ніч кличе"', color:'#3185FC', bg:'/gameplay_kyiv.webp', leg:4 },
-  { name:'Romanian', city:'Bucharest, Romania', phrase:'"Frate, noaptea cheamă"', color:'#44CF6C', bg:'/gameplay_bucharest.webp', leg:4 },
-  { name:'Serbian', city:'Belgrade, Serbia', phrase:'"Brate, noć zove"', color:'#FF7F11', bg:'/gameplay_belgrade.webp', leg:4 },
-  { name:'Hebrew', city:'Tel Aviv, Israel', phrase:'"אחי, הלילה קורא לך"', color:'#F0C808', bg:'/gameplay_telaviv.webp', leg:4 },
-  { name:'Irish Gaelic', city:'Dublin, Ireland', phrase:'"A chara, tá an oíche ag glaoch"', color:'#44CF6C', bg:'/gameplay_dublin.webp', leg:4 },
-  { name:'European Portuguese', city:'Lisbon, Portugal', phrase:'"Mano, a noite está a chamar"', color:'#E84855', bg:'/gameplay_lisbon.webp', leg:4 },
-  { name:'Afrikaans', city:'Johannesburg, South Africa', phrase:'"Bra, die nag roep"', color:'#FF7F11', bg:'/gameplay_johannesburg.webp', leg:4 },
-  { name:'Zulu', city:'Durban, South Africa', phrase:'"Mfowethu, ubusuku buyabiza"', color:'#3185FC', bg:'/gameplay_durban.webp', leg:4 },
-  { name:'Kriol', city:'Northern Australia', phrase:'"Bala, nait bin singaut"', color:'#FF0CB6', bg:'/gameplay_northern_australia.webp', leg:4 },
+  // LEG 5 — HOMECOMING
+  { name:'Russian', city:'Moscow, Russia', phrase:'"Братан, ночь зовёт"', lyric:'Ночь зовёт тебя', color:'#E84855', bg:'/gameplay_moscow.webp', leg:4 },
+  { name:'Ukrainian', city:'Kyiv, Ukraine', phrase:'"Друже, ніч кличе"', lyric:'Ніч кличе тебе', color:'#3185FC', bg:'/gameplay_kyiv.webp', leg:4 },
+  { name:'Romanian', city:'Bucharest, Romania', phrase:'"Frate, noaptea cheamă"', lyric:'Noaptea cheama', color:'#44CF6C', bg:'/gameplay_bucharest.webp', leg:4 },
+  { name:'Serbian', city:'Belgrade, Serbia', phrase:'"Brate, noć zove"', lyric:'Noc zove tebe', color:'#FF7F11', bg:'/gameplay_belgrade.webp', leg:4 },
+  { name:'Hebrew', city:'Tel Aviv, Israel', phrase:'"אחי, הלילה קורא לך"', lyric:'הלילה קורא לך', color:'#F0C808', bg:'/gameplay_telaviv.webp', leg:4 },
+  { name:'Irish Gaelic', city:'Dublin, Ireland', phrase:'"A chara, tá an oíche ag glaoch"', lyric:'An oiche ag glaoch', color:'#44CF6C', bg:'/gameplay_dublin.webp', leg:4 },
+  { name:'European Portuguese', city:'Lisbon, Portugal', phrase:'"Mano, a noite está a chamar"', lyric:'A noite a chamar', color:'#E84855', bg:'/gameplay_lisbon.webp', leg:4 },
+  { name:'Afrikaans', city:'Johannesburg, South Africa', phrase:'"Bra, die nag roep"', lyric:'Die nag roep jou', color:'#FF7F11', bg:'/gameplay_johannesburg.webp', leg:4 },
+  { name:'Zulu', city:'Durban, South Africa', phrase:'"Mfowethu, ubusuku buyabiza"', lyric:'Ubusuku buyabiza', color:'#3185FC', bg:'/gameplay_durban.webp', leg:4 },
+  { name:'Kriol', city:'Northern Australia', phrase:'"Bala, nait bin singaut"', lyric:'Nait bin singaut', color:'#FF0CB6', bg:'/gameplay_northern_australia.webp', leg:4 },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -283,10 +306,32 @@ const screens = {
   welcome: document.getElementById('welcomeScreen'),
   levelIntro: document.getElementById('levelIntroScreen'),
   levelComplete: document.getElementById('levelCompleteScreen'),
+  legComplete: document.getElementById('legCompleteScreen'),
   gameOver: document.getElementById('gameOverScreen'),
   win: document.getElementById('winScreen'),
   scores: document.getElementById('scoresScreen'),
 };
+const lyricBar = document.getElementById('lyricBar');
+const musicToggle = document.getElementById('musicToggle');
+
+// ── MUSIC ──
+const TRACK_URL = 'https://ykjntvewdxdgbmzmvmwa.supabase.co/storage/v1/object/public/records/Dancefloor.mp3';
+let audio = null;
+let musicMuted = false;
+
+function initMusic() {
+  if (audio) return;
+  audio = new Audio(TRACK_URL);
+  audio.loop = true;
+  audio.volume = 0.3;
+}
+function playMusic() { initMusic(); if (!musicMuted) audio.play().catch(()=>{}); }
+function pauseMusic() { if (audio) audio.pause(); }
+musicToggle.addEventListener('click', () => {
+  musicMuted = !musicMuted;
+  musicToggle.classList.toggle('muted', musicMuted);
+  if (musicMuted) pauseMusic(); else playMusic();
+});
 
 /* ═══════════════════════════════════════════════════════════════
    STATE
@@ -306,6 +351,8 @@ let ballLaunched = false;
 let touchX = null;
 let animFrame;
 let comboTimer = null;
+let lyricChars = []; // array of chars assigned to top-row bricks
+let lyricRevealed = false;
 
 /* ═══════════════════════════════════════════════════════════════
    SIZING
@@ -451,25 +498,41 @@ function layoutBricks() {
       const hp = (r < 1 && currentLevel > 5) ? 2 : 1;
       const extraHp = (currentLevel > 10 && r < 2) ? 1 : 0;
 
-      bricks.push({ x: baseX, y, w: brickW, h: brickH, lit: false, hp: hp + extraHp, maxHp: hp + extraHp, row: r, col: c });
+      bricks.push({ x: baseX, y, w: brickW, h: brickH, lit: false, hp: hp + extraHp, maxHp: hp + extraHp, row: r, col: c, char: '' });
     }
+  }
+
+  // Assign lyric characters to top row bricks
+  const lvl = LEVELS[currentLevel];
+  const lyric = lvl.lyric || '';
+  lyricChars = lyric.split('');
+  lyricRevealed = false;
+  lyricBar.textContent = lyric;
+  lyricBar.classList.remove('revealed');
+  const topRow = bricks.filter(b => b.row === 0);
+  for (let i = 0; i < topRow.length && i < lyricChars.length; i++) {
+    topRow[i].char = lyricChars[i] || '';
   }
 }
 
 function drawBricks() {
   for (const b of bricks) {
     if (b.lit) {
-      // Lit tile — glowing pink
       ctx.fillStyle = PINK;
       ctx.shadowColor = PINK;
       ctx.shadowBlur = 14;
       ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 2); ctx.fill();
-      // Specular highlight
       ctx.fillStyle = 'rgba(255,255,255,0.2)';
       ctx.fillRect(b.x + 2, b.y + 1, b.w * 0.35, b.h * 0.3);
       ctx.shadowBlur = 0;
+      // Lit lyric char — bright white
+      if (b.char) {
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.min(b.h - 4, 14)}px 'Poppins',sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(b.char, b.x + b.w / 2, b.y + b.h / 2);
+      }
     } else {
-      // Dark chrome tile
       const grd = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
       const alpha = 0.35 + (b.hp / b.maxHp) * 0.4;
       grd.addColorStop(0, `rgba(45,45,55,${alpha})`);
@@ -482,6 +545,22 @@ function drawBricks() {
         ctx.fillStyle = `rgba(255,12,182,${0.2 + ((b.maxHp - b.hp) / b.maxHp) * 0.35})`;
         ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 2); ctx.fill();
       }
+      // Unlit lyric char — barely visible hint
+      if (b.char) {
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        ctx.font = `bold ${Math.min(b.h - 4, 14)}px 'Poppins',sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(b.char, b.x + b.w / 2, b.y + b.h / 2);
+      }
+    }
+  }
+
+  // Check if all top-row lyric bricks are lit → reveal the lyric
+  if (!lyricRevealed) {
+    const topRow = bricks.filter(b => b.row === 0);
+    if (topRow.length > 0 && topRow.every(b => b.lit)) {
+      lyricRevealed = true;
+      lyricBar.classList.add('revealed');
     }
   }
 }
@@ -629,7 +708,7 @@ function changeState(newState) {
   
   switch (newState) {
     case 'welcome':
-      hud.classList.remove('visible'); document.body.style.backgroundImage = 'none'; showScreen('welcome'); break;
+      hud.classList.remove('visible'); musicToggle.classList.remove('visible'); pauseMusic(); lyricBar.textContent = ''; document.body.style.backgroundImage = 'none'; showScreen('welcome'); break;
 
     case 'levelIntro': {
       hud.classList.remove('visible');
@@ -647,8 +726,9 @@ function changeState(newState) {
     case 'playing': {
       showScreen(null);
       hud.classList.add('visible');
+      musicToggle.classList.add('visible');
+      playMusic();
       const lvl = LEVELS[currentLevel];
-      // Set city background during gameplay
       document.body.style.backgroundImage = `linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.65) 100%), url('${lvl.bg}')`;
       document.body.style.backgroundSize = 'cover';
       document.body.style.backgroundPosition = 'center';
@@ -658,13 +738,34 @@ function changeState(newState) {
     }
 
     case 'levelComplete': {
+      pauseMusic();
+      musicToggle.classList.remove('visible');
+      lyricBar.textContent = '';
       const lv = LEVELS[currentLevel];
       document.getElementById('completeLang').textContent = lv.city;
       const lifeBonus = lives * 50 * (currentLevel + 1);
       score += lifeBonus;
       document.getElementById('completeScore').textContent = score.toLocaleString();
       if (currentLevel >= LEVELS.length - 1) { changeState('win'); return; }
+      // Check if this is the last city in a tour leg
+      const leg = TOUR_LEGS[lv.leg];
+      if (currentLevel === leg.cities[1]) {
+        changeState('legComplete'); return;
+      }
       showScreen('levelComplete'); hud.classList.remove('visible');
+      break;
+    }
+
+    case 'legComplete': {
+      hud.classList.remove('visible');
+      const lv = LEVELS[currentLevel];
+      const leg = TOUR_LEGS[lv.leg];
+      const nextLeg = TOUR_LEGS[lv.leg + 1];
+      document.getElementById('legCompleteName').textContent = `${leg.emoji} ${leg.name} Complete`;
+      document.getElementById('legCompleteTitle').textContent = `10 cities conquered`;
+      document.getElementById('legCompleteScore').textContent = score.toLocaleString();
+      document.getElementById('legCompleteNext').textContent = nextLeg ? `Next: ${nextLeg.emoji} ${nextLeg.name}` : 'Final stretch...';
+      showScreen('legComplete');
       break;
     }
 
@@ -724,6 +825,7 @@ document.getElementById('scoresBtn').addEventListener('click', () => changeState
 document.getElementById('scoresBackBtn').addEventListener('click', () => changeState('welcome'));
 document.getElementById('levelGoBtn').addEventListener('click', () => changeState('playing'));
 document.getElementById('nextLevelBtn').addEventListener('click', () => { currentLevel++; lives = Math.min(lives + 1, MAX_LIVES); changeState('levelIntro'); });
+document.getElementById('legContinueBtn').addEventListener('click', () => { currentLevel++; lives = MAX_LIVES; changeState('levelIntro'); });
 document.getElementById('retryBtn').addEventListener('click', () => { currentLevel = 0; score = 0; lives = MAX_LIVES; combo = 0; maxCombo = 0; changeState('levelIntro'); });
 document.getElementById('goHomeBtn').addEventListener('click', () => changeState('welcome'));
 document.getElementById('winHomeBtn').addEventListener('click', () => changeState('welcome'));
