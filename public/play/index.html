@@ -182,29 +182,59 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// ── BACKGROUND PARTICLES ────────────────────────────────────
+// ── DISCO BACKGROUND — mirror ball reflections + dance floor ──
 function initBgParticles() {
   bgParticles = [];
-  const count = Math.min(PARTICLE_COUNT, Math.floor((W * H) / 25000));
+  // Mirror ball light spots — larger, slower, square-ish reflections
+  const count = Math.min(20, Math.floor((W * H) / 40000));
   for (let i = 0; i < count; i++) {
     bgParticles.push({
       x: Math.random() * W, y: Math.random() * H,
-      vx: (Math.random() - 0.5) * 0.15, vy: (Math.random() - 0.5) * 0.15,
-      size: Math.random() * 1.2 + 0.5, opacity: Math.random() * 0.4 + 0.2,
+      vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
+      size: 3 + Math.random() * 8,
+      opacity: Math.random() * 0.15 + 0.03,
+      phase: Math.random() * Math.PI * 2, // for pulsing
+      isPink: Math.random() > 0.6,
     });
   }
 }
 
 function drawBgParticles() {
+  const t = Date.now() * 0.001;
   bgCtx.clearRect(0, 0, W, H);
+
+  // Subtle dance floor grid at bottom
+  const floorY = H * 0.75;
+  bgCtx.strokeStyle = 'rgba(255,12,182,0.04)';
+  bgCtx.lineWidth = 1;
+  const gridSize = 40;
+  for (let x = 0; x < W; x += gridSize) {
+    bgCtx.beginPath(); bgCtx.moveTo(x, floorY); bgCtx.lineTo(x, H); bgCtx.stroke();
+  }
+  for (let y = floorY; y < H; y += gridSize * 0.6) {
+    bgCtx.beginPath(); bgCtx.moveTo(0, y); bgCtx.lineTo(W, y); bgCtx.stroke();
+  }
+
+  // Sweeping spotlight beam
+  const beamAngle = Math.sin(t * 0.3) * 0.4;
+  const beamX = W / 2 + Math.sin(t * 0.5) * W * 0.3;
+  const beamGrd = bgCtx.createRadialGradient(beamX, -50, 0, beamX, H * 0.5, H * 0.8);
+  beamGrd.addColorStop(0, 'rgba(255,12,182,0.06)');
+  beamGrd.addColorStop(1, 'rgba(255,12,182,0)');
+  bgCtx.fillStyle = beamGrd;
+  bgCtx.fillRect(0, 0, W, H);
+
+  // Mirror ball light reflections — square spots that drift and pulse
   for (const p of bgParticles) {
     p.x += p.vx; p.y += p.vy;
-    if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
-    if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
-    bgCtx.beginPath();
-    bgCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    bgCtx.fillStyle = `rgba(${PINK_RGB[0]},${PINK_RGB[1]},${PINK_RGB[2]},${p.opacity})`;
-    bgCtx.fill();
+    if (p.x < -20) p.x = W + 20; if (p.x > W + 20) p.x = -20;
+    if (p.y < -20) p.y = H + 20; if (p.y > H + 20) p.y = -20;
+    const pulse = Math.sin(t * 2 + p.phase) * 0.5 + 0.5;
+    const alpha = p.opacity * (0.5 + pulse * 0.5);
+    const color = p.isPink ? `rgba(255,12,182,${alpha})` : `rgba(255,255,255,${alpha * 0.7})`;
+    bgCtx.fillStyle = color;
+    // Square-ish reflections like a real mirror ball
+    bgCtx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size * 0.7);
   }
 }
 
@@ -286,33 +316,36 @@ function drawBricks() {
   const lvl = LEVELS[currentLevel];
   for (const b of bricks) {
     if (b.lit) {
-      // Illuminated brick — glowing
-      const grd = ctx.createLinearGradient(b.x, b.y, b.x + b.w, b.y + b.h);
-      grd.addColorStop(0, PINK);
-      grd.addColorStop(1, lvl.color);
-      ctx.fillStyle = grd;
+      // Lit dance floor tile — glowing neon
+      ctx.fillStyle = PINK;
       ctx.shadowColor = PINK;
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = 16;
       ctx.beginPath();
-      ctx.roundRect(b.x, b.y, b.w, b.h, 3);
+      ctx.roundRect(b.x, b.y, b.w, b.h, 2);
       ctx.fill();
+      // White specular highlight on lit tile
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.fillRect(b.x + 2, b.y + 1, b.w * 0.4, b.h * 0.35);
       ctx.shadowBlur = 0;
     } else {
-      // Unlit brick
-      const alpha = 0.3 + (b.hp / b.maxHp) * 0.5;
-      ctx.fillStyle = `rgba(30,30,40,${alpha})`;
-      ctx.strokeStyle = `rgba(${PINK_RGB[0]},${PINK_RGB[1]},${PINK_RGB[2]},0.15)`;
-      ctx.lineWidth = 1;
+      // Dark dance floor tile — chrome/mirror surface
+      const grd = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
+      grd.addColorStop(0, `rgba(40,40,50,${0.4 + (b.hp / b.maxHp) * 0.4})`);
+      grd.addColorStop(1, `rgba(20,20,28,${0.4 + (b.hp / b.maxHp) * 0.3})`);
+      ctx.fillStyle = grd;
       ctx.beginPath();
-      ctx.roundRect(b.x, b.y, b.w, b.h, 3);
+      ctx.roundRect(b.x, b.y, b.w, b.h, 2);
       ctx.fill();
+      // Chrome edge
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 0.5;
       ctx.stroke();
-      // Show damage
+      // Damage = pink bleed through
       if (b.hp < b.maxHp) {
-        const dmgAlpha = 0.15 + ((b.maxHp - b.hp) / b.maxHp) * 0.35;
+        const dmgAlpha = 0.2 + ((b.maxHp - b.hp) / b.maxHp) * 0.4;
         ctx.fillStyle = `rgba(${PINK_RGB[0]},${PINK_RGB[1]},${PINK_RGB[2]},${dmgAlpha})`;
         ctx.beginPath();
-        ctx.roundRect(b.x, b.y, b.w, b.h, 3);
+        ctx.roundRect(b.x, b.y, b.w, b.h, 2);
         ctx.fill();
       }
     }
@@ -326,16 +359,21 @@ function initPaddle() {
 }
 
 function drawPaddle() {
-  const grd = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x + paddle.w, paddle.y);
-  grd.addColorStop(0, '#D4008E');
-  grd.addColorStop(0.5, PINK);
-  grd.addColorStop(1, '#D4008E');
+  // Chrome/silver paddle with pink edge glow — like a mirror ball facet
+  const grd = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x, paddle.y + paddle.h);
+  grd.addColorStop(0, '#e2e2e2');
+  grd.addColorStop(0.4, '#999');
+  grd.addColorStop(1, '#555');
   ctx.fillStyle = grd;
   ctx.shadowColor = PINK;
-  ctx.shadowBlur = 18;
+  ctx.shadowBlur = 20;
   ctx.beginPath();
-  ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, paddle.h / 2);
+  ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 3);
   ctx.fill();
+  // Pink edge highlight
+  ctx.strokeStyle = PINK;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
   ctx.shadowBlur = 0;
 }
 
@@ -360,31 +398,33 @@ function launchBall() {
 }
 
 function drawBall() {
-  // Trail
+  // Trail — pink disco light streak
   for (let i = 0; i < ballTrail.length; i++) {
     const t = ballTrail[i];
-    const alpha = (i / ballTrail.length) * 0.3;
+    const alpha = (i / ballTrail.length) * 0.25;
     const size = ball.r * (0.3 + (i / ballTrail.length) * 0.7);
-    ctx.beginPath();
-    ctx.arc(t.x, t.y, size, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(${PINK_RGB[0]},${PINK_RGB[1]},${PINK_RGB[2]},${alpha})`;
-    ctx.fill();
+    ctx.fillRect(t.x - size, t.y - size, size * 2, size * 2); // square trail like mirror reflection
   }
-  // Ball glow
-  const grd = ctx.createRadialGradient(ball.x, ball.y, 0, ball.x, ball.y, ball.r * 2.5);
-  grd.addColorStop(0, 'rgba(255,255,255,0.9)');
-  grd.addColorStop(0.3, `rgba(${PINK_RGB[0]},${PINK_RGB[1]},${PINK_RGB[2]},0.6)`);
+  // Disco ball glow
+  const grd = ctx.createRadialGradient(ball.x, ball.y, 0, ball.x, ball.y, ball.r * 2);
+  grd.addColorStop(0, 'rgba(255,255,255,0.8)');
+  grd.addColorStop(0.4, `rgba(${PINK_RGB[0]},${PINK_RGB[1]},${PINK_RGB[2]},0.4)`);
   grd.addColorStop(1, 'rgba(255,12,182,0)');
   ctx.fillStyle = grd;
   ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.r * 2.5, 0, Math.PI * 2);
+  ctx.arc(ball.x, ball.y, ball.r * 2, 0, Math.PI * 2);
   ctx.fill();
-  // Ball core
+  // Ball core — silver chrome with specular highlight
+  const coreGrd = ctx.createRadialGradient(ball.x - ball.r * 0.3, ball.y - ball.r * 0.3, 0, ball.x, ball.y, ball.r);
+  coreGrd.addColorStop(0, '#ffffff');
+  coreGrd.addColorStop(0.5, '#c0c0c0');
+  coreGrd.addColorStop(1, '#666');
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = coreGrd;
   ctx.shadowColor = PINK;
-  ctx.shadowBlur = 15;
+  ctx.shadowBlur = 12;
   ctx.fill();
   ctx.shadowBlur = 0;
 }
