@@ -10,128 +10,214 @@
 <title>Elaine's Dancefloor World Tour</title>
 <link rel="manifest" href="/play/manifest.json">
 <link rel="icon" href="/favicon.svg">
-<link rel="apple-touch-icon" href="/play/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;900&family=Sora:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* ═══ RESET ═══ */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#e2e2e2;font-family:'Sora',sans-serif;-webkit-font-smoothing:antialiased;touch-action:none;user-select:none;-webkit-user-select:none}
+
+/* ═══ CANVAS ═══ */
 canvas{display:block;position:absolute;top:0;left:0;width:100%;height:100%}
+
+/* ═══ UI LAYER ═══ */
 #ui{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;z-index:10}
 #ui.active{pointer-events:auto}
-.screen{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;max-width:480px;width:100%}
+
+/* ═══ SCREENS ═══ */
+.screen{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1.5rem;width:100%;height:100%;position:relative;overflow:hidden}
 .screen.visible{display:flex}
-h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:0.04em}
-h1{font-size:clamp(2rem,8vw,4rem);line-height:1.1;margin-bottom:0.5rem}
-h2{font-size:clamp(1.5rem,5vw,2.25rem);line-height:1.2;margin-bottom:0.5rem}
-h3{font-size:clamp(1.1rem,3.5vw,1.5rem);line-height:1.3;margin-bottom:0.25rem}
+
+/* ═══ TYPOGRAPHY ═══ */
+h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:0.02em}
+h1{font-size:clamp(2rem,8vw,3.5rem);line-height:1.05;margin-bottom:0.5rem}
+h2{font-size:clamp(1.5rem,6vw,2.5rem);line-height:1.1;margin-bottom:0.5rem}
+h3{font-size:clamp(1rem,3.5vw,1.4rem);line-height:1.3;margin-bottom:0.25rem;font-weight:700}
 .pink{color:#FF0CB6}
-.muted{color:#919090;font-size:0.85rem}
-.glow{text-shadow:0 0 20px rgba(255,12,182,0.5),0 0 60px rgba(255,12,182,0.2)}
-.btn{pointer-events:auto;display:inline-flex;align-items:center;justify-content:center;padding:0.85rem 2.5rem;border:none;border-radius:4px;background:#FF0CB6;color:#fff;font-family:'Sora',sans-serif;font-weight:600;font-size:1rem;cursor:pointer;letter-spacing:0.03em;text-transform:uppercase;transition:background 0.2s,transform 0.1s;margin-top:1.5rem;min-width:200px;-webkit-tap-highlight-color:transparent}
-.btn:active{background:#D4008E;transform:scale(0.96)}
-.subtitle{font-size:clamp(0.9rem,2.5vw,1.1rem);color:#919090;margin-bottom:1rem;font-weight:400}
-.spacer{height:1rem}
-.score-row{display:flex;justify-content:space-between;width:100%;max-width:300px;margin-top:0.5rem;font-size:0.95rem;padding:0.3rem 0;border-bottom:1px solid #1b1b1b}
+.white{color:#e2e2e2}
+.muted{color:#919090;font-size:0.8rem}
+.glow{text-shadow:0 0 30px rgba(255,12,182,0.5),0 0 80px rgba(255,12,182,0.15)}
+
+/* ═══ BUTTONS ═══ */
+.btn{
+  pointer-events:auto;display:inline-flex;align-items:center;justify-content:center;
+  padding:0.9rem 2.5rem;border:none;border-radius:4px;
+  background:linear-gradient(135deg,#FF0CB6,#D4008E);color:#fff;
+  font-family:'Sora',sans-serif;font-weight:600;font-size:0.95rem;
+  cursor:pointer;letter-spacing:0.04em;text-transform:uppercase;
+  transition:transform 0.15s,box-shadow 0.2s;
+  margin-top:1rem;min-width:200px;
+  box-shadow:0 0 20px rgba(255,12,182,0.3);
+  -webkit-tap-highlight-color:transparent
+}
+.btn:active{transform:scale(0.96);box-shadow:0 0 10px rgba(255,12,182,0.2)}
+.btn-outline{background:transparent;border:1px solid rgba(255,255,255,0.15);color:#e2e2e2;box-shadow:none}
+.btn-outline:active{background:rgba(255,255,255,0.05)}
+
+.subtitle{font-size:clamp(0.85rem,2.5vw,1rem);color:#919090;margin-bottom:0.75rem;font-weight:400}
+.spacer{height:0.75rem}
+
+/* ═══ SCORES ═══ */
+.score-row{display:flex;justify-content:space-between;width:100%;max-width:300px;margin-top:0.4rem;font-size:0.9rem;padding:0.3rem 0;border-bottom:1px solid rgba(255,255,255,0.06)}
 .score-row .rank{color:#919090;width:2rem}
-.score-row .val{color:#FF0CB6;font-weight:500}
-#hud{position:absolute;top:0;left:0;width:100%;padding:max(env(safe-area-inset-top,12px),12px) 1rem 0;display:none;justify-content:space-between;align-items:center;font-size:0.85rem;z-index:20;font-weight:500}
+.score-row .val{color:#FF0CB6;font-weight:600}
+
+/* ═══ HUD ═══ */
+#hud{position:absolute;top:0;left:0;width:100%;padding:max(env(safe-area-inset-top,12px),12px) 1rem 0;display:none;justify-content:space-between;align-items:flex-start;font-size:0.85rem;z-index:20;font-weight:500}
 #hud.visible{display:flex}
-#hud .lives{color:#FF0CB6}
-#hud .level-name{color:#e2e2e2;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em}
-#hud .score-display{color:#919090}
-.level-intro{animation:fadeUp 0.6s ease-out}
+#hud .lives{color:#FF0CB6;font-size:1.1rem;letter-spacing:2px}
+#hud .level-name{color:#e2e2e2;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;text-align:center;line-height:1.3}
+#hud .level-name .city{display:block;font-family:'Poppins',sans-serif;font-weight:900;font-size:0.8rem;color:#FF0CB6}
+#hud .score-display{color:#e2e2e2;font-family:'Poppins',sans-serif;font-weight:900;font-size:1.1rem}
+
+/* ═══ COMBO POPUP ═══ */
+#comboPopup{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);z-index:25;pointer-events:none;font-family:'Poppins',sans-serif;font-weight:900;font-size:2rem;color:#FF0CB6;text-shadow:0 0 20px rgba(255,12,182,0.6);opacity:0;transition:none}
+#comboPopup.show{animation:comboPop 0.8s ease-out forwards}
+@keyframes comboPop{0%{opacity:1;transform:translate(-50%,-50%) scale(1.5)}40%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-70%) scale(0.8)}}
+
+/* ═══ ELAINE PERFORMER (during gameplay) ═══ */
+#elainePerformer{position:absolute;bottom:70px;right:-10px;width:90px;height:auto;z-index:15;opacity:0.6;pointer-events:none;filter:drop-shadow(0 0 15px rgba(255,12,182,0.3));transition:opacity 0.3s}
+#elainePerformer.active{opacity:0.7}
+
+/* ═══ WELCOME — hero background ═══ */
+#welcomeScreen{background:linear-gradient(180deg,rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.9) 100%),url('/elaine_gameplay.png') center top/cover no-repeat;justify-content:flex-end;padding-bottom:max(env(safe-area-inset-bottom,2rem),2rem)}
+#welcomeScreen .welcome-content{position:relative;z-index:2}
+
+/* ═══ LEVEL INTRO ═══ */
+#levelIntroScreen{background:radial-gradient(ellipse at center top,rgba(255,12,182,0.08) 0%,rgba(0,0,0,1) 70%)}
+.level-intro-img{width:min(180px,40vw);height:auto;filter:drop-shadow(0 0 30px rgba(255,12,182,0.4));margin-bottom:1rem}
+.level-stop{font-family:'Sora',sans-serif;font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.25em;color:#FF0CB6;margin-bottom:0.5rem}
+.level-city{font-family:'Poppins',sans-serif;font-weight:900;font-size:clamp(1.8rem,7vw,3rem);text-transform:uppercase;letter-spacing:-0.02em;color:#e2e2e2;line-height:1.05;margin-bottom:0.4rem}
+.level-performing{font-family:'Sora',sans-serif;font-weight:500;font-size:0.85rem;color:#919090;margin-bottom:0.5rem}
+.level-phrase{font-family:'Sora',sans-serif;font-weight:400;font-size:0.85rem;color:rgba(255,12,182,0.7);font-style:italic}
+
+/* ═══ RESULTS SCREENS ═══ */
+.result-screen{background:radial-gradient(ellipse at center,rgba(255,12,182,0.06) 0%,rgba(0,0,0,1) 70%)}
+.result-img{width:min(140px,35vw);height:auto;filter:drop-shadow(0 0 25px rgba(255,12,182,0.4));margin-bottom:1rem}
+.result-score{font-family:'Poppins',sans-serif;font-weight:900;font-size:clamp(1.5rem,5vw,2.2rem);color:#FF0CB6;margin:0.5rem 0}
+.result-label{font-family:'Sora',sans-serif;font-weight:500;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;color:#919090}
+
+/* ═══ ANIMATIONS ═══ */
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes shimmer{0%,100%{opacity:0.6}50%{opacity:1}}
+.fade-up{animation:fadeUp 0.6s ease-out}
+.shimmer{animation:shimmer 2s ease-in-out infinite}
 </style>
 </head>
 <body>
 <canvas id="bg"></canvas>
 <canvas id="game"></canvas>
+
+<!-- Combo popup -->
+<div id="comboPopup"></div>
+
+<!-- Elaine during gameplay -->
+<img id="elainePerformer" src="/elaine_transperant.png" alt="">
+
+<!-- HUD -->
 <div id="hud">
   <span class="lives" id="lives"></span>
   <span class="level-name" id="levelName"></span>
   <span class="score-display" id="scoreDisplay">0</span>
 </div>
+
 <div id="ui" class="active">
+  <!-- WELCOME -->
   <div class="screen visible" id="welcomeScreen">
-    <img src="/elaine.png" alt="Elaine" style="width:120px;height:auto;border-radius:50%;border:3px solid #FF0CB6;box-shadow:0 0 30px rgba(255,12,182,0.3);margin-bottom:1.25rem">
-    <h1 class="glow" style="font-size:clamp(1.8rem,7vw,3rem)">Elaine&apos;s<br>Dancefloor<br><span class="pink">World Tour</span></h1>
-    <p class="subtitle">Break through to the stage in 15 cities. One beat at a time.</p>
-    <button class="btn pulse" id="startBtn">Start Tour</button>
-    <button class="btn" id="scoresBtn" style="background:transparent;border:1px solid #303030;color:#e2e2e2;margin-top:0.75rem;min-width:200px">Tour Scores</button>
+    <div class="welcome-content">
+      <h1 class="glow" style="color:#fff;margin-bottom:0.25rem">Elaine's<br>Dancefloor<br><span class="pink">World Tour</span></h1>
+      <p class="subtitle" style="color:rgba(255,255,255,0.6)">Break through to the stage in 15 cities</p>
+      <button class="btn shimmer" id="startBtn">Start Tour</button>
+      <button class="btn btn-outline" id="scoresBtn" style="margin-top:0.75rem">Tour Scores</button>
+    </div>
   </div>
+
+  <!-- LEVEL INTRO -->
   <div class="screen" id="levelIntroScreen">
-    <img src="/elaine.png" alt="Elaine" style="width:80px;height:auto;border-radius:50%;border:2px solid #FF0CB6;margin-bottom:1rem">
-    <h3 class="muted" id="levelNum"></h3>
-    <h2 class="glow" id="levelLang"></h2>
-    <p class="subtitle" id="levelRegion"></p>
-    <p class="muted" id="levelPhrase" style="font-style:italic;margin-top:0.25rem"></p>
+    <img class="level-intro-img" src="/elaine_transperant.png" alt="Elaine">
+    <div class="level-stop" id="levelNum"></div>
+    <div class="level-city" id="levelCity"></div>
+    <div class="level-performing" id="levelPerforming"></div>
+    <div class="level-phrase" id="levelPhrase"></div>
     <button class="btn" id="levelGoBtn">Hit the Stage</button>
   </div>
-  <div class="screen" id="levelCompleteScreen">
-    <h3 class="muted">Concert Complete!</h3>
+
+  <!-- LEVEL COMPLETE -->
+  <div class="screen result-screen" id="levelCompleteScreen">
+    <img class="result-img" src="/elaine_pink.png" alt="Elaine">
+    <div class="result-label">Concert Complete</div>
     <h2 class="glow" id="completeLang"></h2>
-    <p class="subtitle" id="completeScore"></p>
-    <p class="muted" style="margin-top:0.5rem">The crowd went wild.</p>
+    <div class="result-score" id="completeScore"></div>
+    <p class="muted" style="margin-top:0.25rem">The crowd went wild.</p>
     <button class="btn" id="nextLevelBtn">Next City</button>
   </div>
-  <div class="screen" id="gameOverScreen">
+
+  <!-- GAME OVER -->
+  <div class="screen result-screen" id="gameOverScreen">
+    <img class="result-img" src="/elaine_transperant.png" alt="Elaine" style="opacity:0.6">
+    <div class="result-label">Tour Ended</div>
     <h2>Game Over</h2>
-    <p class="subtitle" id="gameOverScore"></p>
+    <div class="result-score" id="gameOverScore"></div>
     <button class="btn" id="retryBtn">Try Again</button>
-    <button class="btn" id="goHomeBtn" style="background:transparent;border:1px solid #303030;color:#e2e2e2;margin-top:0.75rem">Menu</button>
+    <button class="btn btn-outline" id="goHomeBtn" style="margin-top:0.75rem">Menu</button>
   </div>
-  <div class="screen" id="winScreen">
-    <img src="/elaine.png" alt="Elaine" style="width:100px;height:auto;border-radius:50%;border:3px solid #FF0CB6;box-shadow:0 0 40px rgba(255,12,182,0.5);margin-bottom:1rem">
-    <h3 class="muted" style="margin-bottom:0.75rem">World Tour Complete</h3>
-    <h1 class="glow" style="font-size:clamp(1.5rem,6vw,3rem)">15 cities<span class="pink">.</span> 15 crowds<span class="pink">.</span><br>One <span class="pink">Dancefloor</span>.</h1>
-    <p class="subtitle" id="winScore" style="margin-top:1rem"></p>
+
+  <!-- WIN -->
+  <div class="screen result-screen" id="winScreen">
+    <img class="result-img" src="/elaine_pink.png" alt="Elaine" style="width:min(160px,40vw)">
+    <div class="result-label" style="margin-bottom:0.5rem">World Tour Complete</div>
+    <h1 class="glow" style="font-size:clamp(1.4rem,5vw,2.5rem)">15 cities<span class="pink">.</span><br>15 crowds<span class="pink">.</span><br>One <span class="pink">Dancefloor</span><span class="pink">.</span></h1>
+    <div class="result-score" id="winScore"></div>
     <button class="btn" id="winHomeBtn">Tour Again</button>
   </div>
-  <div class="screen" id="scoresScreen">
-    <h2>High Scores</h2>
+
+  <!-- SCORES -->
+  <div class="screen result-screen" id="scoresScreen">
+    <h2>Tour Scores</h2>
     <div class="spacer"></div>
     <div id="scoresList"></div>
-    <button class="btn" id="scoresBackBtn" style="background:transparent;border:1px solid #303030;color:#e2e2e2">Back</button>
+    <button class="btn btn-outline" id="scoresBackBtn">Back</button>
   </div>
 </div>
 
 <script>
-// ── LEVELS ──────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   TOUR DATA — 15 cities, ordered by tour route
+   ═══════════════════════════════════════════════════════════════ */
 const LEVELS = [
-  { name: 'English', region: 'Melbourne, Australia', phrase: '"Mate, the night is calling"', color: '#FFFFFF' },
-  { name: 'Chilean Spanish', region: 'Santiago, Chile', phrase: '"Weón, la noche está llamando po"', color: '#E84855' },
-  { name: 'Brazilian Portuguese', region: 'São Paulo, Brazil', phrase: '"Mano, a noite tá chamando"', color: '#44CF6C' },
-  { name: 'Egyptian Arabic', region: 'Cairo, Egypt', phrase: '"يالا يا حبيبي الليل بيناديك"', color: '#F0C808' },
-  { name: 'French', region: 'Paris, France', phrase: '"Mec, la nuit nous appelle"', color: '#3185FC' },
-  { name: 'Hindi', region: 'Mumbai, India', phrase: '"Yaar, raat bula rahi hai"', color: '#FF7F11' },
-  { name: 'Mandarin', region: 'Shanghai, China', phrase: '"走吧，夜晚在召唤你"', color: '#E84855' },
-  { name: 'German', region: 'Berlin, Germany', phrase: '"Alter, die Nacht ruft"', color: '#F0C808' },
-  { name: 'Japanese', region: 'Tokyo, Japan', phrase: '"よう、夜が呼んでるぜ"', color: '#FF6B8A' },
-  { name: 'Korean', region: 'Seoul, South Korea', phrase: '"야, 밤이 부르고 있어"', color: '#44CF6C' },
-  { name: 'Swahili', region: 'Nairobi, Kenya', phrase: '"Buda, usiku unaita"', color: '#3185FC' },
-  { name: 'Turkish', region: 'Istanbul, Turkey', phrase: '"Kanka, gece çağırıyor"', color: '#FF7F11' },
-  { name: 'Italian', region: 'Milan, Italy', phrase: '"Fra, la notte ci chiama"', color: '#44CF6C' },
-  { name: 'Thai', region: 'Bangkok, Thailand', phrase: '"เฮ้ย กลางคืนเรียกแล้ว"', color: '#F0C808' },
-  { name: 'Nigerian Pidgin', region: 'Lagos, Nigeria', phrase: '"Guy, night don dey call o"', color: '#3185FC' },
+  { name:'English', city:'Melbourne, Australia', phrase:'"Mate, the night is calling"', color:'#FFFFFF' },
+  { name:'Chilean Spanish', city:'Santiago, Chile', phrase:'"Weón, la noche está llamando po"', color:'#E84855' },
+  { name:'Brazilian Portuguese', city:'São Paulo, Brazil', phrase:'"Mano, a noite tá chamando"', color:'#44CF6C' },
+  { name:'Egyptian Arabic', city:'Cairo, Egypt', phrase:'"يالا يا حبيبي الليل بيناديك"', color:'#F0C808' },
+  { name:'French', city:'Paris, France', phrase:'"Mec, la nuit nous appelle"', color:'#3185FC' },
+  { name:'Hindi', city:'Mumbai, India', phrase:'"Yaar, raat bula rahi hai"', color:'#FF7F11' },
+  { name:'Mandarin', city:'Shanghai, China', phrase:'"走吧，夜晚在召唤你"', color:'#E84855' },
+  { name:'German', city:'Berlin, Germany', phrase:'"Alter, die Nacht ruft"', color:'#F0C808' },
+  { name:'Japanese', city:'Tokyo, Japan', phrase:'"よう、夜が呼んでるぜ"', color:'#FF6B8A' },
+  { name:'Korean', city:'Seoul, South Korea', phrase:'"야, 밤이 부르고 있어"', color:'#44CF6C' },
+  { name:'Swahili', city:'Nairobi, Kenya', phrase:'"Buda, usiku unaita"', color:'#3185FC' },
+  { name:'Turkish', city:'Istanbul, Turkey', phrase:'"Kanka, gece çağırıyor"', color:'#FF7F11' },
+  { name:'Italian', city:'Milan, Italy', phrase:'"Fra, la notte ci chiama"', color:'#44CF6C' },
+  { name:'Thai', city:'Bangkok, Thailand', phrase:'"เฮ้ย กลางคืนเรียกแล้ว"', color:'#F0C808' },
+  { name:'Nigerian Pidgin', city:'Lagos, Nigeria', phrase:'"Guy, night don dey call o"', color:'#3185FC' },
 ];
 
-// ── CONSTANTS ───────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   CONSTANTS
+   ═══════════════════════════════════════════════════════════════ */
 const PINK = '#FF0CB6';
 const PINK_RGB = [255, 12, 182];
-const WHITE = '#e2e2e2';
 const BG = '#000000';
 const PADDLE_H = 14;
 const BALL_R = 8;
 const BRICK_ROWS = 5;
 const BASE_COLS = 8;
 const MAX_LIVES = 3;
-const PARTICLE_COUNT = 35;
 
-// ── DOM ─────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   DOM REFS
+   ═══════════════════════════════════════════════════════════════ */
 const bgCanvas = document.getElementById('bg');
 const bgCtx = bgCanvas.getContext('2d');
 const canvas = document.getElementById('game');
@@ -141,8 +227,9 @@ const hud = document.getElementById('hud');
 const livesEl = document.getElementById('lives');
 const levelNameEl = document.getElementById('levelName');
 const scoreDisplayEl = document.getElementById('scoreDisplay');
+const comboPopup = document.getElementById('comboPopup');
+const elainePerformer = document.getElementById('elainePerformer');
 
-// Screens
 const screens = {
   welcome: document.getElementById('welcomeScreen'),
   levelIntro: document.getElementById('levelIntroScreen'),
@@ -152,22 +239,28 @@ const screens = {
   scores: document.getElementById('scoresScreen'),
 };
 
-// ── STATE ───────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════════ */
 let W, H, dpr;
-let state = 'welcome'; // welcome | levelIntro | playing | paused | levelComplete | gameOver | win | scores
+let state = 'welcome';
 let currentLevel = 0;
 let score = 0;
 let lives = MAX_LIVES;
 let combo = 0;
+let maxCombo = 0;
 let ball, paddle, bricks, brickCols, brickW, brickH, brickPadX, brickPadTop;
 let ballTrail = [];
 let hitParticles = [];
-let bgParticles = [];
+let bgSpots = [];
 let ballLaunched = false;
 let touchX = null;
 let animFrame;
+let comboTimer = null;
 
-// ── SIZING ──────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   SIZING
+   ═══════════════════════════════════════════════════════════════ */
 function resize() {
   dpr = window.devicePixelRatio || 1;
   W = window.innerWidth;
@@ -176,79 +269,74 @@ function resize() {
   bgCanvas.height = canvas.height = H * dpr;
   bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  initBgParticles();
+  initBgSpots();
   if (state === 'playing') layoutBricks();
 }
 window.addEventListener('resize', resize);
 resize();
 
-// ── DISCO BACKGROUND — mirror ball reflections + dance floor ──
-function initBgParticles() {
-  bgParticles = [];
-  // Mirror ball light spots — larger, slower, square-ish reflections
-  const count = Math.min(20, Math.floor((W * H) / 40000));
+/* ═══════════════════════════════════════════════════════════════
+   DISCO BACKGROUND — mirror ball spots + dance floor grid
+   ═══════════════════════════════════════════════════════════════ */
+function initBgSpots() {
+  bgSpots = [];
+  const count = Math.min(25, Math.floor((W * H) / 30000));
   for (let i = 0; i < count; i++) {
-    bgParticles.push({
+    bgSpots.push({
       x: Math.random() * W, y: Math.random() * H,
-      vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
-      size: 3 + Math.random() * 8,
-      opacity: Math.random() * 0.15 + 0.03,
-      phase: Math.random() * Math.PI * 2, // for pulsing
-      isPink: Math.random() > 0.6,
+      vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5,
+      size: 4 + Math.random() * 10,
+      phase: Math.random() * Math.PI * 2,
+      isPink: Math.random() > 0.5,
     });
   }
 }
 
-function drawBgParticles() {
+function drawBackground() {
   const t = Date.now() * 0.001;
   bgCtx.clearRect(0, 0, W, H);
 
-  // Subtle dance floor grid at bottom
-  const floorY = H * 0.75;
-  bgCtx.strokeStyle = 'rgba(255,12,182,0.04)';
+  // Dance floor grid at bottom
+  const floorY = H * 0.78;
+  bgCtx.strokeStyle = 'rgba(255,12,182,0.03)';
   bgCtx.lineWidth = 1;
-  const gridSize = 40;
-  for (let x = 0; x < W; x += gridSize) {
-    bgCtx.beginPath(); bgCtx.moveTo(x, floorY); bgCtx.lineTo(x, H); bgCtx.stroke();
-  }
-  for (let y = floorY; y < H; y += gridSize * 0.6) {
-    bgCtx.beginPath(); bgCtx.moveTo(0, y); bgCtx.lineTo(W, y); bgCtx.stroke();
-  }
+  for (let x = 0; x < W; x += 35) { bgCtx.beginPath(); bgCtx.moveTo(x, floorY); bgCtx.lineTo(x, H); bgCtx.stroke(); }
+  for (let y = floorY; y < H; y += 22) { bgCtx.beginPath(); bgCtx.moveTo(0, y); bgCtx.lineTo(W, y); bgCtx.stroke(); }
 
-  // Sweeping spotlight beam
-  const beamAngle = Math.sin(t * 0.3) * 0.4;
-  const beamX = W / 2 + Math.sin(t * 0.5) * W * 0.3;
-  const beamGrd = bgCtx.createRadialGradient(beamX, -50, 0, beamX, H * 0.5, H * 0.8);
-  beamGrd.addColorStop(0, 'rgba(255,12,182,0.06)');
-  beamGrd.addColorStop(1, 'rgba(255,12,182,0)');
-  bgCtx.fillStyle = beamGrd;
+  // Sweeping spotlight
+  const beamX = W / 2 + Math.sin(t * 0.4) * W * 0.35;
+  const grd = bgCtx.createRadialGradient(beamX, -30, 0, beamX, H * 0.4, H * 0.7);
+  grd.addColorStop(0, 'rgba(255,12,182,0.05)');
+  grd.addColorStop(1, 'rgba(255,12,182,0)');
+  bgCtx.fillStyle = grd;
   bgCtx.fillRect(0, 0, W, H);
 
-  // Mirror ball light reflections — square spots that drift and pulse
-  for (const p of bgParticles) {
-    p.x += p.vx; p.y += p.vy;
-    if (p.x < -20) p.x = W + 20; if (p.x > W + 20) p.x = -20;
-    if (p.y < -20) p.y = H + 20; if (p.y > H + 20) p.y = -20;
-    const pulse = Math.sin(t * 2 + p.phase) * 0.5 + 0.5;
-    const alpha = p.opacity * (0.5 + pulse * 0.5);
-    const color = p.isPink ? `rgba(255,12,182,${alpha})` : `rgba(255,255,255,${alpha * 0.7})`;
-    bgCtx.fillStyle = color;
-    // Square-ish reflections like a real mirror ball
-    bgCtx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size * 0.7);
+  // Mirror ball spots
+  for (const s of bgSpots) {
+    s.x += s.vx; s.y += s.vy;
+    if (s.x < -15) s.x = W + 15; if (s.x > W + 15) s.x = -15;
+    if (s.y < -15) s.y = H + 15; if (s.y > H + 15) s.y = -15;
+    const pulse = Math.sin(t * 1.8 + s.phase) * 0.5 + 0.5;
+    const alpha = (0.03 + pulse * 0.06);
+    bgCtx.fillStyle = s.isPink ? `rgba(255,12,182,${alpha})` : `rgba(255,255,255,${alpha * 0.5})`;
+    bgCtx.fillRect(s.x - s.size/2, s.y - s.size * 0.35, s.size, s.size * 0.7);
   }
 }
 
-// ── HIT PARTICLES ───────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   HIT PARTICLES — sparkle burst on brick break
+   ═══════════════════════════════════════════════════════════════ */
 function spawnHitParticles(x, y, color) {
-  const count = 8 + Math.floor(Math.random() * 6);
+  const count = 10 + Math.floor(Math.random() * 8);
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const speed = 1.5 + Math.random() * 3;
+    const speed = 2 + Math.random() * 4;
     hitParticles.push({
       x, y,
       vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
       life: 1, decay: 0.02 + Math.random() * 0.02,
-      size: 1.5 + Math.random() * 2.5, color
+      size: 1.5 + Math.random() * 3, color,
+      isSquare: Math.random() > 0.5 // mix of square + circle particles
     });
   }
 }
@@ -257,7 +345,7 @@ function updateHitParticles() {
   for (let i = hitParticles.length - 1; i >= 0; i--) {
     const p = hitParticles[i];
     p.x += p.vx; p.y += p.vy;
-    p.vy += 0.04;
+    p.vy += 0.05;
     p.life -= p.decay;
     if (p.life <= 0) hitParticles.splice(i, 1);
   }
@@ -266,126 +354,116 @@ function updateHitParticles() {
 function drawHitParticles() {
   for (const p of hitParticles) {
     ctx.globalAlpha = p.life;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
     ctx.fillStyle = p.color;
-    ctx.fill();
+    if (p.isSquare) {
+      ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+    } else {
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    }
   }
   ctx.globalAlpha = 1;
 }
 
-// ── BRICK LAYOUT (arc pattern) ──────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   COMBO POPUP
+   ═══════════════════════════════════════════════════════════════ */
+function showCombo(n) {
+  if (n < 3) return;
+  comboPopup.textContent = `COMBO ×${n}`;
+  comboPopup.classList.remove('show');
+  void comboPopup.offsetWidth; // force reflow
+  comboPopup.classList.add('show');
+  clearTimeout(comboTimer);
+  comboTimer = setTimeout(() => comboPopup.classList.remove('show'), 900);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BRICKS — disco floor tiles with arc layout
+   ═══════════════════════════════════════════════════════════════ */
 function layoutBricks() {
-  const lvl = LEVELS[currentLevel];
   brickCols = BASE_COLS + Math.floor(currentLevel / 3);
-  const gap = 4;
-  const totalPadX = 20;
+  const gap = 3;
+  const totalPadX = 16;
   brickW = (W - totalPadX * 2 - gap * (brickCols - 1)) / brickCols;
-  brickH = Math.max(18, Math.min(28, H * 0.03));
+  brickH = Math.max(16, Math.min(26, H * 0.028));
   brickPadX = totalPadX;
-  brickPadTop = Math.max(60, H * 0.1);
+  brickPadTop = Math.max(55, H * 0.09);
 
   bricks = [];
   const centerX = W / 2;
-  const arcRadius = W * 0.8;
 
   for (let r = 0; r < BRICK_ROWS; r++) {
     for (let c = 0; c < brickCols; c++) {
       const baseX = brickPadX + c * (brickW + gap);
       const baseY = brickPadTop + r * (brickH + gap);
-      // Arc offset: bricks curve upward toward center
       const dx = (baseX + brickW / 2 - centerX) / (W / 2);
-      const arcOffset = Math.sqrt(Math.max(0, 1 - dx * dx)) * (H * 0.06) - (H * 0.06);
+      const arcOffset = Math.sqrt(Math.max(0, 1 - dx * dx)) * (H * 0.05) - (H * 0.05);
       const y = baseY - arcOffset * (1 - r / BRICK_ROWS * 0.5);
+      const hp = (r < 1 && currentLevel > 5) ? 2 : 1;
+      const extraHp = (currentLevel > 10 && r < 2) ? 1 : 0;
 
-      // Hit points: higher levels have tougher bricks
-      const hp = r < 1 && currentLevel > 5 ? 2 : 1;
-      // Extra hp for later levels
-      const extraHp = currentLevel > 10 && r < 2 ? 1 : 0;
-
-      bricks.push({
-        x: baseX, y, w: brickW, h: brickH,
-        lit: false, hp: hp + extraHp, maxHp: hp + extraHp,
-        row: r, col: c
-      });
+      bricks.push({ x: baseX, y, w: brickW, h: brickH, lit: false, hp: hp + extraHp, maxHp: hp + extraHp, row: r, col: c });
     }
   }
 }
 
 function drawBricks() {
-  const lvl = LEVELS[currentLevel];
   for (const b of bricks) {
     if (b.lit) {
-      // Lit dance floor tile — glowing neon
+      // Lit tile — glowing pink
       ctx.fillStyle = PINK;
       ctx.shadowColor = PINK;
-      ctx.shadowBlur = 16;
-      ctx.beginPath();
-      ctx.roundRect(b.x, b.y, b.w, b.h, 2);
-      ctx.fill();
-      // White specular highlight on lit tile
-      ctx.fillStyle = 'rgba(255,255,255,0.25)';
-      ctx.fillRect(b.x + 2, b.y + 1, b.w * 0.4, b.h * 0.35);
+      ctx.shadowBlur = 14;
+      ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 2); ctx.fill();
+      // Specular highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.fillRect(b.x + 2, b.y + 1, b.w * 0.35, b.h * 0.3);
       ctx.shadowBlur = 0;
     } else {
-      // Dark dance floor tile — chrome/mirror surface
+      // Dark chrome tile
       const grd = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
-      grd.addColorStop(0, `rgba(40,40,50,${0.4 + (b.hp / b.maxHp) * 0.4})`);
-      grd.addColorStop(1, `rgba(20,20,28,${0.4 + (b.hp / b.maxHp) * 0.3})`);
+      const alpha = 0.35 + (b.hp / b.maxHp) * 0.4;
+      grd.addColorStop(0, `rgba(45,45,55,${alpha})`);
+      grd.addColorStop(1, `rgba(22,22,30,${alpha})`);
       ctx.fillStyle = grd;
-      ctx.beginPath();
-      ctx.roundRect(b.x, b.y, b.w, b.h, 2);
-      ctx.fill();
-      // Chrome edge
-      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
-      // Damage = pink bleed through
+      ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 0.5; ctx.stroke();
       if (b.hp < b.maxHp) {
-        const dmgAlpha = 0.2 + ((b.maxHp - b.hp) / b.maxHp) * 0.4;
-        ctx.fillStyle = `rgba(${PINK_RGB[0]},${PINK_RGB[1]},${PINK_RGB[2]},${dmgAlpha})`;
-        ctx.beginPath();
-        ctx.roundRect(b.x, b.y, b.w, b.h, 2);
-        ctx.fill();
+        ctx.fillStyle = `rgba(255,12,182,${0.2 + ((b.maxHp - b.hp) / b.maxHp) * 0.35})`;
+        ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 2); ctx.fill();
       }
     }
   }
 }
 
-// ── PADDLE ──────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   PADDLE — chrome bar with pink glow
+   ═══════════════════════════════════════════════════════════════ */
 function initPaddle() {
-  const pw = Math.min(120, W * 0.22);
-  paddle = { x: W / 2 - pw / 2, y: H - 60, w: pw, h: PADDLE_H };
+  const pw = Math.min(110, W * 0.22);
+  paddle = { x: W / 2 - pw / 2, y: H - 55, w: pw, h: PADDLE_H };
 }
 
 function drawPaddle() {
-  // Chrome/silver paddle with pink edge glow — like a mirror ball facet
   const grd = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x, paddle.y + paddle.h);
-  grd.addColorStop(0, '#e2e2e2');
-  grd.addColorStop(0.4, '#999');
-  grd.addColorStop(1, '#555');
+  grd.addColorStop(0, '#d0d0d0');
+  grd.addColorStop(0.5, '#888');
+  grd.addColorStop(1, '#444');
   ctx.fillStyle = grd;
   ctx.shadowColor = PINK;
-  ctx.shadowBlur = 20;
-  ctx.beginPath();
-  ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 3);
-  ctx.fill();
-  // Pink edge highlight
-  ctx.strokeStyle = PINK;
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
+  ctx.shadowBlur = 18;
+  ctx.beginPath(); ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 3); ctx.fill();
+  ctx.strokeStyle = PINK; ctx.lineWidth = 1; ctx.stroke();
   ctx.shadowBlur = 0;
 }
 
-// ── BALL ────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   BALL — disco chrome with pink trail
+   ═══════════════════════════════════════════════════════════════ */
 function initBall() {
   ballLaunched = false;
-  ball = {
-    x: paddle.x + paddle.w / 2,
-    y: paddle.y - BALL_R - 2,
-    vx: 0, vy: 0, r: BALL_R,
-    speed: Math.min(4.5 + currentLevel * 0.25, 7.5)
-  };
+  ball = { x: paddle.x + paddle.w / 2, y: paddle.y - BALL_R - 2, vx: 0, vy: 0, r: BALL_R, speed: Math.min(4.5 + currentLevel * 0.25, 7.5) };
   ballTrail = [];
 }
 
@@ -398,187 +476,119 @@ function launchBall() {
 }
 
 function drawBall() {
-  // Trail — pink disco light streak
+  // Trail
   for (let i = 0; i < ballTrail.length; i++) {
     const t = ballTrail[i];
-    const alpha = (i / ballTrail.length) * 0.25;
-    const size = ball.r * (0.3 + (i / ballTrail.length) * 0.7);
-    ctx.fillStyle = `rgba(${PINK_RGB[0]},${PINK_RGB[1]},${PINK_RGB[2]},${alpha})`;
-    ctx.fillRect(t.x - size, t.y - size, size * 2, size * 2); // square trail like mirror reflection
+    const alpha = (i / ballTrail.length) * 0.2;
+    const sz = ball.r * (0.3 + (i / ballTrail.length) * 0.7);
+    ctx.fillStyle = `rgba(255,12,182,${alpha})`;
+    ctx.fillRect(t.x - sz, t.y - sz, sz * 2, sz * 2);
   }
-  // Disco ball glow
+  // Glow
   const grd = ctx.createRadialGradient(ball.x, ball.y, 0, ball.x, ball.y, ball.r * 2);
-  grd.addColorStop(0, 'rgba(255,255,255,0.8)');
-  grd.addColorStop(0.4, `rgba(${PINK_RGB[0]},${PINK_RGB[1]},${PINK_RGB[2]},0.4)`);
+  grd.addColorStop(0, 'rgba(255,255,255,0.7)');
+  grd.addColorStop(0.4, 'rgba(255,12,182,0.3)');
   grd.addColorStop(1, 'rgba(255,12,182,0)');
   ctx.fillStyle = grd;
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.r * 2, 0, Math.PI * 2);
-  ctx.fill();
-  // Ball core — silver chrome with specular highlight
-  const coreGrd = ctx.createRadialGradient(ball.x - ball.r * 0.3, ball.y - ball.r * 0.3, 0, ball.x, ball.y, ball.r);
-  coreGrd.addColorStop(0, '#ffffff');
-  coreGrd.addColorStop(0.5, '#c0c0c0');
-  coreGrd.addColorStop(1, '#666');
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-  ctx.fillStyle = coreGrd;
-  ctx.shadowColor = PINK;
-  ctx.shadowBlur = 12;
-  ctx.fill();
-  ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r * 2, 0, Math.PI * 2); ctx.fill();
+  // Core
+  const cg = ctx.createRadialGradient(ball.x - ball.r * 0.3, ball.y - ball.r * 0.3, 0, ball.x, ball.y, ball.r);
+  cg.addColorStop(0, '#fff'); cg.addColorStop(0.5, '#bbb'); cg.addColorStop(1, '#666');
+  ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+  ctx.fillStyle = cg; ctx.shadowColor = PINK; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
 }
 
-// ── COLLISION ───────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   COLLISION
+   ═══════════════════════════════════════════════════════════════ */
 function collide() {
-  // Walls
   if (ball.x - ball.r <= 0) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }
   if (ball.x + ball.r >= W) { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx); }
   if (ball.y - ball.r <= 0) { ball.y = ball.r; ball.vy = Math.abs(ball.vy); }
 
-  // Bottom — lose life
   if (ball.y + ball.r >= H) {
-    lives--;
-    combo = 0;
-    if (lives <= 0) {
-      changeState('gameOver');
-    } else {
-      initBall();
-    }
+    lives--; combo = 0;
+    if (lives <= 0) { changeState('gameOver'); } else { initBall(); }
     return;
   }
 
-  // Paddle
-  if (
-    ball.vy > 0 &&
-    ball.y + ball.r >= paddle.y &&
-    ball.y + ball.r <= paddle.y + paddle.h + ball.speed &&
-    ball.x >= paddle.x - ball.r &&
-    ball.x <= paddle.x + paddle.w + ball.r
-  ) {
+  if (ball.vy > 0 && ball.y + ball.r >= paddle.y && ball.y + ball.r <= paddle.y + paddle.h + ball.speed && ball.x >= paddle.x - ball.r && ball.x <= paddle.x + paddle.w + ball.r) {
     ball.y = paddle.y - ball.r;
-    // Angle based on hit position
-    const hitPos = (ball.x - paddle.x) / paddle.w; // 0..1
-    const angle = -Math.PI * (0.15 + hitPos * 0.7); // -155° to -15° roughly
+    const hitPos = (ball.x - paddle.x) / paddle.w;
+    const angle = -Math.PI * (0.15 + hitPos * 0.7);
     const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-    ball.vx = Math.cos(angle) * speed;
-    ball.vy = Math.sin(angle) * speed;
-    // Ensure upward
+    ball.vx = Math.cos(angle) * speed; ball.vy = Math.sin(angle) * speed;
     if (ball.vy > -1) ball.vy = -1;
     combo = 0;
   }
 
-  // Bricks
   for (const b of bricks) {
     if (b.lit) continue;
-    if (
-      ball.x + ball.r > b.x &&
-      ball.x - ball.r < b.x + b.w &&
-      ball.y + ball.r > b.y &&
-      ball.y - ball.r < b.y + b.h
-    ) {
+    if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w && ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
       b.hp--;
       if (b.hp <= 0) {
-        b.lit = true;
-        combo++;
-        const points = 10 * (currentLevel + 1) + combo * 5;
-        score += points;
+        b.lit = true; combo++; if (combo > maxCombo) maxCombo = combo;
+        score += 10 * (currentLevel + 1) + combo * 5;
         spawnHitParticles(b.x + b.w / 2, b.y + b.h / 2, LEVELS[currentLevel].color);
+        showCombo(combo);
       } else {
         spawnHitParticles(ball.x, ball.y, PINK);
       }
-
-      // Determine bounce direction
-      const overlapLeft = ball.x + ball.r - b.x;
-      const overlapRight = b.x + b.w - (ball.x - ball.r);
-      const overlapTop = ball.y + ball.r - b.y;
-      const overlapBottom = b.y + b.h - (ball.y - ball.r);
-      const minOverlapX = Math.min(overlapLeft, overlapRight);
-      const minOverlapY = Math.min(overlapTop, overlapBottom);
-
-      if (minOverlapX < minOverlapY) {
-        ball.vx = -ball.vx;
-      } else {
-        ball.vy = -ball.vy;
-      }
-
-      break; // One brick per frame
+      const ol = ball.x + ball.r - b.x, or2 = b.x + b.w - (ball.x - ball.r);
+      const ot = ball.y + ball.r - b.y, ob = b.y + b.h - (ball.y - ball.r);
+      if (Math.min(ol, or2) < Math.min(ot, ob)) ball.vx = -ball.vx; else ball.vy = -ball.vy;
+      break;
     }
   }
 
-  // Check level complete
-  if (bricks.every(b => b.lit)) {
-    changeState('levelComplete');
-  }
+  if (bricks.every(b => b.lit)) changeState('levelComplete');
 }
 
-// ── GAME LOOP ───────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   GAME LOOP
+   ═══════════════════════════════════════════════════════════════ */
 function gameLoop() {
   animFrame = requestAnimationFrame(gameLoop);
-  drawBgParticles();
-
+  drawBackground();
   if (state !== 'playing') return;
 
   ctx.clearRect(0, 0, W, H);
-
-  // Ball trail
-  if (ballLaunched) {
-    ballTrail.push({ x: ball.x, y: ball.y });
-    if (ballTrail.length > 12) ballTrail.shift();
-  }
-
-  // Move ball
-  if (!ballLaunched) {
-    ball.x = paddle.x + paddle.w / 2;
-    ball.y = paddle.y - ball.r - 2;
-  } else {
-    ball.x += ball.vx;
-    ball.y += ball.vy;
-    collide();
-  }
-
+  if (ballLaunched) { ballTrail.push({ x: ball.x, y: ball.y }); if (ballTrail.length > 12) ballTrail.shift(); }
+  if (!ballLaunched) { ball.x = paddle.x + paddle.w / 2; ball.y = paddle.y - ball.r - 2; }
+  else { ball.x += ball.vx; ball.y += ball.vy; collide(); }
   updateHitParticles();
-
-  // Draw
-  drawBricks();
-  drawPaddle();
+  drawBricks(); drawPaddle();
   if (state === 'playing') drawBall();
   drawHitParticles();
-
-  // HUD
   livesEl.textContent = '♥'.repeat(lives);
-  scoreDisplayEl.textContent = score;
+  scoreDisplayEl.textContent = score.toLocaleString();
 }
 
-// ── STATE MANAGEMENT ────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   STATE MANAGEMENT
+   ═══════════════════════════════════════════════════════════════ */
 function showScreen(name) {
   Object.values(screens).forEach(s => s.classList.remove('visible'));
-  if (name && screens[name]) {
-    screens[name].classList.add('visible');
-    ui.classList.add('active');
-  } else {
-    ui.classList.remove('active');
-  }
+  if (name && screens[name]) { screens[name].classList.add('visible'); ui.classList.add('active'); }
+  else { ui.classList.remove('active'); }
 }
 
 function changeState(newState) {
   state = newState;
   ctx.clearRect(0, 0, W, H);
-  hitParticles = [];
-  ballTrail = [];
+  hitParticles = []; ballTrail = [];
+  elainePerformer.classList.remove('active');
 
   switch (newState) {
     case 'welcome':
-      hud.classList.remove('visible');
-      showScreen('welcome');
-      break;
+      hud.classList.remove('visible'); showScreen('welcome'); break;
 
     case 'levelIntro': {
       hud.classList.remove('visible');
       const lvl = LEVELS[currentLevel];
       document.getElementById('levelNum').textContent = `Stop ${currentLevel + 1} of ${LEVELS.length}`;
-      document.getElementById('levelLang').textContent = lvl.region;
-      document.getElementById('levelRegion').textContent = `Performing in ${lvl.name}`;
+      document.getElementById('levelCity').textContent = lvl.city;
+      document.getElementById('levelPerforming').textContent = `Performing in ${lvl.name}`;
       document.getElementById('levelPhrase').textContent = lvl.phrase;
       showScreen('levelIntro');
       break;
@@ -587,116 +597,63 @@ function changeState(newState) {
     case 'playing':
       showScreen(null);
       hud.classList.add('visible');
-      levelNameEl.textContent = LEVELS[currentLevel].name;
-      initPaddle();
-      initBall();
-      layoutBricks();
+      elainePerformer.classList.add('active');
+      const lvl = LEVELS[currentLevel];
+      levelNameEl.innerHTML = `<span class="city">${lvl.city.split(',')[0]}</span>${lvl.name}`;
+      initPaddle(); initBall(); layoutBricks();
       break;
 
     case 'levelComplete': {
-      const lvl = LEVELS[currentLevel];
-      document.getElementById('completeLang').textContent = lvl.region;
-      document.getElementById('completeScore').textContent = `Score: ${score}`;
-      // Bonus for remaining lives
+      const lv = LEVELS[currentLevel];
+      document.getElementById('completeLang').textContent = lv.city;
       const lifeBonus = lives * 50 * (currentLevel + 1);
       score += lifeBonus;
-      if (currentLevel >= LEVELS.length - 1) {
-        changeState('win');
-        return;
-      }
-      showScreen('levelComplete');
-      hud.classList.remove('visible');
+      document.getElementById('completeScore').textContent = score.toLocaleString();
+      if (currentLevel >= LEVELS.length - 1) { changeState('win'); return; }
+      showScreen('levelComplete'); hud.classList.remove('visible');
       break;
     }
 
     case 'gameOver':
       hud.classList.remove('visible');
-      document.getElementById('gameOverScore').textContent = `Final Score: ${score}`;
-      saveScore(score);
-      showScreen('gameOver');
-      break;
+      document.getElementById('gameOverScore').textContent = score.toLocaleString();
+      saveScore(score); showScreen('gameOver'); break;
 
     case 'win':
       hud.classList.remove('visible');
-      document.getElementById('winScore').textContent = `Final Score: ${score}`;
-      saveScore(score);
-      showScreen('win');
-      break;
+      document.getElementById('winScore').textContent = `Final Score: ${score.toLocaleString()}`;
+      saveScore(score); showScreen('win'); break;
 
     case 'scores':
-      hud.classList.remove('visible');
-      renderScores();
-      showScreen('scores');
-      break;
+      hud.classList.remove('visible'); renderScores(); showScreen('scores'); break;
   }
 }
 
-// ── SCORES ──────────────────────────────────────────────────
-function getScores() {
-  try { return JSON.parse(localStorage.getItem('dancefloor_breaker_scores') || '[]'); }
-  catch { return []; }
-}
-
+/* ═══════════════════════════════════════════════════════════════
+   SCORES
+   ═══════════════════════════════════════════════════════════════ */
+function getScores() { try { return JSON.parse(localStorage.getItem('dancefloor_breaker_scores') || '[]'); } catch { return []; } }
 function saveScore(s) {
   const scores = getScores();
   scores.push({ score: s, date: new Date().toLocaleDateString(), level: currentLevel + 1 });
   scores.sort((a, b) => b.score - a.score);
   localStorage.setItem('dancefloor_breaker_scores', JSON.stringify(scores.slice(0, 10)));
 }
-
 function renderScores() {
   const list = document.getElementById('scoresList');
   const scores = getScores();
-  if (scores.length === 0) {
-    list.innerHTML = '<p class="muted" style="margin:1rem 0">No scores yet</p>';
-    return;
-  }
-  list.innerHTML = scores.map((s, i) => `
-    <div class="score-row">
-      <span class="rank">${i + 1}.</span>
-      <span>Lvl ${s.level}</span>
-      <span class="val">${s.score.toLocaleString()}</span>
-    </div>
-  `).join('');
+  if (!scores.length) { list.innerHTML = '<p class="muted" style="margin:1rem 0">No scores yet</p>'; return; }
+  list.innerHTML = scores.map((s, i) => `<div class="score-row"><span class="rank">${i + 1}.</span><span>Stop ${s.level}</span><span class="val">${s.score.toLocaleString()}</span></div>`).join('');
 }
 
-// ── INPUT ───────────────────────────────────────────────────
-// Touch
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  const t = e.touches[0];
-  touchX = t.clientX;
-  if (state === 'playing' && !ballLaunched) launchBall();
-}, { passive: false });
-
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  if (state !== 'playing') return;
-  const t = e.touches[0];
-  if (touchX !== null) {
-    const dx = t.clientX - touchX;
-    paddle.x += dx;
-    paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
-  }
-  touchX = t.clientX;
-}, { passive: false });
-
+/* ═══════════════════════════════════════════════════════════════
+   INPUT
+   ═══════════════════════════════════════════════════════════════ */
+canvas.addEventListener('touchstart', e => { e.preventDefault(); touchX = e.touches[0].clientX; if (state === 'playing' && !ballLaunched) launchBall(); }, { passive: false });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); if (state !== 'playing') return; const t = e.touches[0]; if (touchX !== null) { paddle.x += t.clientX - touchX; paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x)); } touchX = t.clientX; }, { passive: false });
 canvas.addEventListener('touchend', () => { touchX = null; });
-
-// Mouse
-let mouseDown = false;
-canvas.addEventListener('mousedown', e => {
-  mouseDown = true;
-  if (state === 'playing' && !ballLaunched) launchBall();
-});
-canvas.addEventListener('mouseup', () => { mouseDown = false; });
-canvas.addEventListener('mousemove', e => {
-  if (state !== 'playing') return;
-  paddle.x = e.clientX - paddle.w / 2;
-  paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
-});
-
-// Keyboard
+canvas.addEventListener('mousedown', () => { if (state === 'playing' && !ballLaunched) launchBall(); });
+canvas.addEventListener('mousemove', e => { if (state !== 'playing') return; paddle.x = e.clientX - paddle.w / 2; paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x)); });
 document.addEventListener('keydown', e => {
   if (state === 'playing') {
     if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); launchBall(); }
@@ -705,39 +662,26 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ── BUTTONS ─────────────────────────────────────────────────
-document.getElementById('startBtn').addEventListener('click', () => {
-  currentLevel = 0; score = 0; lives = MAX_LIVES; combo = 0;
-  changeState('levelIntro');
-});
-
+/* ═══════════════════════════════════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════════════════════════════════ */
+document.getElementById('startBtn').addEventListener('click', () => { currentLevel = 0; score = 0; lives = MAX_LIVES; combo = 0; maxCombo = 0; changeState('levelIntro'); });
 document.getElementById('scoresBtn').addEventListener('click', () => changeState('scores'));
 document.getElementById('scoresBackBtn').addEventListener('click', () => changeState('welcome'));
-
 document.getElementById('levelGoBtn').addEventListener('click', () => changeState('playing'));
-
-document.getElementById('nextLevelBtn').addEventListener('click', () => {
-  currentLevel++;
-  lives = Math.min(lives + 1, MAX_LIVES); // Restore a life between levels
-  changeState('levelIntro');
-});
-
-document.getElementById('retryBtn').addEventListener('click', () => {
-  currentLevel = 0; score = 0; lives = MAX_LIVES; combo = 0;
-  changeState('levelIntro');
-});
+document.getElementById('nextLevelBtn').addEventListener('click', () => { currentLevel++; lives = Math.min(lives + 1, MAX_LIVES); changeState('levelIntro'); });
+document.getElementById('retryBtn').addEventListener('click', () => { currentLevel = 0; score = 0; lives = MAX_LIVES; combo = 0; maxCombo = 0; changeState('levelIntro'); });
 document.getElementById('goHomeBtn').addEventListener('click', () => changeState('welcome'));
 document.getElementById('winHomeBtn').addEventListener('click', () => changeState('welcome'));
 
-// ── INIT ────────────────────────────────────────────────────
-initBgParticles();
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════════════ */
+initBgSpots();
 changeState('welcome');
 gameLoop();
 
-// Service worker registration for PWA
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/play/sw.js').catch(() => {});
-}
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/play/sw.js').catch(() => {}); }
 </script>
 </body>
 </html>
