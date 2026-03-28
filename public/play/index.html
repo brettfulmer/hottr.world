@@ -85,7 +85,7 @@ h3{font-size:clamp(1rem,3.5vw,1.4rem);line-height:1.3;margin-bottom:0.25rem;font
 #welcomeScreen .welcome-content{position:relative;z-index:2}
 
 /* ═══ LEVEL INTRO ═══ */
-#levelIntroScreen{background:radial-gradient(ellipse at center top,rgba(255,12,182,0.08) 0%,rgba(0,0,0,1) 70%)}
+#levelIntroScreen{background-size:cover;background-position:center;background-repeat:no-repeat}
 .level-intro-img{width:min(180px,40vw);height:auto;filter:drop-shadow(0 0 30px rgba(255,12,182,0.4));margin-bottom:1rem}
 .level-stop{font-family:'Sora',sans-serif;font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.25em;color:#FF0CB6;margin-bottom:0.5rem}
 .level-city{font-family:'Poppins',sans-serif;font-weight:900;font-size:clamp(1.8rem,7vw,3rem);text-transform:uppercase;letter-spacing:-0.02em;color:#e2e2e2;line-height:1.05;margin-bottom:0.4rem}
@@ -186,21 +186,21 @@ h3{font-size:clamp(1rem,3.5vw,1.4rem);line-height:1.3;margin-bottom:0.25rem;font
    TOUR DATA — 15 cities, ordered by tour route
    ═══════════════════════════════════════════════════════════════ */
 const LEVELS = [
-  { name:'English', city:'Melbourne, Australia', phrase:'"Mate, the night is calling"', color:'#FFFFFF' },
-  { name:'Chilean Spanish', city:'Santiago, Chile', phrase:'"Weón, la noche está llamando po"', color:'#E84855' },
-  { name:'Brazilian Portuguese', city:'São Paulo, Brazil', phrase:'"Mano, a noite tá chamando"', color:'#44CF6C' },
-  { name:'Egyptian Arabic', city:'Cairo, Egypt', phrase:'"يالا يا حبيبي الليل بيناديك"', color:'#F0C808' },
-  { name:'French', city:'Paris, France', phrase:'"Mec, la nuit nous appelle"', color:'#3185FC' },
-  { name:'Hindi', city:'Mumbai, India', phrase:'"Yaar, raat bula rahi hai"', color:'#FF7F11' },
-  { name:'Mandarin', city:'Shanghai, China', phrase:'"走吧，夜晚在召唤你"', color:'#E84855' },
-  { name:'German', city:'Berlin, Germany', phrase:'"Alter, die Nacht ruft"', color:'#F0C808' },
-  { name:'Japanese', city:'Tokyo, Japan', phrase:'"よう、夜が呼んでるぜ"', color:'#FF6B8A' },
-  { name:'Korean', city:'Seoul, South Korea', phrase:'"야, 밤이 부르고 있어"', color:'#44CF6C' },
-  { name:'Swahili', city:'Nairobi, Kenya', phrase:'"Buda, usiku unaita"', color:'#3185FC' },
-  { name:'Turkish', city:'Istanbul, Turkey', phrase:'"Kanka, gece çağırıyor"', color:'#FF7F11' },
-  { name:'Italian', city:'Milan, Italy', phrase:'"Fra, la notte ci chiama"', color:'#44CF6C' },
-  { name:'Thai', city:'Bangkok, Thailand', phrase:'"เฮ้ย กลางคืนเรียกแล้ว"', color:'#F0C808' },
-  { name:'Nigerian Pidgin', city:'Lagos, Nigeria', phrase:'"Guy, night don dey call o"', color:'#3185FC' },
+  { name:'English', city:'Melbourne, Australia', phrase:'"Mate, the night is calling"', color:'#FFFFFF', bg:'/gameplay_melbourne.webp' },
+  { name:'Chilean Spanish', city:'Santiago, Chile', phrase:'"Weón, la noche está llamando po"', color:'#E84855', bg:'/gameplay_santiago.webp' },
+  { name:'Brazilian Portuguese', city:'São Paulo, Brazil', phrase:'"Mano, a noite tá chamando"', color:'#44CF6C', bg:'/gameplay_saopaulo.webp' },
+  { name:'Egyptian Arabic', city:'Cairo, Egypt', phrase:'"يالا يا حبيبي الليل بيناديك"', color:'#F0C808', bg:'/gameplay_cairo.webp' },
+  { name:'French', city:'Paris, France', phrase:'"Mec, la nuit nous appelle"', color:'#3185FC', bg:'/gameplay_paris.webp' },
+  { name:'Hindi', city:'Mumbai, India', phrase:'"Yaar, raat bula rahi hai"', color:'#FF7F11', bg:'/gameplay_mumbai.webp' },
+  { name:'Mandarin', city:'Shanghai, China', phrase:'"走吧，夜晚在召唤你"', color:'#E84855', bg:'/gameplay_shanghai.webp' },
+  { name:'German', city:'Berlin, Germany', phrase:'"Alter, die Nacht ruft"', color:'#F0C808', bg:'/gameplay_berlin.webp' },
+  { name:'Japanese', city:'Tokyo, Japan', phrase:'"よう、夜が呼んでるぜ"', color:'#FF6B8A', bg:'/gameplay_tokyo.webp' },
+  { name:'Korean', city:'Seoul, South Korea', phrase:'"야, 밤이 부르고 있어"', color:'#44CF6C', bg:'/gameplay_seoul.webp' },
+  { name:'Swahili', city:'Nairobi, Kenya', phrase:'"Buda, usiku unaita"', color:'#3185FC', bg:'/gameplay_nairobi.webp' },
+  { name:'Turkish', city:'Istanbul, Turkey', phrase:'"Kanka, gece çağırıyor"', color:'#FF7F11', bg:'/gameplay_istanbul.webp' },
+  { name:'Italian', city:'Milan, Italy', phrase:'"Fra, la notte ci chiama"', color:'#44CF6C', bg:'/gameplay_milan.webp' },
+  { name:'Thai', city:'Bangkok, Thailand', phrase:'"เฮ้ย กลางคืนเรียกแล้ว"', color:'#F0C808', bg:'/gameplay_bangkok.webp' },
+  { name:'Nigerian Pidgin', city:'Lagos, Nigeria', phrase:'"Guy, night don dey call o"', color:'#3185FC', bg:'/gameplay_lagos.webp' },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -442,7 +442,7 @@ function drawBricks() {
    ═══════════════════════════════════════════════════════════════ */
 function initPaddle() {
   const pw = Math.min(110, W * 0.22);
-  paddle = { x: W / 2 - pw / 2, y: H - 55, w: pw, h: PADDLE_H };
+  paddle = { x: W / 2 - pw / 2, y: H - 85, w: pw, h: PADDLE_H }; // higher so finger fits under
 }
 
 function drawPaddle() {
@@ -590,6 +590,8 @@ function changeState(newState) {
       document.getElementById('levelCity').textContent = lvl.city;
       document.getElementById('levelPerforming').textContent = `Performing in ${lvl.name}`;
       document.getElementById('levelPhrase').textContent = lvl.phrase;
+      // Set city background
+      document.getElementById('levelIntroScreen').style.backgroundImage = `linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.85) 100%), url('${lvl.bg}')`;
       showScreen('levelIntro');
       break;
     }
