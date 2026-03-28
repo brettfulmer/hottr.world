@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#000000">
-<title>Dancefloor Breaker</title>
+<title>Elaine's Dancefloor World Tour</title>
 <link rel="manifest" href="/play/manifest.json">
 <link rel="icon" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/play/icon-192.png">
@@ -57,24 +57,26 @@ h3{font-size:clamp(1.1rem,3.5vw,1.5rem);line-height:1.3;margin-bottom:0.25rem}
 </div>
 <div id="ui" class="active">
   <div class="screen visible" id="welcomeScreen">
-    <h3 class="muted" style="margin-bottom:0.75rem">Made for Elaine</h3>
-    <h1 class="glow">Dancefloor<br><span class="pink">Breaker</span></h1>
-    <p class="subtitle">Illuminate the world, one beat at a time</p>
-    <button class="btn pulse" id="startBtn">Play</button>
-    <button class="btn" id="scoresBtn" style="background:transparent;border:1px solid #303030;color:#e2e2e2;margin-top:0.75rem;min-width:200px">High Scores</button>
+    <img src="/elaine.png" alt="Elaine" style="width:120px;height:auto;border-radius:50%;border:3px solid #FF0CB6;box-shadow:0 0 30px rgba(255,12,182,0.3);margin-bottom:1.25rem">
+    <h1 class="glow" style="font-size:clamp(1.8rem,7vw,3rem)">Elaine&apos;s<br>Dancefloor<br><span class="pink">World Tour</span></h1>
+    <p class="subtitle">Break through to the stage in 15 cities. One beat at a time.</p>
+    <button class="btn pulse" id="startBtn">Start Tour</button>
+    <button class="btn" id="scoresBtn" style="background:transparent;border:1px solid #303030;color:#e2e2e2;margin-top:0.75rem;min-width:200px">Tour Scores</button>
   </div>
   <div class="screen" id="levelIntroScreen">
+    <img src="/elaine.png" alt="Elaine" style="width:80px;height:auto;border-radius:50%;border:2px solid #FF0CB6;margin-bottom:1rem">
     <h3 class="muted" id="levelNum"></h3>
     <h2 class="glow" id="levelLang"></h2>
     <p class="subtitle" id="levelRegion"></p>
     <p class="muted" id="levelPhrase" style="font-style:italic;margin-top:0.25rem"></p>
-    <button class="btn" id="levelGoBtn">Go</button>
+    <button class="btn" id="levelGoBtn">Hit the Stage</button>
   </div>
   <div class="screen" id="levelCompleteScreen">
-    <h3 class="muted">Illuminated</h3>
+    <h3 class="muted">Concert Complete!</h3>
     <h2 class="glow" id="completeLang"></h2>
     <p class="subtitle" id="completeScore"></p>
-    <button class="btn" id="nextLevelBtn">Next Level</button>
+    <p class="muted" style="margin-top:0.5rem">The crowd went wild.</p>
+    <button class="btn" id="nextLevelBtn">Next City</button>
   </div>
   <div class="screen" id="gameOverScreen">
     <h2>Game Over</h2>
@@ -83,10 +85,11 @@ h3{font-size:clamp(1.1rem,3.5vw,1.5rem);line-height:1.3;margin-bottom:0.25rem}
     <button class="btn" id="goHomeBtn" style="background:transparent;border:1px solid #303030;color:#e2e2e2;margin-top:0.75rem">Menu</button>
   </div>
   <div class="screen" id="winScreen">
-    <h3 class="muted" style="margin-bottom:0.75rem">Congratulations</h3>
-    <h1 class="glow" style="font-size:clamp(1.5rem,6vw,3rem)">The Dancefloor<br>is yours, <span class="pink">Elaine</span>.</h1>
+    <img src="/elaine.png" alt="Elaine" style="width:100px;height:auto;border-radius:50%;border:3px solid #FF0CB6;box-shadow:0 0 40px rgba(255,12,182,0.5);margin-bottom:1rem">
+    <h3 class="muted" style="margin-bottom:0.75rem">World Tour Complete</h3>
+    <h1 class="glow" style="font-size:clamp(1.5rem,6vw,3rem)">15 cities<span class="pink">.</span> 15 crowds<span class="pink">.</span><br>One <span class="pink">Dancefloor</span>.</h1>
     <p class="subtitle" id="winScore" style="margin-top:1rem"></p>
-    <button class="btn" id="winHomeBtn">Menu</button>
+    <button class="btn" id="winHomeBtn">Tour Again</button>
   </div>
   <div class="screen" id="scoresScreen">
     <h2>High Scores</h2>
@@ -533,9 +536,9 @@ function changeState(newState) {
     case 'levelIntro': {
       hud.classList.remove('visible');
       const lvl = LEVELS[currentLevel];
-      document.getElementById('levelNum').textContent = `Level ${currentLevel + 1} of ${LEVELS.length}`;
-      document.getElementById('levelLang').textContent = lvl.name;
-      document.getElementById('levelRegion').textContent = lvl.region;
+      document.getElementById('levelNum').textContent = `Stop ${currentLevel + 1} of ${LEVELS.length}`;
+      document.getElementById('levelLang').textContent = lvl.region;
+      document.getElementById('levelRegion').textContent = `Performing in ${lvl.name}`;
       document.getElementById('levelPhrase').textContent = lvl.phrase;
       showScreen('levelIntro');
       break;
@@ -552,7 +555,7 @@ function changeState(newState) {
 
     case 'levelComplete': {
       const lvl = LEVELS[currentLevel];
-      document.getElementById('completeLang').textContent = lvl.name;
+      document.getElementById('completeLang').textContent = lvl.region;
       document.getElementById('completeScore').textContent = `Score: ${score}`;
       // Bonus for remaining lives
       const lifeBonus = lives * 50 * (currentLevel + 1);
