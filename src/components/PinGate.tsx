@@ -1,11 +1,30 @@
 import { useState } from 'react'
 import { NoirHeading, NoirText, NoirLabel } from './noir'
+import { supabase } from '../lib/supabase'
 
-const PIN = '071179'
-const PIN_LENGTH = PIN.length
+const VALID_PINS: Record<string, string> = {
+  '071179': 'brett',    // Original PIN
+  '963223': 'tracked',  // New tracked PIN
+}
+const PIN_LENGTH = 6
 
 interface Props {
   onUnlock: () => void
+}
+
+// Log PIN usage to Supabase (fire and forget)
+async function logPinUsage(pin: string, label: string) {
+  try {
+    await supabase.from('pin_usage').insert({
+      pin_code: pin,
+      pin_label: label,
+      user_agent: navigator.userAgent,
+      screen_width: window.innerWidth,
+      screen_height: window.innerHeight,
+    })
+  } catch {
+    // Silent fail — don't block the user
+  }
 }
 
 export default function PinGate({ onUnlock }: Props) {
@@ -19,7 +38,10 @@ export default function PinGate({ onUnlock }: Props) {
     setError(false)
 
     if (next.length === PIN_LENGTH) {
-      if (next.join('') === PIN) {
+      const pin = next.join('')
+      const label = VALID_PINS[pin]
+      if (label) {
+        logPinUsage(pin, label)
         onUnlock()
       } else {
         setError(true)
