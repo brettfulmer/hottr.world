@@ -1,387 +1,552 @@
-import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react'
-import { languages } from '../data/languages'
-import type { Language } from '../data/languages'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import * as THREE from 'three'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
+import { feature } from 'topojson-client'
+import type { Topology, GeometryCollection } from 'topojson-specification'
 
-const Globe3D = lazy(() => import('./Globe3D'))
+/* ═══════════════════════════════════════════════════════════════
+   GEOSPATIAL ENGINE — async batched country detection
+   ═══════════════════════════════════════════════════════════════ */
+interface CrystalPoint { lat: number; lng: number; country: string }
 
-const TRACK_URL = 'https://ykjntvewdxdgbmzmvmwa.supabase.co/storage/v1/object/public/records/Dancefloor.mp3'
-const LAUNCH_DATE = new Date('2026-04-17T00:00:00Z')
-
-function useCountdown() {
-  const [now, setNow] = useState(new Date())
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(id)
-  }, [])
-  const diff = Math.max(0, LAUNCH_DATE.getTime() - now.getTime())
-  return {
-    days: Math.floor(diff / 86400000),
-    hours: Math.floor((diff % 86400000) / 3600000),
-    mins: Math.floor((diff % 3600000) / 60000),
-    secs: Math.floor((diff % 60000) / 1000),
-    launched: diff === 0,
+function pointInRing(px: number, py: number, ring: number[][]): boolean {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j]
+    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside
   }
+  return inside
 }
 
-function pad(n: number) { return String(n).padStart(2, '0') }
-
-// Film grain overlay for cinematic texture
-function GrainOverlay() {
-  const ref = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const canvas = ref.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')!
-    let raf: number
-    const draw = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-      const imageData = ctx.createImageData(canvas.width, canvas.height)
-      const d = imageData.data
-      for (let i = 0; i < d.length; i += 4) {
-        const v = Math.random() * 20
-        d[i] = v; d[i + 1] = v; d[i + 2] = v; d[i + 3] = 12
+async function loadGeoData(points: CrystalPoint[], onComplete: () => void) {
+  try {
+    const topo = await (await fetch('https://unpkg.com/world-atlas@2.0.2/countries-110m.json')).json() as Topology<{ countries: GeometryCollection }>
+    const geo = feature(topo, topo.objects.countries)
+    const prepared = geo.features.map(feat => {
+      const geom = feat.geometry
+      const rings: number[][][] = []
+      if (geom.type === 'Polygon') rings.push(...geom.coordinates)
+      else if (geom.type === 'MultiPolygon') for (const p of geom.coordinates) rings.push(...p)
+      let mnLng = Infinity, mxLng = -Infinity, mnLat = Infinity, mxLat = -Infinity
+      for (const r of rings) for (const [ln, lt] of r) { if (ln < mnLng) mnLng = ln; if (ln > mxLng) mxLng = ln; if (lt < mnLat) mnLat = lt; if (lt > mxLat) mxLat = lt }
+      return { name: (feat.properties as Record<string, string>)?.name || '', rings, mnLng, mxLng, mnLat, mxLat }
+    })
+    let idx = 0
+    const batch = () => {
+      const end = Math.min(idx + 500, points.length)
+      for (let i = idx; i < end; i++) {
+        const { lat, lng } = points[i]
+        for (const f of prepared) {
+          if (lng < f.mnLng || lng > f.mxLng || lat < f.mnLat || lat > f.mxLat) continue
+          for (const r of f.rings) { if (pointInRing(lng, lat, r)) { points[i].country = f.name; break } }
+          if (points[i].country) break
+        }
       }
-      ctx.putImageData(imageData, 0, 0)
-      raf = requestAnimationFrame(draw)
+      idx = end
+      if (idx < points.length) setTimeout(batch, 0)
+      else onComplete()
     }
-    draw()
-    return () => cancelAnimationFrame(raf)
-  }, [])
-  return <canvas ref={ref} className="fixed inset-0 pointer-events-none z-[100] mix-blend-overlay" />
+    batch()
+  } catch { onComplete() }
 }
 
-export default function DancefloorPage() {
-  const [scene, setScene] = useState(0) // 0-4 editorial scenes, 5 = globe
-  const [selected, setSelected] = useState<Language>(languages[0])
-  const [playing, setPlaying] = useState(false)
-  const [gridOpen, setGridOpen] = useState(false)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const transitioning = useRef(false)
-  const touchStart = useRef<{ y: number } | null>(null)
+/* ═══════════════════════════════════════════════════════════════
+   LANGUAGES
+   ═══════════════════════════════════════════════════════════════ */
+const LANGS = [
+  { id: 'af', name: 'Afrikaans', speakers: '~16M', countries: ['South Africa', 'Namibia'] },
+  { id: 'bn', name: 'Bengali', speakers: '~270M', countries: ['Bangladesh', 'India'] },
+  { id: 'pt-br', name: 'Brazilian Portuguese', speakers: '~260M', countries: ['Brazil', 'Portugal', 'Angola', 'Mozambique'] },
+  { id: 'zh', name: 'Mandarin', speakers: '~1.1B', countries: ['China', 'Taiwan', 'Singapore'] },
+  { id: 'nl', name: 'Dutch', speakers: '~25M', countries: ['Netherlands', 'Belgium', 'Suriname'] },
+  { id: 'ar-eg', name: 'Egyptian Arabic', speakers: '~400M', countries: ['Egypt', 'Saudi Arabia', 'Iraq', 'Jordan', 'Lebanon'] },
+  { id: 'en', name: 'English', speakers: '~1.5B', countries: ['Australia', 'United Kingdom', 'United States of America', 'Canada', 'New Zealand', 'Ireland', 'South Africa', 'Nigeria', 'India'] },
+  { id: 'fr', name: 'French', speakers: '~320M', countries: ['France', 'Belgium', 'Switzerland', 'Canada', 'Senegal', 'Dem. Rep. Congo', 'Cameroon'] },
+  { id: 'de', name: 'German', speakers: '~130M', countries: ['Germany', 'Austria', 'Switzerland'] },
+  { id: 'el', name: 'Greek', speakers: '~13M', countries: ['Greece', 'Cyprus'] },
+  { id: 'hi', name: 'Hindi', speakers: '~600M', countries: ['India', 'Fiji', 'Mauritius'] },
+  { id: 'id', name: 'Indonesian', speakers: '~200M', countries: ['Indonesia'] },
+  { id: 'it', name: 'Italian', speakers: '~85M', countries: ['Italy', 'Switzerland'] },
+  { id: 'ja', name: 'Japanese', speakers: '~125M', countries: ['Japan'] },
+  { id: 'ko', name: 'Korean', speakers: '~80M', countries: ['South Korea', 'North Korea'] },
+  { id: 'es-mx', name: 'Mexican Spanish', speakers: '~550M', countries: ['Mexico', 'United States of America'] },
+  { id: 'pl', name: 'Polish', speakers: '~45M', countries: ['Poland'] },
+  { id: 'ro', name: 'Romanian', speakers: '~26M', countries: ['Romania', 'Moldova'] },
+  { id: 'ru', name: 'Russian', speakers: '~250M', countries: ['Russia', 'Belarus', 'Kazakhstan', 'Kyrgyzstan'] },
+  { id: 'es', name: 'Spanish', speakers: '~550M', countries: ['Spain'] },
+  { id: 'sw', name: 'Swahili', speakers: '~100M', countries: ['Kenya', 'Tanzania', 'Uganda'] },
+  { id: 'sv', name: 'Swedish', speakers: '~10M', countries: ['Sweden', 'Finland'] },
+  { id: 'tl', name: 'Tagalog', speakers: '~80M', countries: ['Philippines'] },
+  { id: 'th', name: 'Thai', speakers: '~60M', countries: ['Thailand'] },
+  { id: 'tr', name: 'Turkish', speakers: '~80M', countries: ['Turkey'] },
+  { id: 'ur', name: 'Urdu', speakers: '~230M', countries: ['Pakistan', 'India'] },
+  { id: 'vi', name: 'Vietnamese', speakers: '~85M', countries: ['Vietnam'] },
+]
 
-  const countdown = useCountdown()
+/* ═══════════════════════════════════════════════════════════════
+   COMPONENT
+   ═══════════════════════════════════════════════════════════════ */
+export default function DancefloorPage() {
+  const canvasRef = useRef<HTMLDivElement>(null)
+  const flashRef = useRef<HTMLDivElement>(null)
+  const [slide, setSlide] = useState(0)
+  const [showUI, setShowUI] = useState(false)
+  const [langIdx, setLangIdx] = useState(0)
+  const locked = useRef(false)
+
+  // Three.js refs exposed to callbacks
+  const threeRef = useRef<{
+    choreo: number; morphStart: number; textDropStart: number
+    bloom: UnrealBloomPass; mesh: THREE.InstancedMesh
+    curCols: THREE.Color[]; globeCols: THREE.Color[]; pts: CrystalPoint[]
+    geoReady: boolean; textMesh3D: THREE.Mesh | null
+    langTrans: { targets: THREE.Color[]; startCols: THREE.Color[]; start: number; duration: number } | null
+    COUNT: number; bScales: Float32Array; tilts: Float32Array
+    globeGroup: THREE.Group
+  } | null>(null)
+
+  const TOTAL = 4
+  const MORPH_MS = 2000
+  const TEXT_SLAM_MS = 200
+  const PINK = new THREE.Color('#FF0CB6')
+  const LAND = new THREE.Color('#FFFFFF')
+  const OCEAN = new THREE.Color('#050608')
+
+  // Highlight language
+  const highlightLang = useCallback((idx: number) => {
+    const t = threeRef.current
+    if (!t || !t.geoReady) return
+    const lang = LANGS[idx]
+    const targets: THREE.Color[] = []
+    const startCols: THREE.Color[] = []
+    for (let i = 0; i < t.COUNT; i++) {
+      startCols[i] = t.curCols[i].clone()
+      const c = t.pts[i].country
+      targets[i] = (c && lang.countries.includes(c)) ? PINK.clone() : t.globeCols[i].clone()
+    }
+    t.langTrans = { targets, startCols, start: Date.now(), duration: 600 }
+  }, [])
 
   const cycleLang = useCallback((dir: number) => {
-    const idx = languages.findIndex(l => l.id === selected.id)
-    const next = (idx + dir + languages.length) % languages.length
-    setSelected(languages[next])
-  }, [selected])
+    setLangIdx(prev => {
+      const next = ((prev + dir) % LANGS.length + LANGS.length) % LANGS.length
+      highlightLang(next)
+      return next
+    })
+  }, [highlightLang])
 
-  // Scene transition
-  const goNext = useCallback(() => {
-    if (transitioning.current || scene >= 5) return
-    transitioning.current = true
-    setScene(s => s + 1)
-    setTimeout(() => { transitioning.current = false }, 900)
-  }, [scene])
-
-  // Wheel/scroll handler for editorial scenes
-  useEffect(() => {
-    if (scene >= 5) return
-    const handler = (e: WheelEvent) => {
-      e.preventDefault()
-      if (e.deltaY > 20) goNext()
+  // Advance slide
+  const advance = useCallback(() => {
+    if (locked.current || slide >= TOTAL) return
+    locked.current = true
+    const next = slide + 1
+    setSlide(next)
+    if (next >= TOTAL) {
+      const t = threeRef.current
+      if (t) {
+        setTimeout(() => { t.choreo = 1 }, 200)
+        setTimeout(() => {
+          // THE DROP
+          t.choreo = 2
+          if (flashRef.current) flashRef.current.classList.add('fire')
+          t.bloom.strength = 3.0
+          const white = new THREE.Color('#FFFFFF')
+          for (let i = 0; i < t.COUNT; i++) { t.curCols[i].copy(white); t.mesh.setColorAt(i, white) }
+          t.mesh.instanceColor!.needsUpdate = true
+          if (t.textMesh3D) { t.textMesh3D.visible = true; t.textDropStart = Date.now() }
+          setTimeout(() => { t.choreo = 3; t.morphStart = Date.now() }, TEXT_SLAM_MS)
+        }, 2500)
+      }
     }
-    window.addEventListener('wheel', handler, { passive: false })
-    return () => window.removeEventListener('wheel', handler)
-  }, [scene, goNext])
+    setTimeout(() => { locked.current = false }, 600)
+  }, [slide])
 
-  // Touch handlers
+  // Input handlers
   useEffect(() => {
-    if (scene >= 5) return
-    const onStart = (e: TouchEvent) => { touchStart.current = { y: e.touches[0].clientY } }
-    const onEnd = (e: TouchEvent) => {
-      if (!touchStart.current) return
-      const dy = e.changedTouches[0].clientY - touchStart.current.y
-      touchStart.current = null
-      if (dy < -40) goNext()
-    }
+    if (slide >= TOTAL) return
+    const onWheel = (e: WheelEvent) => { e.preventDefault(); if (Math.abs(e.deltaY) > 8) advance() }
+    window.addEventListener('wheel', onWheel, { passive: false })
+    return () => window.removeEventListener('wheel', onWheel)
+  }, [slide, advance])
+
+  useEffect(() => {
+    let ty: number | null = null
+    const onStart = (e: TouchEvent) => { ty = e.touches[0].clientY }
+    const onEnd = (e: TouchEvent) => { if (ty !== null && slide < TOTAL && e.changedTouches[0].clientY - ty < -25) advance(); ty = null }
     window.addEventListener('touchstart', onStart, { passive: true })
     window.addEventListener('touchend', onEnd, { passive: true })
     return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd) }
-  }, [scene, goNext])
+  }, [slide, advance])
 
-  // Keyboard
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (scene < 5) {
-        if (e.key === 'ArrowDown' || e.key === ' ') goNext()
-      } else {
+    const onKey = (e: KeyboardEvent) => {
+      if (slide < TOTAL && (e.key === 'ArrowDown' || e.key === ' ')) { e.preventDefault(); advance() }
+      if (threeRef.current?.choreo === 4) {
         if (e.key === 'ArrowLeft') cycleLang(-1)
-        else if (e.key === 'ArrowRight') cycleLang(1)
+        if (e.key === 'ArrowRight') cycleLang(1)
       }
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [scene, goNext, cycleLang])
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [slide, advance, cycleLang])
 
-  // Audio
+  // Countdown
+  const [cd, setCd] = useState({ d: '00', h: '00', m: '00', s: '00' })
   useEffect(() => {
-    const existing = document.getElementById('dancefloor-audio') as HTMLAudioElement | null
-    if (existing) { audioRef.current = existing; setPlaying(!existing.paused) }
+    const tick = () => {
+      const diff = Math.max(0, new Date('2026-04-17T00:00:00Z').getTime() - Date.now())
+      const p = (n: number) => String(n).padStart(2, '0')
+      setCd({ d: p(Math.floor(diff / 864e5)), h: p(Math.floor(diff % 864e5 / 36e5)), m: p(Math.floor(diff % 36e5 / 6e4)), s: p(Math.floor(diff % 6e4 / 1e3)) })
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
   }, [])
 
-  const handlePlay = () => {
-    if (!countdown.launched) return
-    let audio = audioRef.current
-    if (!audio) {
-      const existing = document.getElementById('dancefloor-audio') as HTMLAudioElement | null
-      if (existing) { audio = existing }
-      else {
-        const el = document.createElement('audio')
-        el.id = 'dancefloor-audio'
-        el.src = TRACK_URL
-        el.preload = 'none'
-        document.body.appendChild(el)
-        audio = el
-      }
-      audioRef.current = audio
+  /* ═══════════════════════════════════════════════════════════════
+     THREE.JS SCENE — mounted once via useEffect
+     ═══════════════════════════════════════════════════════════════ */
+  useEffect(() => {
+    const container = canvasRef.current
+    if (!container) return
+
+    const W = container.clientWidth, H = container.clientHeight
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color(0x000000)
+    const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100)
+    camera.position.set(0, 0, 6)
+    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    renderer.setSize(W, H)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.2
+    container.appendChild(renderer.domElement)
+
+    // Env map
+    const pmrem = new THREE.PMREMGenerator(renderer)
+    pmrem.compileEquirectangularShader()
+    const envScene = new THREE.Scene()
+    envScene.background = new THREE.Color(0x020204)
+    const sg = new THREE.SphereGeometry(0.5, 16, 16)
+    ;([[5, 5, 5, 0xffffff, 8], [-5, 3, -5, 0xFF0CB6, 6], [3, -4, 6, 0xffffff, 4], [-4, -2, -3, 0xFF0CB6, 3]] as [number, number, number, number, number][]).forEach(([x, y, z, c, intensity]) => {
+      const mat = new THREE.MeshBasicMaterial({ color: c })
+      mat.color.multiplyScalar(intensity)
+      const m = new THREE.Mesh(sg, mat)
+      m.position.set(x, y, z)
+      envScene.add(m)
+    })
+    const envMap = pmrem.fromScene(envScene, 0.04).texture
+    envScene.traverse(c => { if ((c as THREE.Mesh).geometry) (c as THREE.Mesh).geometry.dispose(); if ((c as THREE.Mesh).material) ((c as THREE.Mesh).material as THREE.Material).dispose() })
+    scene.environment = envMap
+
+    // Crystal grid
+    const R = 2
+    const ll2v = (lat: number, lng: number) => {
+      const phi = (90 - lat) * Math.PI / 180, theta = (lng + 180) * Math.PI / 180
+      return new THREE.Vector3(-R * Math.sin(phi) * Math.cos(theta), R * Math.cos(phi), R * Math.sin(phi) * Math.sin(theta))
     }
-    if (audio.paused) { audio.play(); setPlaying(true) }
-    else { audio.pause(); setPlaying(false) }
-  }
 
-  // Scene styling: each editorial beat is a full viewport
-  const sceneStyle = (idx: number): React.CSSProperties => ({
-    position: 'fixed', inset: 0,
-    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-    opacity: scene === idx ? 1 : 0,
-    transform: scene === idx ? 'scale(1)' : (scene > idx ? 'scale(0.96)' : 'scale(1.02)'),
-    transition: 'opacity 800ms ease, transform 800ms ease',
-    pointerEvents: scene === idx ? 'auto' : 'none',
-    zIndex: scene === idx ? 10 : 1,
-  })
+    const pts: CrystalPoint[] = []
+    for (let lat = -85; lat <= 85; lat += 2) {
+      const s = 2 / Math.max(Math.cos(lat * Math.PI / 180), 0.2)
+      for (let lng = -180; lng < 180; lng += s) pts.push({ lat, lng, country: '' })
+    }
+    const COUNT = pts.length
 
-  const moreCount = selected.moreCountries
-  const tickerNames = languages.map(l => l.name)
-  const tickerDuped = [...tickerNames, ...tickerNames]
+    const crystalMat = new THREE.MeshPhysicalMaterial({
+      transmission: 0.15, roughness: 0.08, ior: 2.4, thickness: 0.3,
+      clearcoat: 1, clearcoatRoughness: 0.02, envMap, envMapIntensity: 2.5,
+      metalness: 0.35, transparent: true, side: THREE.DoubleSide,
+    })
+
+    const mesh = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.014, 0), crystalMat, COUNT)
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
+
+    const dPal = [new THREE.Color('#080810'), new THREE.Color('#1a1a22'), new THREE.Color('#2a2a35'), new THREE.Color('#FFFFFF'), new THREE.Color('#FF0CB6')]
+    const dW = [0.35, 0.6, 0.75, 0.9, 1.0]
+    const dummy = new THREE.Object3D()
+    const bScales = new Float32Array(COUNT), tilts = new Float32Array(COUNT)
+    const discoCols: THREE.Color[] = [], globeCols: THREE.Color[] = [], curCols: THREE.Color[] = []
+
+    for (let i = 0; i < COUNT; i++) {
+      const pos = ll2v(pts[i].lat, pts[i].lng)
+      dummy.position.copy(pos); dummy.lookAt(0, 0, 0); dummy.rotateZ(Math.random() * Math.PI * 2)
+      const sc = 0.9 + Math.random() * 0.2; bScales[i] = sc; tilts[i] = Math.random() * Math.PI * 2
+      dummy.scale.setScalar(sc); dummy.updateMatrix(); mesh.setMatrixAt(i, dummy.matrix)
+      let r = Math.random(), ci = 0
+      for (let j = 0; j < dW.length; j++) { if (r < dW[j]) { ci = j; break } }
+      discoCols[i] = dPal[ci].clone(); globeCols[i] = new THREE.Color('#050608')
+      curCols[i] = discoCols[i].clone(); mesh.setColorAt(i, curCols[i])
+    }
+    mesh.instanceColor!.needsUpdate = true
+
+    const inner = new THREE.Mesh(new THREE.SphereGeometry(R - 0.01, 48, 48), new THREE.MeshBasicMaterial({ color: 0x050608, transparent: true, opacity: 0.4 }))
+    const globeGroup = new THREE.Group()
+    globeGroup.add(mesh); globeGroup.add(inner); scene.add(globeGroup)
+
+    // 3D Text
+    let textMesh3D: THREE.Mesh | null = null
+    const textMat = new THREE.MeshPhysicalMaterial({
+      color: 0xFF0CB6, emissive: 0xFF0CB6, emissiveIntensity: 0.4,
+      metalness: 0.9, roughness: 0.1, envMap, envMapIntensity: 3.0,
+      clearcoat: 1, clearcoatRoughness: 0.1,
+    })
+
+    const fontLoader = new FontLoader()
+    fontLoader.load('https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_bold.typeface.json', (font) => {
+      const textGeo = new TextGeometry('DANCEFLOOR   \u2022   DANCEFLOOR   \u2022   DANCEFLOOR   \u2022', {
+        font, size: 0.45, depth: 0.08, curveSegments: 12,
+        bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.01, bevelSegments: 4,
+      })
+      textGeo.computeBoundingBox()
+      let width = textGeo.boundingBox!.max.x - textGeo.boundingBox!.min.x
+      width += 1.2
+      const wrapRadius = R + 0.4
+      const posAttr = textGeo.attributes.position
+      for (let i = 0; i < posAttr.count; i++) {
+        const x = posAttr.getX(i), y = posAttr.getY(i), z = posAttr.getZ(i)
+        const theta = (x / width) * Math.PI * 2
+        const currentRadius = wrapRadius + z
+        posAttr.setX(i, currentRadius * Math.sin(theta))
+        posAttr.setY(i, y)
+        posAttr.setZ(i, currentRadius * Math.cos(theta))
+      }
+      posAttr.needsUpdate = true
+      textGeo.computeVertexNormals()
+      textMesh3D = new THREE.Mesh(textGeo, textMat)
+      textMesh3D.visible = false
+      textMesh3D.scale.setScalar(2.0)
+      globeGroup.add(textMesh3D)
+      if (threeRef.current) threeRef.current.textMesh3D = textMesh3D
+    })
+
+    // Lights
+    scene.add(new THREE.AmbientLight(0x111111, 0.3))
+    const kL = new THREE.PointLight(0xffffff, 40, 20); kL.position.set(4, 3, 4); scene.add(kL)
+    const pL = new THREE.PointLight(0xFF0CB6, 30, 20); pL.position.set(-3, -2, 4); scene.add(pL)
+    const fL = new THREE.PointLight(0xffffff, 10, 15); fL.position.set(0, 0, -5); scene.add(fL)
+
+    // Post-processing
+    const composer = new EffectComposer(renderer)
+    composer.addPass(new RenderPass(scene, camera))
+    const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.6, 0.4, 0.85)
+    composer.addPass(bloom)
+
+    // Geo data
+    let geoReady = false
+    loadGeoData(pts, () => {
+      for (let i = 0; i < COUNT; i++) globeCols[i] = pts[i].country ? LAND.clone() : OCEAN.clone()
+      geoReady = true
+      if (threeRef.current) threeRef.current.geoReady = true
+    })
+
+    // Expose state to React callbacks
+    threeRef.current = {
+      choreo: 0, morphStart: 0, textDropStart: 0,
+      bloom, mesh, curCols, globeCols, pts, geoReady, textMesh3D: null,
+      langTrans: null, COUNT, bScales, tilts, globeGroup,
+    }
+
+    // Animation
+    const tM = new THREE.Matrix4(), tP = new THREE.Vector3(), tQ = new THREE.Quaternion(), tS = new THREE.Vector3()
+    let rafId = 0
+
+    const animate = () => {
+      rafId = requestAnimationFrame(animate)
+      const t = threeRef.current!
+      const now = Date.now(), time = now * 0.001
+
+      globeGroup.rotation.y += (t.choreo === 1 ? 0.04 : 0.002)
+      kL.position.set(Math.sin(time * 0.3) * 5, Math.sin(time * 0.2) * 2 + 2, Math.cos(time * 0.4) * 5)
+      pL.position.set(Math.cos(time * 0.25) * 4, Math.cos(time * 0.15) * 2 - 1, Math.sin(time * 0.35) * 4)
+
+      // 3D text slam
+      if (t.textMesh3D && t.textMesh3D.visible && t.choreo >= 2) {
+        const elapsed = now - t.textDropStart
+        if (elapsed < TEXT_SLAM_MS) {
+          const p = Math.min(elapsed / TEXT_SLAM_MS, 1)
+          const ease = 1 - Math.pow(1 - p, 3)
+          t.textMesh3D.scale.setScalar(2.0 * (1 - ease) + 1.0 * ease)
+        } else {
+          t.textMesh3D.position.y = 0
+          t.textMesh3D.scale.setScalar(1.0)
+        }
+      }
+
+      // Morph
+      if (t.choreo === 3) {
+        const elapsed = now - t.morphStart, p = Math.min(elapsed / MORPH_MS, 1), ease = 1 - Math.pow(1 - p, 3)
+        bloom.strength = 3.0 * (1 - ease) + 0.6 * ease
+        bloom.threshold = 0.85 * (1 - ease) + 0.2 * ease
+        const white = new THREE.Color('#FFFFFF')
+        for (let i = 0; i < COUNT; i++) { t.curCols[i].copy(white).lerp(t.globeCols[i], ease); mesh.setColorAt(i, t.curCols[i]) }
+        mesh.instanceColor!.needsUpdate = true
+        if (p >= 1) {
+          t.choreo = 4; bloom.strength = 0.6; bloom.threshold = 0.2
+          setShowUI(true)
+          // Highlight first language
+          const lang = LANGS[0]
+          const targets: THREE.Color[] = [], startCols: THREE.Color[] = []
+          for (let i = 0; i < COUNT; i++) {
+            startCols[i] = t.curCols[i].clone()
+            const c = t.pts[i].country
+            targets[i] = (c && lang.countries.includes(c)) ? PINK.clone() : t.globeCols[i].clone()
+          }
+          t.langTrans = { targets, startCols, start: Date.now(), duration: 600 }
+        }
+      }
+
+      // Language transition
+      if (t.langTrans && t.choreo === 4) {
+        const elapsed = now - t.langTrans.start, p = Math.min(elapsed / t.langTrans.duration, 1), ease = 1 - Math.pow(1 - p, 2)
+        for (let i = 0; i < COUNT; i++) { t.curCols[i].copy(t.langTrans.startCols[i]).lerp(t.langTrans.targets[i], ease); mesh.setColorAt(i, t.curCols[i]) }
+        mesh.instanceColor!.needsUpdate = true
+        if (p >= 1) t.langTrans = null
+      }
+
+      // Twinkle
+      const twSpeed = t.choreo === 1 ? 3.0 : 1.5, twRange = t.choreo === 1 ? 0.15 : 0.05, twCount = t.choreo === 1 ? 200 : 80
+      for (let n = 0; n < twCount; n++) {
+        const i = Math.floor(Math.random() * COUNT)
+        mesh.getMatrixAt(i, tM); tM.decompose(tP, tQ, tS)
+        const shimmer = Math.sin(time * twSpeed + tilts[i] * 4) * 0.5 + 0.5
+        tS.setScalar(bScales[i] * (1 - twRange + shimmer * twRange * 2))
+        tM.compose(tP, tQ, tS); mesh.setMatrixAt(i, tM)
+      }
+      mesh.instanceMatrix.needsUpdate = true
+
+      // Settled sparkle
+      if (t.choreo === 4 && !t.langTrans) {
+        for (let i = 0; i < COUNT; i++) {
+          if (Math.random() < 0.0008) mesh.setColorAt(i, t.curCols[i].clone().multiplyScalar(1.5))
+          else mesh.setColorAt(i, t.curCols[i])
+        }
+        mesh.instanceColor!.needsUpdate = true
+      }
+
+      composer.render()
+    }
+    animate()
+
+    const onResize = () => {
+      const w = container.clientWidth, h = container.clientHeight
+      camera.aspect = w / h; camera.updateProjectionMatrix()
+      renderer.setSize(w, h); composer.setSize(w, h)
+    }
+    window.addEventListener('resize', onResize)
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener('resize', onResize)
+      renderer.dispose()
+      if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement)
+    }
+  }, [])
+
+  const lang = LANGS[langIdx]
+
+  const panelCls = (idx: number) =>
+    `fixed inset-0 z-10 flex flex-col items-center justify-center pointer-events-none transition-all duration-500 ${
+      slide === idx ? 'opacity-100 pointer-events-auto translate-y-0' :
+      slide > idx ? 'opacity-0 -translate-y-2' : 'opacity-0 translate-y-1'
+    }`
 
   return (
-    <div className="w-full h-screen overflow-hidden bg-[#050608]">
-      <GrainOverlay />
+    <div className="w-full h-screen overflow-hidden bg-black" style={{ fontFamily: "'Sora', sans-serif" }}>
+      {/* Three.js canvas */}
+      <div ref={canvasRef} className="fixed inset-0 z-0" />
 
-      {/* Vignette overlay */}
-      <div className="fixed inset-0 pointer-events-none z-[99]"
-        style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(5,6,8,0.7) 100%)' }} />
+      {/* Flash overlay */}
+      <div ref={flashRef} id="flash" className="fixed inset-0 z-[5] bg-white opacity-0 pointer-events-none" />
 
-      {/* ====== SCENE 0: THE HOOK ====== */}
-      <div style={sceneStyle(0)}>
-        <div className="px-8 max-w-[900px]">
-          <p className="text-[28px] md:text-[48px] font-bold text-white leading-[1.2] text-center"
-            style={{ fontFamily: 'Poppins' }}>
-            Music has always been the thing that brings strangers together.
-          </p>
-          <p className="text-[14px] md:text-[18px] font-normal text-white/40 text-center mt-6 tracking-wide uppercase"
-            style={{ fontFamily: 'Poppins' }}>
-            Across borders. Across cultures. Across languages you&apos;ve never spoken.
-          </p>
-        </div>
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-white/20 animate-bounce text-lg">&#8595;</div>
-      </div>
-
-      {/* ====== SCENE 1: THE FEELING ====== */}
-      <div style={sceneStyle(1)}>
-        <div className="px-8 max-w-[750px]">
-          <p className="text-[18px] md:text-[24px] font-normal text-white/60 text-center leading-[1.8]"
-            style={{ fontFamily: 'Poppins' }}>
-            You know that feeling — when a song takes over and you can&apos;t help but sing along. The joy, the release, the shared moment on the dancefloor when nothing else matters.
+      {/* ═══ BEAT 1 ═══ */}
+      <div className={panelCls(0)} onClick={advance}>
+        <div className="w-[90%] max-w-[880px] px-6 text-center">
+          <h1 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.08, letterSpacing: '-0.02em', color: '#e2e2e2', fontSize: 'clamp(1.6rem, 6.5vw, 3.2rem)' }}>
+            Music has always been the thing that brings strangers together<span style={{ color: '#FF0CB6' }}>.</span>
+          </h1>
+          <p style={{ fontFamily: "'Sora', sans-serif", fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#919090', fontSize: 'clamp(0.7rem, 2vw, 0.95rem)', lineHeight: 1.8, marginTop: '2rem' }}>
+            Across borders<span style={{ color: '#FF0CB6' }}>.</span> Across cultures<span style={{ color: '#FF0CB6' }}>.</span><br />
+            Across languages you&apos;ve never spoken<span style={{ color: '#FF0CB6' }}>.</span>
           </p>
         </div>
       </div>
 
-      {/* ====== SCENE 2: THE TRUTH ====== */}
-      <div style={sceneStyle(2)}>
-        <div className="px-8 max-w-[750px]">
-          <p className="text-[18px] md:text-[24px] font-normal text-white/50 text-center leading-[1.8]"
-            style={{ fontFamily: 'Poppins' }}>
-            But sometimes you don&apos;t understand the lyrics. You&apos;re singing sounds, not words. And you&apos;ve never known what you were actually singing.
+      {/* ═══ BEAT 2 ═══ */}
+      <div className={panelCls(1)} onClick={advance}>
+        <div className="w-[90%] max-w-[750px] px-6 text-center">
+          <p style={{ fontFamily: "'Sora', sans-serif", fontWeight: 400, color: '#919090', fontSize: 'clamp(1.05rem, 3.2vw, 1.4rem)', lineHeight: 1.85 }}>
+            The beat crosses every border. The words never could.
           </p>
         </div>
       </div>
 
-      {/* ====== SCENE 3: THE DROP ====== */}
-      <div style={sceneStyle(3)}>
-        <p className="text-[36px] md:text-[72px] font-bold text-[#FF0CB6] text-center tracking-tight"
-          style={{ fontFamily: 'Poppins', textShadow: '0 0 40px rgba(255,12,182,0.6), 0 0 80px rgba(255,12,182,0.3)' }}>
-          Not anymore.
-        </p>
-      </div>
-
-      {/* ====== SCENE 4: THE REVEAL ====== */}
-      <div style={sceneStyle(4)}>
-        <div className="px-8 max-w-[800px]">
-          <p className="text-[15px] md:text-[19px] font-normal text-white/50 text-center leading-[1.9]"
-            style={{ fontFamily: 'Poppins' }}>
-            For the first time in history, a commercially released single is dropping in multiple languages — allowing over <span className="text-white font-semibold">5 billion</span> people around the world to sing along, and actually understand every word they&apos;re singing.
+      {/* ═══ BEAT 3 ═══ */}
+      <div className={panelCls(2)} onClick={advance}>
+        <div className="w-[90%] max-w-[900px] text-center">
+          <p style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#FF0CB6', fontSize: 'clamp(2.5rem, 12vw, 5.5rem)', lineHeight: 0.95 }}>
+            Not anymore<span style={{ color: '#FF0CB6' }}>.</span>
           </p>
         </div>
       </div>
 
-      {/* ====== SCENE 5: THE GLOBE ====== */}
-      <div style={{
-        ...sceneStyle(5),
-        justifyContent: 'flex-start',
-        alignItems: 'stretch',
-      }}>
-        {/* Language Grid Overlay */}
-        {gridOpen && (
-          <div className="fixed inset-0 z-[60] bg-[#050608]/95 backdrop-blur-xl flex flex-col">
-            <header className="flex justify-between items-center px-6 py-6">
-              <div className="text-xl font-extrabold tracking-[-0.04em] text-[#FF0CB6]" style={{ fontFamily: 'Poppins' }}>DANCEFLOOR</div>
-              <button onClick={() => setGridOpen(false)} className="material-symbols-outlined text-white/60 hover:text-[#FF0CB6] transition-all duration-300">close</button>
-            </header>
-            <div className="flex-1 overflow-y-auto selection-scroll px-8 py-4">
-              <p className="text-[10px] tracking-[0.2em] font-semibold text-[#FF0CB6] uppercase mb-6" style={{ fontFamily: 'Poppins' }}>Select Language</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {languages.map(lang => (
-                  <button key={lang.id} onClick={() => { setSelected(lang); setGridOpen(false) }}
-                    className={`text-left px-4 py-3 rounded-sm border transition-all ${lang.id === selected.id ? 'border-[#FF0CB6]/50 bg-[#FF0CB6]/10 text-white' : 'border-white/10 bg-white/5 text-white/50 hover:text-white hover:border-white/20'}`}>
-                    <span className="text-xs font-bold tracking-wider uppercase">{lang.name}</span>
-                    <span className="block text-[8px] tracking-widest text-white/30 mt-1 uppercase">{lang.speakers}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Globe with chain suspension */}
-        <div className="w-full h-full flex flex-col items-center justify-start relative pt-6">
-          {/* DANCEFLOOR centered above ball */}
-          <div className="text-center z-20 relative">
-            <h1 className="text-[28px] md:text-[42px] font-extrabold tracking-[0.08em] text-[#FF0CB6] leading-none"
-              style={{ fontFamily: 'Poppins', textShadow: '0 0 30px rgba(255,12,182,0.4)' }}>
-              DANCEFLOOR
-            </h1>
-            {/* Countdown below title */}
-            {!countdown.launched && (
-              <div className="mt-2 flex items-center justify-center gap-1 font-mono text-[12px] text-white/30">
-                <span>{pad(countdown.days)}d</span>
-                <span className="text-[#FF0CB6]/40">:</span>
-                <span>{pad(countdown.hours)}h</span>
-                <span className="text-[#FF0CB6]/40">:</span>
-                <span>{pad(countdown.mins)}m</span>
-                <span className="text-[#FF0CB6]/40">:</span>
-                <span>{pad(countdown.secs)}s</span>
-              </div>
-            )}
-          </div>
-
-          {/* Chain — thin line from title to ball */}
-          <div className="w-[1px] h-[30px] md:h-[40px] bg-gradient-to-b from-white/20 to-white/5 z-20" />
-
-          {/* Background Typography */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden z-0">
-            <h1 className="text-[18vw] font-black leading-none tracking-tighter text-[#FF0CB6] opacity-[0.05] uppercase">{selected.name}</h1>
-          </div>
-
-          {/* Mirror Ball Container */}
-          <div className="relative w-[75vw] max-w-[550px] aspect-square z-10 flex-shrink-0">
-            <button onClick={() => cycleLang(-1)}
-              className="absolute left-0 md:-left-14 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-white/30 hover:text-[#FF0CB6] transition-all duration-200 z-20 text-xl select-none"
-              style={{ fontFamily: 'Poppins', fontWeight: 300 }}>
-              &#8249;
-            </button>
-            <button onClick={() => cycleLang(1)}
-              className="absolute right-0 md:-right-14 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-white/30 hover:text-[#FF0CB6] transition-all duration-200 z-20 text-xl select-none"
-              style={{ fontFamily: 'Poppins', fontWeight: 300 }}>
-              &#8250;
-            </button>
-
-            <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#FF0CB6]/30 border-t-[#FF0CB6] rounded-full animate-spin" /></div>}>
-              <Globe3D selected={selected} />
-            </Suspense>
-          </div>
+      {/* ═══ BEAT 4 ═══ */}
+      <div className={panelCls(3)} onClick={advance}>
+        <div className="w-[90%] max-w-[880px] px-6 text-center">
+          <p style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#e2e2e2', fontSize: 'clamp(1.4rem, 5vw, 2.8rem)', lineHeight: 1.1 }}>
+            One track<span style={{ color: '#FF0CB6' }}>.</span> 27 languages<span style={{ color: '#FF0CB6' }}>.</span> 5 billion voices<span style={{ color: '#FF0CB6' }}>.</span>
+          </p>
+          <p style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#FF0CB6', fontSize: 'clamp(1rem, 3.5vw, 1.8rem)', marginTop: '1.5rem' }}>
+            17 April 2026
+          </p>
         </div>
-
-        {/* Language Info Card — glassmorphism */}
-        <aside className="fixed md:left-10 bottom-14 left-4 right-4 md:right-auto md:w-[400px] rounded-sm z-30"
-          style={{ background: 'rgba(255,255,255,0.025)', backdropFilter: 'blur(48px)', WebkitBackdropFilter: 'blur(48px)', border: '1px solid rgba(255,255,255,0.07)' }}>
-          <div className="p-8 md:p-10">
-            <div className="flex justify-between items-start mb-7">
-              <div className="space-y-2">
-                <p className="text-[10px] tracking-[0.25em] font-semibold text-[#FF0CB6] uppercase" style={{ fontFamily: 'Poppins' }}>Active Linguistic Region</p>
-                <h3 className="text-[24px] md:text-[30px] font-bold text-white tracking-tight uppercase leading-none" style={{ fontFamily: 'Poppins' }}>{selected.name}</h3>
-              </div>
-              <button onClick={() => setGridOpen(true)}
-                className="w-9 h-9 flex items-center justify-center rounded-sm bg-white/5 border border-white/10 hover:border-[#FF0CB6]/30 transition-colors cursor-pointer">
-                <span className="material-symbols-outlined text-[#FF0CB6] text-lg">language</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-7 border-t border-white/[0.06] pt-7">
-              <div>
-                <p className="text-[9px] tracking-[0.2em] font-semibold text-white/25 mb-2 uppercase">Native Speakers</p>
-                <p className="text-[13px] font-semibold text-white/90" style={{ fontFamily: 'Poppins' }}>{selected.speakers}</p>
-              </div>
-              <div>
-                <p className="text-[9px] tracking-[0.2em] font-semibold text-white/25 mb-2 uppercase">Global Rank</p>
-                <p className="text-[13px] font-semibold text-white/90" style={{ fontFamily: 'Poppins' }}>{selected.globalRank}</p>
-              </div>
-            </div>
-
-            <div className="border-t border-white/[0.06] pt-5 mb-7">
-              <p className="text-[9px] tracking-[0.2em] font-semibold text-white/25 mb-3 uppercase">Primary Regions / Nations</p>
-              <div className="grid grid-cols-3 gap-y-2 gap-x-2">
-                {selected.countries.slice(0, 9).map(c => (
-                  <div key={c} className="text-[10px] font-semibold text-white/70 uppercase">{c}</div>
-                ))}
-              </div>
-              {moreCount > 0 && <p className="text-[10px] text-white/25 mt-2 uppercase">+{moreCount} more</p>}
-            </div>
-
-            {countdown.launched ? (
-              <button onClick={handlePlay}
-                className="w-full bg-[#FF0CB6] text-white py-3.5 rounded-sm font-semibold text-[11px] tracking-[0.15em] uppercase hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(255,12,182,0.3)]">
-                {playing ? 'PAUSE' : 'LISTEN NOW'}
-                <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>{playing ? 'pause' : 'play_arrow'}</span>
-              </button>
-            ) : (
-              <div className="w-full bg-white/[0.03] border border-white/[0.06] text-white/35 py-3.5 rounded-sm font-semibold text-[10px] tracking-[0.12em] uppercase flex items-center justify-center gap-3 cursor-not-allowed">
-                <span style={{ fontFamily: 'Poppins' }}>APRIL 17, 2026</span>
-                <span className="font-mono text-[11px] text-white/45 countdown-colon">
-                  {pad(countdown.days)}:{pad(countdown.hours)}:{pad(countdown.mins)}:{pad(countdown.secs)}
-                </span>
-              </div>
-            )}
-          </div>
-        </aside>
-
-        {/* Passive ticker marquee */}
-        <div className="fixed bottom-0 left-0 right-0 h-9 bg-[#050608]/50 backdrop-blur-sm border-t border-white/[0.04] overflow-hidden z-40 flex items-center">
-          <div className="flex items-center gap-12 whitespace-nowrap ticker-marquee">
-            {tickerDuped.map((name, i) => (
-              <span key={`${name}-${i}`}
-                className={`text-[10px] tracking-[0.15em] uppercase ${name === selected.name ? 'text-[#FF0CB6]/60' : 'text-white/15'}`}
-                style={{ fontFamily: 'Poppins' }}>
-                {name}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <footer className="fixed bottom-9 left-0 right-0 px-8 py-2 pointer-events-none hidden md:block z-30">
-          <div className="flex justify-between items-center text-[9px] font-medium text-white/15 uppercase">
-            <div className="pointer-events-auto">&copy; 2026 HOTTR RECORDS</div>
-            <div className="pointer-events-auto text-white/10">press@hottr.world</div>
-            <div className="flex gap-6 pointer-events-auto">
-              <a className="hover:text-white/40 transition-colors" href="https://instagram.com/hottr" target="_blank" rel="noopener noreferrer">Instagram</a>
-              <a className="hover:text-white/40 transition-colors" href="https://tiktok.com/@hottr" target="_blank" rel="noopener noreferrer">TikTok</a>
-              <a className="hover:text-white/40 transition-colors" href="https://x.com/hottr" target="_blank" rel="noopener noreferrer">X</a>
-              <a className="hover:text-white/40 transition-colors" href="mailto:press@hottr.world">Contact</a>
-            </div>
-          </div>
-        </footer>
       </div>
 
-      {/* Scene progress dots (editorial only) */}
-      {scene < 5 && (
-        <div className="fixed right-5 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2.5">
-          {[0, 1, 2, 3, 4].map(i => (
-            <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${scene === i ? 'bg-[#FF0CB6] shadow-[0_0_6px_rgba(255,12,182,0.6)]' : scene > i ? 'bg-white/15' : 'bg-white/8'}`} />
-          ))}
+      {/* NEXT button */}
+      {slide < TOTAL && (
+        <button onClick={advance} className="fixed bottom-8 right-6 z-50 text-[10px] font-medium tracking-[0.25em] uppercase" style={{ fontFamily: "'Sora', sans-serif", color: '#FF0CB6', background: 'none', border: 'none', cursor: 'pointer' }}>
+          NEXT
+        </button>
+      )}
+
+      {/* Progress */}
+      {slide < TOTAL && (
+        <div className="fixed left-5 bottom-8 z-50 flex flex-col items-center gap-1.5">
+          <div className="w-[2px] h-14 rounded-full overflow-hidden" style={{ background: 'rgba(48,48,48,0.3)' }}>
+            <div className="w-full rounded-full transition-all duration-1000 ease-out" style={{ height: `${((slide + 1) / TOTAL) * 100}%`, background: 'rgba(255,12,182,0.5)' }} />
+          </div>
+          <span className="text-[7px] tracking-widest" style={{ fontFamily: "'Sora', sans-serif", color: 'rgba(145,144,144,0.25)' }}>{slide + 1}/{TOTAL}</span>
+        </div>
+      )}
+
+      {/* Countdown */}
+      {showUI && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[95]" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', color: 'rgba(226,226,226,0.6)', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
+          {cd.d}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>D</span>
+          <span style={{ color: 'rgba(255,12,182,0.25)', margin: '0 0.12em' }}>:</span>
+          {cd.h}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>H</span>
+          <span style={{ color: 'rgba(255,12,182,0.25)', margin: '0 0.12em' }}>:</span>
+          {cd.m}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>M</span>
+          <span style={{ color: 'rgba(255,12,182,0.25)', margin: '0 0.12em' }}>:</span>
+          {cd.s}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>S</span>
+        </div>
+      )}
+
+      {/* Language card */}
+      {showUI && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[95] w-[90%] max-w-[340px] rounded-[4px] p-5" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#FF0CB6' }}>Active Linguistic Region</div>
+          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 24, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#e2e2e2', marginTop: 4 }}>{lang.name.toUpperCase()}</div>
+          <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 12, color: '#919090', marginTop: 8 }}>{lang.speakers} speakers</div>
+          <div className="flex items-center gap-3 mt-3 justify-center">
+            <button onClick={() => cycleLang(-1)} className="w-9 h-9 rounded-[4px] flex items-center justify-center text-base cursor-pointer" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(226,226,226,0.5)' }}>&#8249;</button>
+            <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: 'rgba(226,226,226,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', minWidth: 100, textAlign: 'center' }}>{langIdx + 1} / {LANGS.length}</span>
+            <button onClick={() => cycleLang(1)} className="w-9 h-9 rounded-[4px] flex items-center justify-center text-base cursor-pointer" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(226,226,226,0.5)' }}>&#8250;</button>
+          </div>
         </div>
       )}
     </div>

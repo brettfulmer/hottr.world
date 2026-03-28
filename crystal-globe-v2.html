@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DANCEFLOOR — Crystal Globe v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@900&family=Sora:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; color: #e2e2e2; }
+:root { --display: 'Poppins', sans-serif; --body: 'Sora', sans-serif; --pink: #FF0CB6; }
+
+#canvas-container { position: fixed; inset: 0; z-index: 0; }
+canvas { display: block; }
+
+#flash { position: fixed; inset: 0; z-index: 5; background: #fff; opacity: 0; pointer-events: none; }
+#flash.fire { animation: flashBang 0.6s ease-out forwards; }
+@keyframes flashBang { 0% { opacity: 0.90; } 100% { opacity: 0; } }
+
+/* No more .title-dancefloor CSS — it's 3D now */
+
+#countdown {
+  position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 95;
+  font-family: var(--display); font-weight: 900;
+  font-size: clamp(1.2rem, 4vw, 1.8rem); color: rgba(226,226,226,0.6);
+  text-transform: uppercase; letter-spacing: -0.02em;
+  opacity: 0; transition: opacity 0.8s ease; pointer-events: none;
+}
+#countdown.visible { opacity: 1; }
+#countdown .sep { color: rgba(255,12,182,0.25); margin: 0 0.12em; }
+#countdown .u { color: rgba(255,12,182,0.4); font-size: 0.7em; margin-left: 0.1em; }
+
+.slide {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  pointer-events: none; opacity: 0;
+  transition: opacity 500ms cubic-bezier(0.4,0,0.2,1), transform 500ms cubic-bezier(0.4,0,0.2,1);
+  transform: translateY(6px);
+}
+.slide.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.slide.past { opacity: 0; transform: translateY(-10px); }
+.slide-inner { width: 90%; max-width: 880px; padding: 0 1.5rem; text-align: center; }
+
+.t-display { font-family: var(--display); font-weight: 900; text-transform: uppercase; line-height: 1.08; letter-spacing: -0.02em; color: #e2e2e2; font-size: clamp(1.6rem, 6.5vw, 3.2rem); }
+.t-sub { font-family: var(--body); font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: #919090; font-size: clamp(0.7rem, 2vw, 0.95rem); line-height: 1.8; margin-top: 2rem; }
+.t-body { font-family: var(--body); font-weight: 400; color: #919090; font-size: clamp(1.05rem, 3.2vw, 1.4rem); line-height: 1.85; }
+.t-punch { font-family: var(--display); font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; color: var(--pink); font-size: clamp(2.5rem, 12vw, 5.5rem); line-height: 0.95; }
+.t-reveal { font-family: var(--display); font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; color: #e2e2e2; font-size: clamp(1.4rem, 5vw, 2.8rem); line-height: 1.1; }
+.t-date { font-family: var(--display); font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: var(--pink); font-size: clamp(1rem, 3.5vw, 1.8rem); margin-top: 1.5rem; }
+.pk { color: var(--pink); }
+
+#next-btn { position: fixed; bottom: 2rem; right: 1.5rem; z-index: 50; font-family: var(--body); font-weight: 500; font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--pink); background: none; border: none; cursor: pointer; }
+#next-btn:hover { opacity: 0.7; }
+.gone { display: none !important; }
+#progress { position: fixed; left: 1.25rem; bottom: 2rem; z-index: 50; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+#progress .bar { width: 2px; height: 56px; background: rgba(48,48,48,0.3); border-radius: 1px; overflow: hidden; }
+#progress .fill { width: 100%; background: rgba(255,12,182,0.5); border-radius: 1px; transition: height 1s ease-out; }
+#progress .lbl { font-family: var(--body); font-size: 7px; color: rgba(145,144,144,0.25); letter-spacing: 0.15em; }
+
+#lang-card {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  z-index: 95; width: 90%; max-width: 340px;
+  background: rgba(0,0,0,0.72); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255,255,255,0.05); border-radius: 4px;
+  padding: 1.25rem; opacity: 0; pointer-events: none; transition: opacity 0.8s ease;
+}
+#lang-card.visible { opacity: 1; pointer-events: auto; }
+#lang-card .label { font-family: var(--body); font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.2em; color: var(--pink); }
+#lang-card .name { font-family: var(--display); font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: -0.02em; color: #e2e2e2; margin-top: 4px; }
+#lang-card .meta { font-family: var(--body); font-size: 12px; font-weight: 400; color: #919090; margin-top: 8px; }
+#lang-arrows { display: flex; align-items: center; gap: 0.75rem; margin-top: 12px; justify-content: center; }
+#lang-arrows button { width: 36px; height: 36px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: rgba(226,226,226,0.5); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+#lang-arrows button:hover { border-color: rgba(255,12,182,0.4); color: var(--pink); }
+#lang-arrows .lang-display { font-family: var(--body); font-size: 11px; color: rgba(226,226,226,0.4); text-transform: uppercase; letter-spacing: 0.1em; min-width: 100px; text-align: center; }
+</style>
+</head>
+<body>
+<div id="canvas-container"></div>
+<div id="flash"></div>
+<!-- No DOM title text — it's fully 3D now -->
+<div id="countdown"></div>
+
+<div class="slide active" id="s0" onclick="advance()">
+  <div class="slide-inner">
+    <h1 class="t-display">Music has always been the thing that brings strangers together<span class="pk">.</span></h1>
+    <p class="t-sub">Across borders<span class="pk">.</span> Across cultures<span class="pk">.</span><br>Across languages you've never spoken<span class="pk">.</span></p>
+  </div>
+</div>
+<div class="slide" id="s1" onclick="advance()">
+  <div class="slide-inner" style="max-width:750px">
+    <p class="t-body">The beat crosses every border. The words never could.</p>
+  </div>
+</div>
+<div class="slide" id="s2" onclick="advance()">
+  <div class="slide-inner"><p class="t-punch">Not anymore<span class="pk">.</span></p></div>
+</div>
+<div class="slide" id="s3" onclick="advance()">
+  <div class="slide-inner">
+    <p class="t-reveal">One track<span class="pk">.</span> 27 languages<span class="pk">.</span> 5 billion voices<span class="pk">.</span></p>
+    <p class="t-date">17 April 2026</p>
+  </div>
+</div>
+
+<button id="next-btn" onclick="advance()">NEXT</button>
+<div id="progress"><div class="bar"><div class="fill" id="pfill" style="height:25%"></div></div><span class="lbl" id="plbl">1/4</span></div>
+
+<div id="lang-card">
+  <div class="label">Active Linguistic Region</div>
+  <div class="name" id="lc-name">AFRIKAANS</div>
+  <div class="meta" id="lc-meta">~16M speakers</div>
+  <div id="lang-arrows">
+    <button onclick="cycleLang(-1)">&#8249;</button>
+    <div class="lang-display" id="lc-nav">1 / 27</div>
+    <button onclick="cycleLang(1)">&#8250;</button>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+
+/* ═══ 1. GEO ENGINE ═══ */
+function pointInRing(px,py,ring){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const[xi,yi]=ring[i],[xj,yj]=ring[j];if((yi>py)!==(yj>py)&&px<((xj-xi)*(py-yi))/(yj-yi)+xi)inside=!inside;}return inside;}
+
+async function loadGeoData(points,onComplete){
+  try{
+    const topo=await(await fetch('https://unpkg.com/world-atlas@2.0.2/countries-110m.json')).json();
+    const tc=await import('https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/+esm');
+    const geo=tc.feature(topo,topo.objects.countries);
+    const prepared=geo.features.map(feat=>{
+      const geom=feat.geometry,rings=[];
+      if(geom.type==='Polygon')rings.push(...geom.coordinates);
+      else if(geom.type==='MultiPolygon')for(const p of geom.coordinates)rings.push(...p);
+      let mnLng=Infinity,mxLng=-Infinity,mnLat=Infinity,mxLat=-Infinity;
+      for(const r of rings)for(const[ln,lt]of r){if(ln<mnLng)mnLng=ln;if(ln>mxLng)mxLng=ln;if(lt<mnLat)mnLat=lt;if(lt>mxLat)mxLat=lt;}
+      return{name:(feat.properties||{}).name||'',rings,mnLng,mxLng,mnLat,mxLat};
+    });
+    let idx=0;
+    (function batch(){
+      const end=Math.min(idx+500,points.length);
+      for(let i=idx;i<end;i++){const{lat,lng}=points[i];for(const f of prepared){if(lng<f.mnLng||lng>f.mxLng||lat<f.mnLat||lat>f.mxLat)continue;for(const r of f.rings){if(pointInRing(lng,lat,r)){points[i].country=f.name;break;}}if(points[i].country)break;}}
+      idx=end;if(idx<points.length)setTimeout(batch,0);else{console.log('[Geo]',points.filter(p=>p.country).length,'land');onComplete();}
+    })();
+  }catch(e){console.error('[Geo]',e);onComplete();}
+}
+
+/* ═══ 2. LANGUAGES ═══ */
+const LANGS=[
+  {id:'af',name:'Afrikaans',speakers:'~16M',countries:['South Africa','Namibia']},
+  {id:'bn',name:'Bengali',speakers:'~270M',countries:['Bangladesh','India']},
+  {id:'pt-br',name:'Brazilian Portuguese',speakers:'~260M',countries:['Brazil','Portugal','Angola','Mozambique']},
+  {id:'zh',name:'Mandarin',speakers:'~1.1B',countries:['China','Taiwan','Singapore']},
+  {id:'nl',name:'Dutch',speakers:'~25M',countries:['Netherlands','Belgium','Suriname']},
+  {id:'ar-eg',name:'Egyptian Arabic',speakers:'~400M',countries:['Egypt','Saudi Arabia','Iraq','Jordan','Lebanon']},
+  {id:'en',name:'English',speakers:'~1.5B',countries:['Australia','United Kingdom','United States of America','Canada','New Zealand','Ireland','South Africa','Nigeria','India']},
+  {id:'fr',name:'French',speakers:'~320M',countries:['France','Belgium','Switzerland','Canada','Senegal','Dem. Rep. Congo','Cameroon']},
+  {id:'de',name:'German',speakers:'~130M',countries:['Germany','Austria','Switzerland']},
+  {id:'el',name:'Greek',speakers:'~13M',countries:['Greece','Cyprus']},
+  {id:'hi',name:'Hindi',speakers:'~600M',countries:['India','Fiji','Mauritius']},
+  {id:'id',name:'Indonesian',speakers:'~200M',countries:['Indonesia']},
+  {id:'it',name:'Italian',speakers:'~85M',countries:['Italy','Switzerland']},
+  {id:'ja',name:'Japanese',speakers:'~125M',countries:['Japan']},
+  {id:'ko',name:'Korean',speakers:'~80M',countries:['South Korea','North Korea']},
+  {id:'es-mx',name:'Mexican Spanish',speakers:'~550M',countries:['Mexico','United States of America']},
+  {id:'pl',name:'Polish',speakers:'~45M',countries:['Poland']},
+  {id:'ro',name:'Romanian',speakers:'~26M',countries:['Romania','Moldova']},
+  {id:'ru',name:'Russian',speakers:'~250M',countries:['Russia','Belarus','Kazakhstan','Kyrgyzstan']},
+  {id:'es',name:'Spanish',speakers:'~550M',countries:['Spain']},
+  {id:'sw',name:'Swahili',speakers:'~100M',countries:['Kenya','Tanzania','Uganda']},
+  {id:'sv',name:'Swedish',speakers:'~10M',countries:['Sweden','Finland']},
+  {id:'tl',name:'Tagalog',speakers:'~80M',countries:['Philippines']},
+  {id:'th',name:'Thai',speakers:'~60M',countries:['Thailand']},
+  {id:'tr',name:'Turkish',speakers:'~80M',countries:['Turkey']},
+  {id:'ur',name:'Urdu',speakers:'~230M',countries:['Pakistan','India']},
+  {id:'vi',name:'Vietnamese',speakers:'~85M',countries:['Vietnam']},
+];
+let langIdx=0;
+
+/* ═══ 3. TIMELINE ═══ */
+let currentSlide=0;const TOTAL=4;let locked=false;
+let choreo=0,morphStart=0;const MORPH_MS=2000;
+// 3D text animation state
+let textDropStart=0;
+const TEXT_SLAM_MS=200, TEXT_SETTLE_MS=2000;
+
+function updateUI(){
+  for(let i=0;i<TOTAL;i++){const el=document.getElementById(`s${i}`);el.className='slide'+(i===currentSlide?' active':i<currentSlide?' past':'');}
+  if(currentSlide>=TOTAL){document.getElementById('next-btn').classList.add('gone');document.getElementById('progress').classList.add('gone');}
+  else{document.getElementById('next-btn').classList.remove('gone');document.getElementById('progress').classList.remove('gone');document.getElementById('pfill').style.height=`${((currentSlide+1)/TOTAL)*100}%`;document.getElementById('plbl').textContent=`${currentSlide+1}/${TOTAL}`;}
+}
+window.advance=function(){
+  if(locked||currentSlide>=TOTAL)return;locked=true;currentSlide++;updateUI();
+  if(currentSlide>=TOTAL){setTimeout(()=>{choreo=1;},200);setTimeout(triggerTheDrop,2500);}
+  setTimeout(()=>{locked=false;},600);
+};
+window.addEventListener('wheel',e=>{if(currentSlide>=TOTAL)return;e.preventDefault();if(Math.abs(e.deltaY)>8)advance();},{passive:false});
+let _ty=null;
+window.addEventListener('touchstart',e=>{_ty=e.touches[0].clientY;},{passive:true});
+window.addEventListener('touchend',e=>{if(_ty===null||currentSlide>=TOTAL)return;if(e.changedTouches[0].clientY-_ty<-25)advance();_ty=null;},{passive:true});
+window.addEventListener('keydown',e=>{if(currentSlide<TOTAL&&(e.key==='ArrowDown'||e.key===' ')){e.preventDefault();advance();}if(choreo===4){if(e.key==='ArrowLeft')cycleLang(-1);if(e.key==='ArrowRight')cycleLang(1);}});
+window.cycleLang=function(dir){langIdx=((langIdx+dir)%LANGS.length+LANGS.length)%LANGS.length;highlightLanguage(LANGS[langIdx]);updateLangCard();};
+function updateLangCard(){const l=LANGS[langIdx];document.getElementById('lc-name').textContent=l.name.toUpperCase();document.getElementById('lc-meta').textContent=`${l.speakers} speakers`;document.getElementById('lc-nav').textContent=`${langIdx+1} / ${LANGS.length}`;}
+function tickCD(){const diff=Math.max(0,new Date('2026-04-17T00:00:00Z').getTime()-Date.now()),p=n=>String(n).padStart(2,'0'),d=Math.floor(diff/864e5),h=Math.floor(diff%864e5/36e5),m=Math.floor(diff%36e5/6e4),s=Math.floor(diff%6e4/1e3);document.getElementById('countdown').innerHTML=`${p(d)}<span class="u">D</span><span class="sep">:</span>${p(h)}<span class="u">H</span><span class="sep">:</span>${p(m)}<span class="u">M</span><span class="sep">:</span>${p(s)}<span class="u">S</span>`;}
+setInterval(tickCD,1000);tickCD();
+
+/* ═══ 4. THE DROP ═══ */
+function triggerTheDrop(){
+  choreo=2;
+  document.getElementById('flash').classList.add('fire');
+  bloom.strength=3.0;
+  const white=new THREE.Color('#FFFFFF');
+  for(let i=0;i<COUNT;i++){curCols[i].copy(white);mesh.setColorAt(i,white);}
+  mesh.instanceColor.needsUpdate=true;
+  // Show 3D text with slam
+  if(textMesh3D){textMesh3D.visible=true;textDropStart=Date.now();}
+  setTimeout(()=>{choreo=3;morphStart=Date.now();},TEXT_SLAM_MS);
+}
+
+/* ═══ 5. THREE.JS SCENE ═══ */
+const W=innerWidth,H=innerHeight;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x000000);
+const camera=new THREE.PerspectiveCamera(45,W/H,0.1,100);camera.position.set(0,0,6);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(W,H);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;
+document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+const pmrem=new THREE.PMREMGenerator(renderer);pmrem.compileEquirectangularShader();
+const envMap=(()=>{
+  const s=new THREE.Scene();s.background=new THREE.Color(0x020204);const g=new THREE.SphereGeometry(0.5,16,16);
+  [[5,5,5,0xffffff,8],[-5,3,-5,0xFF0CB6,6],[3,-4,6,0xffffff,4],[-4,-2,-3,0xFF0CB6,3]].forEach(([x,y,z,c,i])=>{
+    const m=new THREE.MeshBasicMaterial({color:c});m.color.multiplyScalar(i);const o=new THREE.Mesh(g,m);o.position.set(x,y,z);s.add(o);
+  });const t=pmrem.fromScene(s,0.04).texture;s.traverse(c=>{c.geometry?.dispose();c.material?.dispose();});return t;
+})();
+scene.environment=envMap;
+
+const R=2;
+function ll2v(lat,lng){const phi=(90-lat)*Math.PI/180,theta=(lng+180)*Math.PI/180;return new THREE.Vector3(-R*Math.sin(phi)*Math.cos(theta),R*Math.cos(phi),R*Math.sin(phi)*Math.sin(theta));}
+
+const pts=[];
+for(let lat=-85;lat<=85;lat+=2){const s=2/Math.max(Math.cos(lat*Math.PI/180),0.2);for(let lng=-180;lng<180;lng+=s)pts.push({lat,lng,country:''});}
+const COUNT=pts.length;
+
+const crystalMat=new THREE.MeshPhysicalMaterial({
+  transmission:0.15,roughness:0.08,ior:2.4,thickness:0.3,
+  clearcoat:1,clearcoatRoughness:0.02,envMap,envMapIntensity:2.5,
+  metalness:0.35,transparent:true,side:THREE.DoubleSide,
+});
+
+const mesh=new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.014,0),crystalMat,COUNT);
+mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+const dPal=[new THREE.Color('#080810'),new THREE.Color('#1a1a22'),new THREE.Color('#2a2a35'),new THREE.Color('#FFFFFF'),new THREE.Color('#FF0CB6')];
+const dW=[0.35,0.6,0.75,0.9,1.0];
+const dummy=new THREE.Object3D();
+const bScales=new Float32Array(COUNT),tilts=new Float32Array(COUNT);
+const discoCols=[],globeCols=[],curCols=[];
+
+for(let i=0;i<COUNT;i++){
+  const pos=ll2v(pts[i].lat,pts[i].lng);
+  dummy.position.copy(pos);dummy.lookAt(0,0,0);dummy.rotateZ(Math.random()*Math.PI*2);
+  const sc=0.9+Math.random()*0.2;bScales[i]=sc;tilts[i]=Math.random()*Math.PI*2;
+  dummy.scale.setScalar(sc);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
+  let r=Math.random(),ci=0;for(let j=0;j<dW.length;j++){if(r<dW[j]){ci=j;break;}}
+  discoCols[i]=dPal[ci].clone();globeCols[i]=new THREE.Color('#050608');
+  curCols[i]=discoCols[i].clone();mesh.setColorAt(i,curCols[i]);
+}
+mesh.instanceColor.needsUpdate=true;
+
+const inner=new THREE.Mesh(new THREE.SphereGeometry(R-0.01,48,48),new THREE.MeshBasicMaterial({color:0x050608,transparent:true,opacity:0.4}));
+const globeGroup=new THREE.Group();globeGroup.add(mesh);globeGroup.add(inner);scene.add(globeGroup);
+
+/* ═══ 3D "DANCEFLOOR" TEXT — Universal Studios style ═══
+   Loaded via FontLoader with helvetiker_bold (closest available CDN bold sans).
+   For production: generate Poppins 900 JSON via facetype.js.
+   Cylindrical bend applied post-generation for globe wrap.
+   Separate textGroup with slow majestic rotation. */
+
+let textMesh3D = null;
+// No separate textGroup — text goes directly on globeGroup for fused rotation
+
+const textMat = new THREE.MeshPhysicalMaterial({
+  color: 0xFF0CB6,
+  emissive: 0xFF0CB6,
+  emissiveIntensity: 0.4,
+  metalness: 0.9,
+  roughness: 0.1,
+  envMap,
+  envMapIntensity: 3.0,
+  clearcoat: 1.0,
+  clearcoatRoughness: 0.1,
+});
+
+const fontLoader = new FontLoader();
+fontLoader.load(
+  'https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_bold.typeface.json',
+  (font) => {
+    // Balanced spacing — wraps to fill exactly 360 degrees
+    const textGeo = new TextGeometry('DANCEFLOOR   \u2022   DANCEFLOOR   \u2022   DANCEFLOOR   \u2022', {
+      font,
+      size: 0.45,
+      depth: 0.08,
+      curveSegments: 12,
+      bevelEnabled: true,
+      bevelThickness: 0.015,
+      bevelSize: 0.01,
+      bevelOffset: 0,
+      bevelSegments: 4,
+    });
+
+    // ── BOUNDING-BOX PROPORTIONAL WRAP ──
+    // Maps the total text width to exactly 2*PI radians (360 degrees)
+    // so first letter and last space meet perfectly at the back.
+    textGeo.computeBoundingBox();
+    let width = textGeo.boundingBox.max.x - textGeo.boundingBox.min.x;
+    width += 1.2; // Pad the circumference to create the missing space at the seam
+    const wrapRadius = R + 0.4;
+    const posAttr = textGeo.attributes.position;
+
+    for (let i = 0; i < posAttr.count; i++) {
+      const x = posAttr.getX(i);
+      const y = posAttr.getY(i);
+      const z = posAttr.getZ(i); // text extrusion depth
+
+      // Map X exactly to 360-degree circle (-PI to PI)
+      const theta = (x / width) * Math.PI * 2;
+
+      // Add Z depth to radius so text extrudes outward, not inward
+      const currentRadius = wrapRadius + z;
+
+      posAttr.setX(i, currentRadius * Math.sin(theta));
+      posAttr.setY(i, y);
+      posAttr.setZ(i, currentRadius * Math.cos(theta));
+    }
+    posAttr.needsUpdate = true;
+    textGeo.computeVertexNormals();
+
+    textMesh3D = new THREE.Mesh(textGeo, textMat);
+    textMesh3D.visible = false;
+    textMesh3D.position.set(0, 0, 0);
+    textMesh3D.scale.setScalar(2.0); // slam start (2.0, not 3.0 — avoids camera clip)
+    globeGroup.add(textMesh3D);
+
+    console.log('[3DText] DANCEFLOOR ring loaded — width:', width.toFixed(2), 'wrapR:', wrapRadius);
+  },
+  undefined,
+  (err) => console.error('[3DText] Font load failed:', err)
+);
+
+scene.add(new THREE.AmbientLight(0x111111,0.3));
+const kL=new THREE.PointLight(0xffffff,40,20);kL.position.set(4,3,4);scene.add(kL);
+const pL=new THREE.PointLight(0xFF0CB6,30,20);pL.position.set(-3,-2,4);scene.add(pL);
+scene.add(new THREE.PointLight(0xffffff,10,15).translateZ(-5));
+
+const composer=new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene,camera));
+const bloom=new UnrealBloomPass(new THREE.Vector2(W,H),0.6,0.4,0.85);
+composer.addPass(bloom);
+
+/* ═══ 6. GEO DATA ═══ */
+const OCEAN=new THREE.Color('#050608'),LAND=new THREE.Color('#FFFFFF'),PINK=new THREE.Color('#FF0CB6');
+let geoReady=false;
+loadGeoData(pts,()=>{for(let i=0;i<COUNT;i++)globeCols[i]=pts[i].country?LAND.clone():OCEAN.clone();geoReady=true;});
+
+/* ═══ 7. LANGUAGE HIGHLIGHTING ═══ */
+let langTrans=null;
+function highlightLanguage(lang){
+  if(!geoReady)return;
+  const targets=[],startCols=[];
+  for(let i=0;i<COUNT;i++){startCols[i]=curCols[i].clone();const c=pts[i].country;targets[i]=(c&&lang.countries.includes(c))?PINK.clone():globeCols[i].clone();}
+  langTrans={targets,startCols,start:Date.now(),duration:600};
+}
+
+/* ═══ 8. ANIMATION LOOP ═══ */
+const tM=new THREE.Matrix4(),tP=new THREE.Vector3(),tQ=new THREE.Quaternion(),tS=new THREE.Vector3();
+
+function animate(){
+  requestAnimationFrame(animate);
+  const now=Date.now(),t=now*0.001;
+
+  // Globe rotation
+  globeGroup.rotation.y+=(choreo===1?0.04:0.002); // ~1 full rotation over 2.5s at 60fps
+
+  // 3D text rotates with globeGroup — no separate orbit needed
+
+  // Orbit lights
+  kL.position.set(Math.sin(t*0.3)*5,Math.sin(t*0.2)*2+2,Math.cos(t*0.4)*5);
+  pL.position.set(Math.cos(t*0.25)*4,Math.cos(t*0.15)*2-1,Math.sin(t*0.35)*4);
+
+  // ── 3D Text animation: slam → settle ──
+  if(textMesh3D && textMesh3D.visible && choreo>=2){
+    const elapsed=now-textDropStart;
+
+    if(elapsed<TEXT_SLAM_MS){
+      // SLAM: scale 2.0 → 1.0, cubic ease out
+      const p=Math.min(elapsed/TEXT_SLAM_MS,1);
+      const ease=1-Math.pow(1-p,3);
+      textMesh3D.scale.setScalar(2.0*(1-ease)+1.0*ease);
+      textMesh3D.position.y=0;
+    } else {
+      // SETTLED: permanent orbit at equator, scale 1.0
+      textMesh3D.position.y=0;
+      textMesh3D.scale.setScalar(1.0);
+    }
+  }
+
+  // State 3: Morph
+  if(choreo===3){
+    const elapsed=now-morphStart,p=Math.min(elapsed/MORPH_MS,1),ease=1-Math.pow(1-p,3);
+    bloom.strength=3.0*(1-ease)+0.6*ease;
+    bloom.threshold=0.85*(1-ease)+0.2*ease;
+    const white=new THREE.Color('#FFFFFF');
+    for(let i=0;i<COUNT;i++){curCols[i].copy(white).lerp(globeCols[i],ease);mesh.setColorAt(i,curCols[i]);}
+    mesh.instanceColor.needsUpdate=true;
+    if(p>=1){
+      choreo=4;bloom.strength=0.6;bloom.threshold=0.2;
+      document.getElementById('countdown').classList.add('visible');
+      document.getElementById('lang-card').classList.add('visible');
+      highlightLanguage(LANGS[langIdx]);updateLangCard();
+    }
+  }
+
+  // Language transition
+  if(langTrans&&choreo===4){
+    const elapsed=now-langTrans.start,p=Math.min(elapsed/langTrans.duration,1),ease=1-Math.pow(1-p,2);
+    for(let i=0;i<COUNT;i++){curCols[i].copy(langTrans.startCols[i]).lerp(langTrans.targets[i],ease);mesh.setColorAt(i,curCols[i]);}
+    mesh.instanceColor.needsUpdate=true;
+    if(p>=1)langTrans=null;
+  }
+
+  // Twinkle
+  const twSpeed=choreo===1?3.0:1.5,twRange=choreo===1?0.15:0.05,twCount=choreo===1?200:80;
+  for(let n=0;n<twCount;n++){
+    const i=Math.floor(Math.random()*COUNT);
+    mesh.getMatrixAt(i,tM);tM.decompose(tP,tQ,tS);
+    const shimmer=Math.sin(t*twSpeed+tilts[i]*4)*0.5+0.5;
+    tS.setScalar(bScales[i]*(1-twRange+shimmer*twRange*2));
+    tM.compose(tP,tQ,tS);mesh.setMatrixAt(i,tM);
+  }
+  mesh.instanceMatrix.needsUpdate=true;
+
+  // Settled sparkle — per-frame brightness in own color
+  if(choreo===4&&!langTrans){
+    for(let i=0;i<COUNT;i++){
+      if(Math.random()<0.0008){mesh.setColorAt(i,curCols[i].clone().multiplyScalar(1.5));}
+      else{mesh.setColorAt(i,curCols[i]);}
+    }
+    mesh.instanceColor.needsUpdate=true;
+  }
+
+  composer.render();
+}
+animate();
+
+window.addEventListener('resize',()=>{const w=innerWidth,h=innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);composer.setSize(w,h);});
+</script>
+</body>
+</html>

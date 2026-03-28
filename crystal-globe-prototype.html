@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DANCEFLOOR — Crystal Globe Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@900&family=Sora:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; color: #e2e2e2; }
+
+  :root {
+    --font-display: 'Poppins', sans-serif;
+    --font-body: 'Sora', sans-serif;
+    --pink: #FF0CB6;
+    --dark: #050608;
+  }
+
+  #canvas-container { position: fixed; inset: 0; z-index: 0; }
+  canvas { display: block; }
+
+  /* ── Flash overlay for the burst ── */
+  #flash-overlay {
+    position: fixed; inset: 0; z-index: 5;
+    background: white; opacity: 0; pointer-events: none;
+    transition: opacity 0.15s ease-out;
+  }
+  #flash-overlay.fire { opacity: 0.9; }
+
+  /* ── Slide system ── */
+  .slide-layer {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: none; opacity: 0;
+    transition: opacity 900ms cubic-bezier(0.4,0,0.2,1), transform 900ms cubic-bezier(0.4,0,0.2,1);
+    transform: translateY(6px);
+  }
+  .slide-layer.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .slide-layer.past { opacity: 0; transform: translateY(-10px); }
+
+  .slide-inner { width: 90%; max-width: 880px; padding: 0 1.5rem; text-align: center; }
+
+  /* ── Display: Poppins 900 ── */
+  .type-display {
+    font-family: var(--font-display); font-weight: 900; text-transform: uppercase;
+    line-height: 1.08; letter-spacing: -0.02em; color: #e2e2e2;
+    font-size: clamp(1.6rem, 6.5vw, 3.2rem);
+  }
+  .type-display .pink { color: var(--pink); }
+
+  /* ── Subhead: Sora 500 ── */
+  .type-subhead {
+    font-family: var(--font-body); font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.1em; color: #919090;
+    font-size: clamp(0.7rem, 2vw, 0.95rem); line-height: 1.8; margin-top: 2rem;
+  }
+  .type-subhead .pink { color: var(--pink); }
+
+  /* ── Body: Sora 400 ── */
+  .type-body {
+    font-family: var(--font-body); font-weight: 400; color: #919090;
+    font-size: clamp(1rem, 3.2vw, 1.35rem); line-height: 1.85;
+  }
+  .type-body.dim { color: rgba(145,144,144,0.7); }
+  .type-body .bold-white { color: #e2e2e2; font-weight: 600; }
+  .type-body .pink { color: var(--pink); }
+
+  .type-punchline {
+    font-family: var(--font-display); font-weight: 900; text-transform: uppercase;
+    letter-spacing: -0.02em; color: var(--pink);
+    font-size: clamp(2.5rem, 12vw, 5.5rem); line-height: 0.95;
+  }
+
+  #next-btn {
+    position: fixed; bottom: 2rem; right: 1.5rem; z-index: 50;
+    font-family: var(--font-body); font-weight: 500; font-size: 10px;
+    letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--pink); background: none; border: none; cursor: pointer;
+    transition: opacity 0.3s;
+  }
+  #next-btn:hover { opacity: 0.7; }
+  #next-btn.hidden { display: none; }
+
+  #progress {
+    position: fixed; left: 1.25rem; bottom: 2rem; z-index: 50;
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  }
+  #progress .bar { width: 2px; height: 56px; background: rgba(48,48,48,0.3); border-radius: 1px; overflow: hidden; }
+  #progress .fill { width: 100%; background: rgba(255,12,182,0.5); border-radius: 1px; transition: height 1s ease-out; }
+  #progress .label { font-family: var(--font-body); font-size: 7px; color: rgba(145,144,144,0.25); letter-spacing: 0.15em; }
+  #progress.hidden { display: none; }
+
+  #globe-ui {
+    position: fixed; inset: 0; z-index: 10;
+    display: none; flex-direction: column; align-items: center; justify-content: flex-start;
+    padding-top: 1rem;
+  }
+  #globe-ui.active { display: flex; }
+  #globe-title {
+    font-family: var(--font-display); font-weight: 900;
+    font-size: clamp(2.3rem, 9vw, 3.9rem);
+    text-transform: uppercase; letter-spacing: -0.02em;
+    color: var(--pink); line-height: 0.95;
+  }
+  #globe-countdown {
+    font-family: var(--font-display); font-weight: 900;
+    font-size: clamp(1.1rem, 3.2vw, 1.4rem);
+    color: rgba(226,226,226,0.6); letter-spacing: -0.02em;
+    text-transform: uppercase; margin-top: 0.75rem;
+  }
+  #globe-countdown .sep { color: rgba(255,12,182,0.25); margin: 0 0.15em; }
+  #globe-countdown .unit { color: rgba(255,12,182,0.4); font-size: 0.7em; margin-left: 0.15em; }
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+<div id="flash-overlay"></div>
+
+<!-- ═══ SLIDES ═══ -->
+<div class="slide-layer active" id="slide-0" onclick="advance()">
+  <div class="slide-inner">
+    <h1 class="type-display">Music has always been the thing that brings strangers together<span class="pink">.</span></h1>
+    <p class="type-subhead">Across borders<span class="pink">.</span> Across cultures<span class="pink">.</span><br>Across languages you've never spoken<span class="pink">.</span></p>
+  </div>
+</div>
+
+<div class="slide-layer" id="slide-1" onclick="advance()">
+  <div class="slide-inner" style="max-width:680px">
+    <p class="type-body">You know that feeling. A song takes over and you can't help but sing along. The joy, the release, the shared moment on the dancefloor when nothing else matters.</p>
+  </div>
+</div>
+
+<div class="slide-layer" id="slide-2" onclick="advance()">
+  <div class="slide-inner" style="max-width:680px">
+    <p class="type-body dim">But sometimes you don't understand the lyrics. You're singing sounds, not words. And you've never known what you were actually singing.</p>
+  </div>
+</div>
+
+<div class="slide-layer" id="slide-3" onclick="advance()">
+  <div class="slide-inner">
+    <p class="type-punchline">Not anymore.</p>
+  </div>
+</div>
+
+<div class="slide-layer" id="slide-4" onclick="advance()">
+  <div class="slide-inner" style="max-width:720px">
+    <p class="type-body dim">For the first time in history, a commercially released single is dropping in multiple languages. Over <span class="bold-white">5 billion</span> people around the world can finally sing along, and actually understand every word they're singing<span class="pink">.</span></p>
+  </div>
+</div>
+
+<button id="next-btn" onclick="advance()">NEXT</button>
+
+<div id="progress">
+  <div class="bar"><div class="fill" id="progress-fill" style="height:20%"></div></div>
+  <span class="label" id="progress-label">1/5</span>
+</div>
+
+<div id="globe-ui">
+  <div id="globe-title">DANCEFLOOR</div>
+  <div id="globe-countdown"></div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+
+let currentSlide = 0;
+const totalSlides = 5;
+let transitioning = false;
+
+// Globe reveal state
+let globeRevealed = false;
+let revealPhase = 0;     // 0=not started, 1=flash, 2=morph, 3=settled
+let revealStart = 0;
+const FLASH_DURATION = 200;   // ms — white flash
+const MORPH_DURATION = 2000;  // ms — crystals morph from disco to globe colors
+
+// ═══════════════════════════════════════════
+// SLIDE SYSTEM
+// ═══════════════════════════════════════════
+
+function updateSlides() {
+  for (let i = 0; i < totalSlides; i++) {
+    const el = document.getElementById(`slide-${i}`);
+    el.className = 'slide-layer' + (i === currentSlide ? ' active' : i < currentSlide ? ' past' : '');
+  }
+  const btn = document.getElementById('next-btn');
+  const prog = document.getElementById('progress');
+  const globeUI = document.getElementById('globe-ui');
+
+  if (currentSlide >= totalSlides) {
+    btn.classList.add('hidden');
+    prog.classList.add('hidden');
+    // Trigger the reveal burst
+    if (!globeRevealed) triggerReveal();
+    // Show globe UI after flash
+    setTimeout(() => globeUI.classList.add('active'), FLASH_DURATION + 400);
+  } else {
+    btn.classList.remove('hidden');
+    prog.classList.remove('hidden');
+    globeUI.classList.remove('active');
+    document.getElementById('progress-fill').style.height = `${((currentSlide + 1) / totalSlides) * 100}%`;
+    document.getElementById('progress-label').textContent = `${currentSlide + 1}/${totalSlides}`;
+  }
+}
+
+window.advance = function() {
+  if (transitioning || currentSlide >= totalSlides) return;
+  transitioning = true;
+  currentSlide++;
+  updateSlides();
+  setTimeout(() => { transitioning = false; }, 600);
+};
+
+window.addEventListener('wheel', (e) => {
+  if (currentSlide >= totalSlides) return;
+  e.preventDefault();
+  if (Math.abs(e.deltaY) > 8) advance();
+}, { passive: false });
+
+let touchY = null;
+window.addEventListener('touchstart', (e) => { touchY = e.touches[0].clientY; }, { passive: true });
+window.addEventListener('touchend', (e) => {
+  if (touchY === null || currentSlide >= totalSlides) return;
+  const dy = e.changedTouches[0].clientY - touchY;
+  touchY = null;
+  if (dy < -25) advance();
+}, { passive: true });
+
+window.addEventListener('keydown', (e) => {
+  if (currentSlide < totalSlides && (e.key === 'ArrowDown' || e.key === ' ')) { e.preventDefault(); advance(); }
+});
+
+function updateCountdown() {
+  const launch = new Date('2026-04-17T00:00:00Z').getTime();
+  const diff = Math.max(0, launch - Date.now());
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  const p = n => String(n).padStart(2, '0');
+  document.getElementById('globe-countdown').innerHTML =
+    `${p(d)}<span class="unit">D</span><span class="sep">:</span>${p(h)}<span class="unit">H</span><span class="sep">:</span>${p(m)}<span class="unit">M</span><span class="sep">:</span>${p(s)}<span class="unit">S</span>`;
+}
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+// ═══════════════════════════════════════════
+// REVEAL BURST
+// ═══════════════════════════════════════════
+
+function triggerReveal() {
+  globeRevealed = true;
+  revealPhase = 1;
+  revealStart = Date.now();
+
+  // Fire the white flash overlay
+  const flash = document.getElementById('flash-overlay');
+  flash.classList.add('fire');
+
+  // Spike bloom
+  bloom.strength = 3.0;
+
+  // After flash, start the morph
+  setTimeout(() => {
+    flash.classList.remove('fire');
+    // Fade flash overlay out smoothly
+    flash.style.transition = 'opacity 0.8s ease-out';
+    flash.style.opacity = '0';
+    revealPhase = 2;
+    revealStart = Date.now();
+  }, FLASH_DURATION);
+}
+
+// ═══════════════════════════════════════════
+// THREE.JS CRYSTAL GLOBE
+// ═══════════════════════════════════════════
+
+const container = document.getElementById('canvas-container');
+const W = window.innerWidth, H = window.innerHeight;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+
+const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+camera.position.set(0, 0, 6);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(W, H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+container.appendChild(renderer.domElement);
+
+// ── Environment Map ──
+const pmremGen = new THREE.PMREMGenerator(renderer);
+pmremGen.compileEquirectangularShader();
+
+function generateEnvMap() {
+  const envScene = new THREE.Scene();
+  envScene.background = new THREE.Color(0x020204);
+  const geo = new THREE.SphereGeometry(0.5, 16, 16);
+  const spots = [
+    { pos: [5, 5, 5], color: 0xffffff, intensity: 8 },
+    { pos: [-5, 3, -5], color: 0xFF0CB6, intensity: 6 },
+    { pos: [3, -4, 6], color: 0xffffff, intensity: 4 },
+    { pos: [-4, -2, -3], color: 0xFF0CB6, intensity: 3 },
+  ];
+  spots.forEach(s => {
+    const mat = new THREE.MeshBasicMaterial({ color: s.color });
+    mat.color.multiplyScalar(s.intensity);
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(...s.pos);
+    envScene.add(m);
+  });
+  const rt = pmremGen.fromScene(envScene, 0.04);
+  envScene.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
+  return rt.texture;
+}
+
+const envMap = generateEnvMap();
+scene.environment = envMap;
+
+// ── Lat/Lng to Vec3 ──
+const GLOBE_RADIUS = 2;
+function latLngToVec3(lat, lng, radius = GLOBE_RADIUS) {
+  const phi = (90 - lat) * (Math.PI / 180);
+  const theta = (lng + 180) * (Math.PI / 180);
+  return new THREE.Vector3(
+    -radius * Math.sin(phi) * Math.cos(theta),
+    radius * Math.cos(phi),
+    radius * Math.sin(phi) * Math.sin(theta)
+  );
+}
+
+// ── Generate points ──
+const points = [];
+const STEP = 3;
+for (let lat = -85; lat <= 85; lat += STEP) {
+  const latRad = lat * Math.PI / 180;
+  const lngStep = STEP / Math.max(Math.cos(latRad), 0.2);
+  for (let lng = -180; lng < 180; lng += lngStep) {
+    points.push({ lat, lng });
+  }
+}
+const COUNT = points.length;
+
+// ── Crystal setup ──
+const crystalGeo = new THREE.OctahedronGeometry(0.022, 0);
+
+const crystalMat = new THREE.MeshPhysicalMaterial({
+  transmission: 1.0,
+  roughness: 0.05,
+  ior: 2.4,
+  thickness: 0.5,
+  clearcoat: 1.0,
+  clearcoatRoughness: 0.02,
+  envMap: envMap,
+  envMapIntensity: 3.0,
+  metalness: 0.0,
+  transparent: true,
+  side: THREE.DoubleSide,
+});
+
+const mesh = new THREE.InstancedMesh(crystalGeo, crystalMat, COUNT);
+mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+// ── Color palettes ──
+// Disco mode: uniform mix (no country info visible)
+const discoPalette = [
+  new THREE.Color('#080810'),  // dark mirror
+  new THREE.Color('#1a1a22'),  // slightly lighter dark
+  new THREE.Color('#2a2a35'),  // mid dark
+  new THREE.Color('#FFFFFF'),  // bright catch
+  new THREE.Color('#FF0CB6'),  // pink catch
+];
+const discoWeights = [0.35, 0.25, 0.15, 0.15, 0.1];
+
+// Globe mode: country-aware
+const OCEAN_COLOR = new THREE.Color('#050608');
+const LAND_COLOR = new THREE.Color('#E0E0E0');
+const ACTIVE_COLOR = new THREE.Color('#FF0CB6');
+
+const dummy = new THREE.Object3D();
+const baseScales = new Float32Array(COUNT);
+const tiltAngles = new Float32Array(COUNT);
+
+// Per-instance: disco color and globe color (computed after country data loads)
+const discoColors = new Array(COUNT);
+const globeColors = new Array(COUNT); // filled when country data loads
+const isLand = new Uint8Array(COUNT);
+
+// Assign disco colors and positions
+for (let i = 0; i < COUNT; i++) {
+  const { lat, lng } = points[i];
+  const pos = latLngToVec3(lat, lng);
+
+  dummy.position.copy(pos);
+  dummy.lookAt(0, 0, 0);
+  dummy.rotateZ(Math.random() * Math.PI * 2);
+
+  const scale = 0.8 + Math.random() * 0.4;
+  baseScales[i] = scale;
+  tiltAngles[i] = Math.random() * Math.PI * 2;
+  dummy.scale.setScalar(scale);
+  dummy.updateMatrix();
+  mesh.setMatrixAt(i, dummy.matrix);
+
+  // Disco color — random from disco palette
+  let r = Math.random(), cum = 0, ci = 0;
+  for (let j = 0; j < discoWeights.length; j++) {
+    cum += discoWeights[j];
+    if (r < cum) { ci = j; break; }
+  }
+  discoColors[i] = discoPalette[ci].clone();
+  mesh.setColorAt(i, discoColors[i]);
+
+  // Globe colors default to ocean (overwritten when geo data loads)
+  globeColors[i] = OCEAN_COLOR.clone();
+  isLand[i] = 0;
+}
+
+mesh.instanceColor.needsUpdate = true;
+scene.add(mesh);
+
+// ── Inner sphere ──
+const innerGeo = new THREE.SphereGeometry(GLOBE_RADIUS - 0.01, 48, 48);
+const innerMat = new THREE.MeshBasicMaterial({ color: 0x050608, transparent: true, opacity: 0.4 });
+const innerSphere = new THREE.Mesh(innerGeo, innerMat);
+scene.add(innerSphere);
+
+// ── Lighting ──
+scene.add(new THREE.AmbientLight(0x111111, 0.3));
+const keyLight = new THREE.PointLight(0xffffff, 40, 20);
+keyLight.position.set(4, 3, 4);
+scene.add(keyLight);
+const pinkLight = new THREE.PointLight(0xFF0CB6, 30, 20);
+pinkLight.position.set(-3, -2, 4);
+scene.add(pinkLight);
+const fillLight = new THREE.PointLight(0xffffff, 10, 15);
+fillLight.position.set(0, 0, -5);
+scene.add(fillLight);
+
+// ── Post-Processing ──
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.6, 0.4, 0.85);
+composer.addPass(bloom);
+
+// ── Globe group ──
+const globeGroup = new THREE.Group();
+globeGroup.add(mesh);
+globeGroup.add(innerSphere);
+scene.add(globeGroup);
+
+// ── Load country data for globe mode ──
+// Simple point-in-polygon using the world-atlas TopoJSON
+async function loadCountryData() {
+  try {
+    const resp = await fetch('https://unpkg.com/world-atlas@2.0.2/countries-110m.json');
+    const topo = await resp.json();
+    // Inline topojson feature extraction
+    const topoClient = await import('https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/+esm');
+    const geo = topoClient.feature(topo, topo.objects.countries);
+
+    // For each crystal, determine if it's land and which country
+    for (let i = 0; i < COUNT; i++) {
+      const { lat, lng } = points[i];
+      let country = '';
+      for (const feat of geo.features) {
+        const geom = feat.geometry;
+        const rings = [];
+        if (geom.type === 'Polygon') rings.push(...geom.coordinates);
+        else if (geom.type === 'MultiPolygon') for (const p of geom.coordinates) rings.push(...p);
+        for (const ring of rings) {
+          if (pointInRing(lng, lat, ring)) { country = feat.properties?.name || ''; break; }
+        }
+        if (country) break;
+      }
+      if (country) {
+        isLand[i] = 1;
+        globeColors[i] = LAND_COLOR.clone();
+        points[i].country = country;
+      } else {
+        globeColors[i] = OCEAN_COLOR.clone();
+        points[i].country = '';
+      }
+    }
+  } catch (e) {
+    console.warn('Country data failed to load, globe mode will show uniform colors');
+    // Fallback: just use brightness to differentiate
+    for (let i = 0; i < COUNT; i++) {
+      globeColors[i] = baseScales[i] > 1.0 ? LAND_COLOR.clone() : OCEAN_COLOR.clone();
+      isLand[i] = baseScales[i] > 1.0 ? 1 : 0;
+    }
+  }
+}
+
+function pointInRing(px, py, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+loadCountryData();
+
+// ── Animation ──
+const tempMatrix = new THREE.Matrix4();
+const tempPos = new THREE.Vector3();
+const tempQuat = new THREE.Quaternion();
+const tempScale = new THREE.Vector3();
+const tempColor = new THREE.Color();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const now = Date.now();
+  const t = now * 0.001;
+
+  // Rotate
+  globeGroup.rotation.y += 0.002;
+
+  // Orbit lights
+  keyLight.position.x = Math.sin(t * 0.3) * 5;
+  keyLight.position.z = Math.cos(t * 0.4) * 5;
+  keyLight.position.y = Math.sin(t * 0.2) * 2 + 2;
+  pinkLight.position.x = Math.cos(t * 0.25) * 4;
+  pinkLight.position.z = Math.sin(t * 0.35) * 4;
+  pinkLight.position.y = Math.cos(t * 0.15) * 2 - 1;
+
+  // ── Reveal morph phase ──
+  if (revealPhase === 1) {
+    // Flash — spike all crystals to white
+    for (let i = 0; i < COUNT; i++) {
+      mesh.setColorAt(i, new THREE.Color('#FFFFFF'));
+    }
+    mesh.instanceColor.needsUpdate = true;
+  } else if (revealPhase === 2) {
+    // Morph from white → globe colors over MORPH_DURATION
+    const elapsed = now - revealStart;
+    const progress = Math.min(elapsed / MORPH_DURATION, 1);
+    // Ease out cubic
+    const ease = 1 - Math.pow(1 - progress, 3);
+
+    // Decay bloom back to normal
+    bloom.strength = 3.0 * (1 - ease) + 0.6 * ease;
+
+    const white = new THREE.Color('#FFFFFF');
+    for (let i = 0; i < COUNT; i++) {
+      tempColor.copy(white).lerp(globeColors[i], ease);
+      mesh.setColorAt(i, tempColor);
+    }
+    mesh.instanceColor.needsUpdate = true;
+
+    if (progress >= 1) {
+      revealPhase = 3;
+      bloom.strength = 0.6;
+    }
+  }
+
+  // ── Twinkle — refined: smaller, slower, elegant ──
+  if (revealPhase < 2) {
+    // Disco mode twinkle — all crystals
+    const updateCount = Math.min(100, COUNT);
+    for (let n = 0; n < updateCount; n++) {
+      const i = Math.floor(Math.random() * COUNT);
+      mesh.getMatrixAt(i, tempMatrix);
+      tempMatrix.decompose(tempPos, tempQuat, tempScale);
+      const shimmer = Math.sin(t * 1.5 + tiltAngles[i] * 4.0) * 0.5 + 0.5;
+      tempScale.setScalar(baseScales[i] * (0.95 + shimmer * 0.1));
+      tempMatrix.compose(tempPos, tempQuat, tempScale);
+      mesh.setMatrixAt(i, tempMatrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  } else if (revealPhase === 3) {
+    // Globe mode twinkle — only pink (active) tiles sparkle
+    // For now, sparkle all land tiles subtly
+    const updateCount = Math.min(80, COUNT);
+    for (let n = 0; n < updateCount; n++) {
+      const i = Math.floor(Math.random() * COUNT);
+      mesh.getMatrixAt(i, tempMatrix);
+      tempMatrix.decompose(tempPos, tempQuat, tempScale);
+      const shimmer = Math.sin(t * 1.5 + tiltAngles[i] * 4.0) * 0.5 + 0.5;
+      tempScale.setScalar(baseScales[i] * (0.96 + shimmer * 0.08));
+      tempMatrix.compose(tempPos, tempQuat, tempScale);
+      mesh.setMatrixAt(i, tempMatrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+
+  composer.render();
+}
+
+animate();
+
+// ── Resize ──
+window.addEventListener('resize', () => {
+  const w = window.innerWidth, h = window.innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  composer.setSize(w, h);
+});
+</script>
+</body>
+</html>
