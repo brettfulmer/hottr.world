@@ -1,66 +1,331 @@
 /**
- * ShowcasePage — Globe-only showcase (PIN 963223)
+ * ShowcasePage — Crystal-Mirrorball Globe (R3F)
  *
- * Launches straight into the spinning crystal mirror ball.
- * No editorial slides, no language card, no progression.
- * Just the globe with DANCEFLOOR text ring + countdown.
+ * PIN 963223 route. Pure visual showcase — no editorial slides, no language card.
+ * Faceted IcosahedronGeometry with dual normal maps (grid + facet),
+ * MeshPhysicalMaterial for crystal-mirror hybrid, emissive country map,
+ * auto-cycling language highlights, prismatic bloom + chromatic aberration.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState, useEffect, useMemo, Suspense } from 'react'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { Environment, Text3D, Center } from '@react-three/drei'
+import { EffectComposer, Bloom, ChromaticAberration, Vignette } from '@react-three/postprocessing'
+import { BlendFunction } from 'postprocessing'
 import * as THREE from 'three'
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
 import { feature } from 'topojson-client'
 import type { Topology, GeometryCollection } from 'topojson-specification'
+import { languages } from '../data/languages-50'
 
-interface CrystalPoint { lat: number; lng: number; country: string }
+const TEX_W = 2048, TEX_H = 1024, GLOBE_R = 2
 
-async function loadGeoData(points: CrystalPoint[], onComplete: () => void) {
-  try {
-    const topo = await (await fetch('https://unpkg.com/world-atlas@2.0.2/countries-110m.json')).json() as Topology<{ countries: GeometryCollection }>
-    const geo = feature(topo, topo.objects.countries)
-    const prepared = geo.features.map(feat => {
-      const geom = feat.geometry
-      const rings: number[][][] = []
-      if (geom.type === 'Polygon') rings.push(...geom.coordinates)
-      else if (geom.type === 'MultiPolygon') for (const p of geom.coordinates) rings.push(...p)
-      let mnLng = Infinity, mxLng = -Infinity, mnLat = Infinity, mxLat = -Infinity
-      for (const r of rings) for (const [ln, lt] of r) { if (ln < mnLng) mnLng = ln; if (ln > mxLng) mxLng = ln; if (lt < mnLat) mnLat = lt; if (lt > mxLat) mxLat = lt }
-      return { name: (feat.properties as Record<string, string>)?.name || '', rings, mnLng, mxLng, mnLat, mxLat }
-    })
-    function pointInRing(px: number, py: number, ring: number[][]) {
-      let inside = false
-      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-        const [xi, yi] = ring[i], [xj, yj] = ring[j]
-        if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside
-      }
-      return inside
+/* ═══════════════════════════════════════════════════════════════
+   TEXTURE GENERATORS
+   ═══════════════════════════════════════════════════════════════ */
+
+// Grid + facet blended normal map
+function generateNormalMap(): THREE.CanvasTexture {
+  const c = document.createElement('canvas')
+  c.width = TEX_W; c.height = TEX_H
+  const ctx = c.getContext('2d')!
+
+  // Base flat normal
+  ctx.fillStyle = 'rgb(128, 128, 255)'
+  ctx.fillRect(0, 0, TEX_W, TEX_H)
+
+  // Grid grooves — mirrorball tile structure
+  const tileSize = 10
+  ctx.strokeStyle = 'rgb(128, 128, 180)'
+  ctx.lineWidth = 1.5
+  for (let x = 0; x < TEX_W; x += tileSize) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, TEX_H); ctx.stroke()
+  }
+  for (let y = 0; y < TEX_H; y += tileSize) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(TEX_W, y); ctx.stroke()
+  }
+
+  // Per-tile facet variation — each tile has a slightly different normal angle
+  for (let y = 0; y < TEX_H; y += tileSize) {
+    for (let x = 0; x < TEX_W; x += tileSize) {
+      const nx = 128 + (Math.random() - 0.5) * 20
+      const ny = 128 + (Math.random() - 0.5) * 20
+      ctx.fillStyle = `rgb(${Math.round(nx)}, ${Math.round(ny)}, 245)`
+      ctx.fillRect(x + 1, y + 1, tileSize - 2, tileSize - 2)
     }
-    let idx = 0
-    const batch = () => {
-      const end = Math.min(idx + 500, points.length)
-      for (let i = idx; i < end; i++) {
-        const { lat, lng } = points[i]
-        for (const f of prepared) {
-          if (lng < f.mnLng || lng > f.mxLng || lat < f.mnLat || lat > f.mxLat) continue
-          for (const r of f.rings) { if (pointInRing(lng, lat, r)) { points[i].country = f.name; break } }
-          if (points[i].country) break
-        }
-      }
-      idx = end
-      if (idx < points.length) setTimeout(batch, 0)
-      else onComplete()
-    }
-    batch()
-  } catch { onComplete() }
+  }
+
+  const tex = new THREE.CanvasTexture(c)
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+  return tex
 }
 
+// Country map texture (for emissive + base color)
+function generateCountryMap(
+  countryData: CountryFeature[],
+  activeCountries: string[]
+): THREE.CanvasTexture {
+  const c = document.createElement('canvas')
+  c.width = TEX_W; c.height = TEX_H
+  const ctx = c.getContext('2d')!
+
+  // Ocean: very dark
+  ctx.fillStyle = '#060608'
+  ctx.fillRect(0, 0, TEX_W, TEX_H)
+
+  // Land: grey (will catch metallic reflections)
+  ctx.fillStyle = '#888888'
+  for (const feat of countryData) {
+    const isActive = activeCountries.includes(feat.name)
+    ctx.fillStyle = isActive ? '#FF0CB6' : '#888888'
+    for (const ring of feat.rings) {
+      ctx.beginPath()
+      for (let i = 0; i < ring.length; i++) {
+        const [lng, lat] = ring[i]
+        const px = ((lng + 180) / 360) * TEX_W
+        const py = ((90 - lat) / 180) * TEX_H
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py)
+      }
+      ctx.closePath(); ctx.fill()
+    }
+  }
+
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
+// Emissive map — only highlighted countries glow
+function generateEmissiveMap(
+  countryData: CountryFeature[],
+  activeCountries: string[]
+): THREE.CanvasTexture {
+  const c = document.createElement('canvas')
+  c.width = TEX_W; c.height = TEX_H
+  const ctx = c.getContext('2d')!
+
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(0, 0, TEX_W, TEX_H)
+
+  if (activeCountries.length > 0) {
+    ctx.fillStyle = '#FF0CB6'
+    ctx.shadowColor = '#FF0CB6'
+    ctx.shadowBlur = 12
+    for (const feat of countryData) {
+      if (!activeCountries.includes(feat.name)) continue
+      for (const ring of feat.rings) {
+        ctx.beginPath()
+        for (let i = 0; i < ring.length; i++) {
+          const [lng, lat] = ring[i]
+          const px = ((lng + 180) / 360) * TEX_W
+          const py = ((90 - lat) / 180) * TEX_H
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py)
+        }
+        ctx.closePath(); ctx.fill()
+      }
+    }
+  }
+
+  const tex = new THREE.CanvasTexture(c)
+  return tex
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GEO DATA
+   ═══════════════════════════════════════════════════════════════ */
+interface CountryFeature { name: string; rings: number[][][] }
+
+async function loadCountryData(): Promise<CountryFeature[]> {
+  const topo = await (await fetch('https://unpkg.com/world-atlas@2.0.2/countries-110m.json')).json() as Topology<{ countries: GeometryCollection }>
+  const geo = feature(topo, topo.objects.countries)
+  return geo.features.map(feat => {
+    const geom = feat.geometry
+    const rings: number[][][] = []
+    if (geom.type === 'Polygon') rings.push(...geom.coordinates)
+    else if (geom.type === 'MultiPolygon') for (const p of geom.coordinates) rings.push(...p)
+    return { name: (feat.properties as Record<string, string>)?.name || '', rings }
+  })
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CRYSTAL GLOBE COMPONENT
+   ═══════════════════════════════════════════════════════════════ */
+function CrystalGlobe({ countryData, activeCountries }: { countryData: CountryFeature[]; activeCountries: string[] }) {
+  const meshRef = useRef<THREE.Mesh>(null)
+  const matRef = useRef<THREE.MeshPhysicalMaterial>(null)
+
+  const normalMap = useMemo(() => generateNormalMap(), [])
+
+  // Update maps when language changes
+  const colorMap = useMemo(
+    () => countryData.length > 0 ? generateCountryMap(countryData, activeCountries) : null,
+    [countryData, activeCountries]
+  )
+  const emissiveMap = useMemo(
+    () => countryData.length > 0 ? generateEmissiveMap(countryData, activeCountries) : null,
+    [countryData, activeCountries]
+  )
+
+  useFrame(() => {
+    if (meshRef.current) meshRef.current.rotation.y += 0.002
+  })
+
+  return (
+    <mesh ref={meshRef}>
+      <icosahedronGeometry args={[GLOBE_R, 14]} />
+      <meshPhysicalMaterial
+        ref={matRef}
+        map={colorMap}
+        normalMap={normalMap}
+        normalScale={new THREE.Vector2(0.4, 0.4)}
+        emissiveMap={emissiveMap}
+        emissive="#FF0CB6"
+        emissiveIntensity={activeCountries.length > 0 ? 0.6 : 0}
+        metalness={0.95}
+        roughness={0.05}
+        transmission={0.1}
+        ior={1.5}
+        clearcoat={1.0}
+        clearcoatRoughness={0.02}
+        envMapIntensity={3.0}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DANCEFLOOR TEXT RING
+   ═══════════════════════════════════════════════════════════════ */
+function DancefloorRing() {
+  const groupRef = useRef<THREE.Group>(null)
+  const textRef = useRef<THREE.Mesh>(null)
+  const curved = useRef(false)
+
+  useFrame(() => {
+    if (groupRef.current) groupRef.current.rotation.y += 0.002
+    // Curve text once geometry is available
+    if (textRef.current && !curved.current) {
+      const geo = textRef.current.geometry
+      if (geo && geo.boundingBox === null) geo.computeBoundingBox()
+      if (geo && geo.boundingBox) {
+        let width = geo.boundingBox.max.x - geo.boundingBox.min.x
+        width += 0.8
+        const wrapR = GLOBE_R + 0.35
+        const pos = geo.attributes.position
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i)
+          const theta = (x / width) * Math.PI * 2
+          const cr = wrapR + z
+          pos.setX(i, cr * Math.sin(theta))
+          pos.setY(i, y)
+          pos.setZ(i, cr * Math.cos(theta))
+        }
+        pos.needsUpdate = true
+        geo.computeVertexNormals()
+        curved.current = true
+      }
+    }
+  })
+
+  return (
+    <group ref={groupRef}>
+      <Center>
+        <Text3D
+          ref={textRef}
+          font="https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_bold.typeface.json"
+          size={0.35}
+          height={0.06}
+          curveSegments={12}
+          bevelEnabled
+          bevelThickness={0.01}
+          bevelSize={0.008}
+          bevelSegments={4}
+        >
+          {'DANCEFLOOR   \u2022   DANCEFLOOR   \u2022   DANCEFLOOR   \u2022'}
+          <meshPhysicalMaterial
+            color="#FF0CB6"
+            emissive="#FF0CB6"
+            emissiveIntensity={0.5}
+            metalness={0.95}
+            roughness={0.08}
+            envMapIntensity={3.0}
+            clearcoat={1.0}
+            clearcoatRoughness={0.05}
+          />
+        </Text3D>
+      </Center>
+    </group>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHTING
+   ═══════════════════════════════════════════════════════════════ */
+function NightclubLights() {
+  const keyRef = useRef<THREE.PointLight>(null)
+  const pinkRef = useRef<THREE.PointLight>(null)
+
+  useFrame(() => {
+    const t = Date.now() * 0.001
+    if (keyRef.current) keyRef.current.position.set(Math.sin(t * 0.3) * 5, Math.sin(t * 0.2) * 2 + 3, Math.cos(t * 0.4) * 5)
+    if (pinkRef.current) pinkRef.current.position.set(Math.cos(t * 0.25) * 4, Math.cos(t * 0.15) * 2 - 2, Math.sin(t * 0.35) * 4)
+  })
+
+  return (
+    <>
+      <Environment preset="studio" background={false} />
+      <ambientLight intensity={0.15} color="#111111" />
+      <pointLight ref={keyRef} color="#ffffff" intensity={50} distance={20} />
+      <pointLight ref={pinkRef} color="#FF0CB6" intensity={35} distance={20} />
+      <spotLight color="#FF0CB6" intensity={20} distance={15} position={[0, 5, 0]} angle={0.6} penumbra={0.8} />
+      <pointLight color="#ffffff" intensity={8} distance={12} position={[0, 0, -5]} />
+    </>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE
+   ═══════════════════════════════════════════════════════════════ */
+function Scene({ countryData, activeCountries }: { countryData: CountryFeature[]; activeCountries: string[] }) {
+  return (
+    <>
+      <NightclubLights />
+      <CrystalGlobe countryData={countryData} activeCountries={activeCountries} />
+      <DancefloorRing />
+      <EffectComposer>
+        <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.4} intensity={0.8} mipmapBlur />
+        <ChromaticAberration
+          blendFunction={BlendFunction.NORMAL}
+          offset={new THREE.Vector2(0.002, 0.002)}
+        />
+        <Vignette darkness={0.4} offset={0.3} />
+      </EffectComposer>
+    </>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SHOWCASE PAGE
+   ═══════════════════════════════════════════════════════════════ */
 export default function ShowcasePage() {
-  const canvasRef = useRef<HTMLDivElement>(null)
+  const [countryData, setCountryData] = useState<CountryFeature[]>([])
+  const [langIdx, setLangIdx] = useState(0)
   const [cd, setCd] = useState({ d: '00', h: '00', m: '00', s: '00' })
 
+  const lang = languages[langIdx]
+  const activeCountries = lang?.countries || []
+
+  // Load geo data once
+  useEffect(() => { loadCountryData().then(setCountryData) }, [])
+
+  // Auto-cycle languages every 4 seconds
+  useEffect(() => {
+    const id = setInterval(() => {
+      setLangIdx(prev => (prev + 1) % languages.length)
+    }, 4000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Countdown
   useEffect(() => {
     const tick = () => {
       const diff = Math.max(0, new Date('2026-04-17T00:00:00Z').getTime() - Date.now())
@@ -70,166 +335,26 @@ export default function ShowcasePage() {
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id)
   }, [])
 
-  useEffect(() => {
-    const container = canvasRef.current
-    if (!container) return
-    const W = container.clientWidth, H = container.clientHeight
-    const scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000)
-    const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100); camera.position.set(0, 0, 6)
-    const renderer = new THREE.WebGLRenderer({ antialias: true })
-    renderer.setSize(W, H); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.2
-    container.appendChild(renderer.domElement)
-
-    // Env map
-    const pmrem = new THREE.PMREMGenerator(renderer); pmrem.compileEquirectangularShader()
-    const envScene = new THREE.Scene(); envScene.background = new THREE.Color(0x020204)
-    const sg = new THREE.SphereGeometry(0.5, 16, 16)
-    ;([[5,5,5,0xffffff,8],[-5,3,-5,0xFF0CB6,6],[3,-4,6,0xffffff,4],[-4,-2,-3,0xFF0CB6,3]] as [number,number,number,number,number][]).forEach(([x,y,z,c,intensity]) => {
-      const mat = new THREE.MeshBasicMaterial({ color: c }); mat.color.multiplyScalar(intensity)
-      const m = new THREE.Mesh(sg, mat); m.position.set(x,y,z); envScene.add(m)
-    })
-    const envMap = pmrem.fromScene(envScene, 0.04).texture
-    envScene.traverse(c => { if ((c as THREE.Mesh).geometry) (c as THREE.Mesh).geometry.dispose(); if ((c as THREE.Mesh).material) ((c as THREE.Mesh).material as THREE.Material).dispose() })
-    scene.environment = envMap
-
-    const R = 2
-    const ll2v = (lat: number, lng: number) => {
-      const phi = (90-lat)*Math.PI/180, theta = (lng+180)*Math.PI/180
-      return new THREE.Vector3(-R*Math.sin(phi)*Math.cos(theta), R*Math.cos(phi), R*Math.sin(phi)*Math.sin(theta))
-    }
-
-    const pts: CrystalPoint[] = []
-    for (let lat = -85; lat <= 85; lat += 2) {
-      const s = 2 / Math.max(Math.cos(lat*Math.PI/180), 0.2)
-      for (let lng = -180; lng < 180; lng += s) pts.push({ lat, lng, country: '' })
-    }
-    const COUNT = pts.length
-    const LAND = new THREE.Color('#FFFFFF')
-    const OCEAN = new THREE.Color('#050608')
-
-    const crystalMat = new THREE.MeshPhysicalMaterial({
-      transmission: 0.15, roughness: 0.08, ior: 2.4, thickness: 0.3,
-      clearcoat: 1, clearcoatRoughness: 0.02, envMap, envMapIntensity: 2.5,
-      metalness: 0.35, transparent: true, side: THREE.DoubleSide,
-    })
-
-    const mesh = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.014, 0), crystalMat, COUNT)
-    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
-
-    // Disco palette for initial state
-    const dPal = [new THREE.Color('#080810'),new THREE.Color('#1a1a22'),new THREE.Color('#2a2a35'),new THREE.Color('#FFFFFF'),new THREE.Color('#FF0CB6')]
-    const dW = [0.35, 0.6, 0.75, 0.9, 1.0]
-    const dummy = new THREE.Object3D()
-    const bScales = new Float32Array(COUNT), tilts = new Float32Array(COUNT)
-    const curCols: THREE.Color[] = []
-    const globeCols: THREE.Color[] = []
-
-    for (let i = 0; i < COUNT; i++) {
-      const pos = ll2v(pts[i].lat, pts[i].lng)
-      dummy.position.copy(pos); dummy.lookAt(0,0,0); dummy.rotateZ(Math.random()*Math.PI*2)
-      const sc = 0.9 + Math.random()*0.2; bScales[i] = sc; tilts[i] = Math.random()*Math.PI*2
-      dummy.scale.setScalar(sc); dummy.updateMatrix(); mesh.setMatrixAt(i, dummy.matrix)
-      let r = Math.random(), ci = 0
-      for (let j = 0; j < dW.length; j++) { if (r < dW[j]) { ci = j; break } }
-      globeCols[i] = new THREE.Color('#050608')
-      curCols[i] = dPal[ci].clone(); mesh.setColorAt(i, curCols[i])
-    }
-    mesh.instanceColor!.needsUpdate = true
-
-    const inner = new THREE.Mesh(new THREE.SphereGeometry(R-0.01,48,48), new THREE.MeshBasicMaterial({color:0x050608,transparent:true,opacity:0.4}))
-    const globeGroup = new THREE.Group(); globeGroup.add(mesh); globeGroup.add(inner); scene.add(globeGroup)
-
-    // 3D Text — visible immediately
-    const textMat = new THREE.MeshPhysicalMaterial({
-      color: 0xFF0CB6, emissive: 0xFF0CB6, emissiveIntensity: 0.4,
-      metalness: 0.9, roughness: 0.1, envMap, envMapIntensity: 3.0, clearcoat: 1, clearcoatRoughness: 0.1,
-    })
-    const fontLoader = new FontLoader()
-    fontLoader.load('https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_bold.typeface.json', (font) => {
-      const textGeo = new TextGeometry('DANCEFLOOR   \u2022   DANCEFLOOR   \u2022   DANCEFLOOR   \u2022', {
-        font, size: 0.45, depth: 0.08, curveSegments: 12,
-        bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.01, bevelSegments: 4,
-      })
-      textGeo.computeBoundingBox()
-      let width = textGeo.boundingBox!.max.x - textGeo.boundingBox!.min.x; width += 1.2
-      const wrapRadius = R + 0.4
-      const posAttr = textGeo.attributes.position
-      for (let i = 0; i < posAttr.count; i++) {
-        const x = posAttr.getX(i), y = posAttr.getY(i), z = posAttr.getZ(i)
-        const theta = (x / width) * Math.PI * 2
-        const cr = wrapRadius + z
-        posAttr.setX(i, cr * Math.sin(theta)); posAttr.setY(i, y); posAttr.setZ(i, cr * Math.cos(theta))
-      }
-      posAttr.needsUpdate = true; textGeo.computeVertexNormals()
-      const textMesh = new THREE.Mesh(textGeo, textMat)
-      textMesh.scale.setScalar(1.0)
-      globeGroup.add(textMesh)
-    })
-
-    // Lights
-    scene.add(new THREE.AmbientLight(0x111111, 0.3))
-    const kL = new THREE.PointLight(0xffffff, 40, 20); kL.position.set(4,3,4); scene.add(kL)
-    const pL = new THREE.PointLight(0xFF0CB6, 30, 20); pL.position.set(-3,-2,4); scene.add(pL)
-    scene.add(new THREE.PointLight(0xffffff, 10, 15).translateZ(-5))
-
-    const composer = new EffectComposer(renderer)
-    composer.addPass(new RenderPass(scene, camera))
-    const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.6, 0.4, 0.2)
-    composer.addPass(bloom)
-
-    // Load geo and morph to globe colors
-    loadGeoData(pts, () => {
-      for (let i = 0; i < COUNT; i++) {
-        const col = pts[i].country ? LAND.clone() : OCEAN.clone()
-        globeCols[i] = col
-        curCols[i].copy(col)
-        mesh.setColorAt(i, col)
-      }
-      mesh.instanceColor!.needsUpdate = true
-    })
-
-    // Animation
-    const tM = new THREE.Matrix4(), tP = new THREE.Vector3(), tQ = new THREE.Quaternion(), tS = new THREE.Vector3()
-    let rafId = 0
-
-    const animate = () => {
-      rafId = requestAnimationFrame(animate)
-      const time = Date.now() * 0.001
-
-      globeGroup.rotation.y += 0.002
-      kL.position.set(Math.sin(time*0.3)*5, Math.sin(time*0.2)*2+2, Math.cos(time*0.4)*5)
-      pL.position.set(Math.cos(time*0.25)*4, Math.cos(time*0.15)*2-1, Math.sin(time*0.35)*4)
-
-      // Twinkle
-      for (let n = 0; n < 60; n++) {
-        const i = Math.floor(Math.random() * COUNT)
-        mesh.getMatrixAt(i, tM); tM.decompose(tP, tQ, tS)
-        const shimmer = Math.sin(time * 1.5 + tilts[i] * 4) * 0.5 + 0.5
-        tS.setScalar(bScales[i] * (0.95 + shimmer * 0.1))
-        tM.compose(tP, tQ, tS); mesh.setMatrixAt(i, tM)
-      }
-      mesh.instanceMatrix.needsUpdate = true
-
-      composer.render()
-    }
-    animate()
-
-    const onResize = () => {
-      const w = container.clientWidth, h = container.clientHeight
-      camera.aspect = w/h; camera.updateProjectionMatrix()
-      renderer.setSize(w, h); composer.setSize(w, h)
-    }
-    window.addEventListener('resize', onResize)
-    return () => { cancelAnimationFrame(rafId); window.removeEventListener('resize', onResize); renderer.dispose(); if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement) }
-  }, [])
-
   return (
-    <div className="w-full h-screen overflow-hidden bg-black" style={{ fontFamily: "'Sora', sans-serif" }}>
-      <div ref={canvasRef} className="fixed inset-0 z-0" />
+    <div style={{ width: '100%', height: '100vh', overflow: 'hidden', background: '#000', fontFamily: "'Sora', sans-serif" }}>
+      {/* R3F Canvas */}
+      <Canvas
+        camera={{ position: [0, 0, 5.5], fov: 45 }}
+        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.3 }}
+        style={{ position: 'fixed', inset: 0 }}
+      >
+        <Suspense fallback={null}>
+          <Scene countryData={countryData} activeCountries={activeCountries} />
+        </Suspense>
+      </Canvas>
 
       {/* Countdown */}
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', color: 'rgba(226,226,226,0.6)', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
+      <div style={{
+        position: 'fixed', top: '1.5rem', left: '50%', transform: 'translateX(-50%)', zIndex: 50,
+        fontFamily: "'Poppins', sans-serif", fontWeight: 900,
+        fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', color: 'rgba(226,226,226,0.6)',
+        textTransform: 'uppercase', letterSpacing: '-0.02em',
+      }}>
         {cd.d}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>D</span>
         <span style={{ color: 'rgba(255,12,182,0.25)', margin: '0 0.12em' }}>:</span>
         {cd.h}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>H</span>
@@ -239,8 +364,25 @@ export default function ShowcasePage() {
         {cd.s}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>S</span>
       </div>
 
+      {/* Auto-cycling language name */}
+      <div
+        key={lang?.id}
+        style={{
+          position: 'fixed', bottom: '4.5rem', left: '50%', transform: 'translateX(-50%)', zIndex: 50,
+          fontFamily: "'Poppins', sans-serif", fontWeight: 900,
+          fontSize: 'clamp(1rem, 3.5vw, 1.6rem)', color: '#FF0CB6',
+          textTransform: 'uppercase', letterSpacing: '-0.02em',
+          animation: 'fadeInOut 4s ease-in-out',
+          textShadow: '0 0 20px rgba(255,12,182,0.5)',
+        }}
+      >
+        {lang?.name}
+      </div>
+
       {/* Bottom label */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 text-center">
+      <div style={{
+        position: 'fixed', bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)', zIndex: 50, textAlign: 'center',
+      }}>
         <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(226,226,226,0.3)' }}>
           50 languages &middot; 5.8 billion voices
         </div>
@@ -248,6 +390,16 @@ export default function ShowcasePage() {
           17 April 2026
         </div>
       </div>
+
+      {/* CSS animation for language name cycling */}
+      <style>{`
+        @keyframes fadeInOut {
+          0% { opacity: 0; transform: translateX(-50%) translateY(8px); }
+          15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+        }
+      `}</style>
     </div>
   )
 }
