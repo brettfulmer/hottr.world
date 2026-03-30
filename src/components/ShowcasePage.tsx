@@ -1,5 +1,5 @@
 /**
- * ShowcasePage — Mirrorball Globe + Swarovski Crystals + Curved Text (R3F)
+ * ShowcasePage — Mirrorball Globe + 5x Swarovski Crystals + Curved Text (R3F)
  */
 import { useRef, useState, useEffect, useMemo, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
@@ -48,10 +48,10 @@ async function loadGeo(): Promise<{ geo: GeoFeature[], points: CrystalPoint[] }>
     return { name: (f.properties as Record<string, string>)?.name || '', rings, mnLng, mxLng, mnLat, mxLat }
   })
 
-  // Generate coordinate points for crystals
+  // Generate coordinate points for crystals (5x Density = 0.9 degree steps instead of 2.0)
   const pts: CrystalPoint[] = []
-  for (let lat = -85; lat <= 85; lat += 2) {
-    const s = 2 / Math.max(Math.cos(lat*Math.PI/180), 0.2)
+  for (let lat = -85; lat <= 85; lat += 0.9) {
+    const s = 0.9 / Math.max(Math.cos(lat*Math.PI/180), 0.2)
     for (let lng = -180; lng < 180; lng += s) pts.push({ lat, lng, country: '' })
   }
 
@@ -168,15 +168,15 @@ function SwarovskiOverlay({ points, active }: { points: CrystalPoint[]; active: 
   const bScales = useMemo(() => new Float32Array(COUNT), [COUNT])
   const tilts = useMemo(() => new Float32Array(COUNT), [COUNT])
 
-  const dPal = useMemo(() => [new THREE.Color('#080810'), new THREE.Color('#1a1a22'), new THREE.Color('#2a2a35'), new THREE.Color('#FFFFFF'), new THREE.Color('#FF0CB6')], [])
-  const PINK = useMemo(() => new THREE.Color('#FF0CB6'), [])
-  const LAND = useMemo(() => new THREE.Color('#FFFFFF'), [])
+  // Strict Coloring Rules
+  const HOT_PINK = useMemo(() => new THREE.Color('#FF0CB6'), [])
+  const DIAMOND = useMemo(() => new THREE.Color('#FFFFFF'), [])
+  const OCEAN = useMemo(() => new THREE.Color('#050608'), [])
 
   useEffect(() => {
     if (!meshRef.current || points.length === 0) return
     const mesh = meshRef.current
     const dummy = new THREE.Object3D()
-    const dW = [0.35, 0.6, 0.75, 0.9, 1.0]
 
     const ll2v = (lat: number, lng: number) => {
       const phi = (90 - lat) * Math.PI / 180, theta = (lng + 180) * Math.PI / 180
@@ -198,19 +198,18 @@ function SwarovskiOverlay({ points, active }: { points: CrystalPoint[]; active: 
       dummy.updateMatrix()
       mesh.setMatrixAt(i, dummy.matrix)
 
+      // Strict Color Application
       let c: THREE.Color
       if (points[i].country) {
-        c = active.includes(points[i].country) ? PINK : LAND
+        c = active.includes(points[i].country) ? HOT_PINK : DIAMOND
       } else {
-        let r = Math.random(), ci = 0
-        for (let j = 0; j < dW.length; j++) { if (r < dW[j]) { ci = j; break } }
-        c = dPal[ci]
+        c = OCEAN
       }
       mesh.setColorAt(i, c)
     }
     mesh.instanceMatrix.needsUpdate = true
     mesh.instanceColor!.needsUpdate = true
-  }, [points, active, dPal, PINK, LAND, bScales, tilts])
+  }, [points, active, HOT_PINK, DIAMOND, OCEAN, bScales, tilts])
 
   // Crystal Twinkle/Shimmer Animation
   useFrame(({ clock }) => {
@@ -233,7 +232,8 @@ function SwarovskiOverlay({ points, active }: { points: CrystalPoint[]; active: 
     mesh.instanceMatrix.needsUpdate = true
   })
 
-  const geometry = useMemo(() => new THREE.OctahedronGeometry(0.014, 0), [])
+  // Reduced crystal size slightly (0.014 to 0.009) to accommodate 5x density without merging into a blob
+  const geometry = useMemo(() => new THREE.OctahedronGeometry(0.009, 0), [])
 
   if (points.length === 0) return null
 
