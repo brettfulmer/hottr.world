@@ -9,7 +9,7 @@
  */
 import { useRef, useState, useEffect, useMemo, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Environment, Text3D, Center } from '@react-three/drei'
+import { Environment, Text3D } from '@react-three/drei'
 import { EffectComposer, Bloom, ChromaticAberration, Vignette } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
 import * as THREE from 'three'
@@ -48,7 +48,7 @@ function makeMirrorNormalMap(): THREE.CanvasTexture {
 
   const tex = new THREE.CanvasTexture(c)
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping
-  tex.repeat.set(100, 50) // dense tiling — 100 columns, 50 rows
+  tex.repeat.set(60, 60) // dense square micro-tiles
   tex.needsUpdate = true
   return tex
 }
@@ -110,18 +110,14 @@ function MirrorballBase() {
 
   return (
     <mesh ref={ref}>
-      <icosahedronGeometry args={[R, 5]} />
-      <meshPhysicalMaterial
+      <sphereGeometry args={[R, 128, 128]} />
+      <meshStandardMaterial
         color="#1a1a24"
         normalMap={nMap}
-        normalScale={new THREE.Vector2(0.5, 0.5)}
-        metalness={0.95}
-        roughness={0.06}
-        transmission={0.03}
-        clearcoat={1.0}
-        clearcoatRoughness={0.03}
-        envMapIntensity={3.0}
-        flatShading
+        normalScale={new THREE.Vector2(0.7, 0.7)}
+        metalness={1.0}
+        roughness={0.08}
+        envMapIntensity={3.5}
       />
     </mesh>
   )
@@ -194,53 +190,42 @@ function GlowOverlay({ geo, active }: { geo: GeoFeature[]; active: string[] }) {
 /* ═══════════════════════════════════════════════════════════════
    DANCEFLOOR 3D TEXT RING
    ═══════════════════════════════════════════════════════════════ */
-function TextRing() {
-  const gRef = useRef<THREE.Group>(null)
-  const tRef = useRef<THREE.Mesh>(null)
-  const bent = useRef(false)
+function TextLabel() {
+  const ref = useRef<THREE.Mesh>(null)
+  const centered = useRef(false)
 
+  // Center the geometry manually after it loads (no Center component = no bounding box artifact)
   useFrame(() => {
-    if (gRef.current) gRef.current.rotation.y += 0.002
-    if (tRef.current && !bent.current) {
-      const geo = tRef.current.geometry
-      if (!geo.boundingBox) geo.computeBoundingBox()
+    if (ref.current && !centered.current) {
+      const geo = ref.current.geometry
+      geo.computeBoundingBox()
       if (geo.boundingBox) {
-        let w = geo.boundingBox.max.x - geo.boundingBox.min.x + 1.0
-        const wr = R + 0.4
-        const p = geo.attributes.position
-        for (let i = 0; i < p.count; i++) {
-          const x = p.getX(i), y = p.getY(i), z = p.getZ(i)
-          const th = (x / w) * Math.PI * 2
-          const cr = wr + z
-          p.setX(i, cr * Math.sin(th)); p.setY(i, y); p.setZ(i, cr * Math.cos(th))
-        }
-        p.needsUpdate = true; geo.computeVertexNormals()
-        bent.current = true
+        const cx = (geo.boundingBox.max.x + geo.boundingBox.min.x) / 2
+        const cy = (geo.boundingBox.max.y + geo.boundingBox.min.y) / 2
+        geo.translate(-cx, -cy, 0)
+        centered.current = true
       }
     }
   })
 
   return (
-    <group ref={gRef}>
-      <Center>
-        <Text3D
-          ref={tRef}
-          font="https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_bold.typeface.json"
-          size={0.4} height={0.07} curveSegments={12}
-          bevelEnabled bevelThickness={0.012} bevelSize={0.009} bevelSegments={4}
-        >
-          {'DANCEFLOOR   \u2022   DANCEFLOOR   \u2022   DANCEFLOOR   \u2022'}
-          <meshStandardMaterial
-            color="#FF0CB6"
-            emissive="#FF0CB6"
-            emissiveIntensity={0.8}
-            metalness={0.95}
-            roughness={0.08}
-            envMapIntensity={2.5}
-          />
-        </Text3D>
-      </Center>
-    </group>
+    <mesh ref={ref} position={[0, 0, R + 0.5]}>
+      <Text3D
+        font="https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_bold.typeface.json"
+        size={0.5} height={0.08} curveSegments={12}
+        bevelEnabled bevelThickness={0.015} bevelSize={0.01} bevelSegments={4}
+      >
+        DANCEFLOOR
+        <meshStandardMaterial
+          color="#FF0CB6"
+          emissive="#FF0CB6"
+          emissiveIntensity={0.8}
+          metalness={0.95}
+          roughness={0.08}
+          envMapIntensity={2.5}
+        />
+      </Text3D>
+    </mesh>
   )
 }
 
@@ -277,7 +262,7 @@ function Scene({ geo, active }: { geo: GeoFeature[]; active: string[] }) {
       <MirrorballBase />
       <LandOverlay geo={geo} />
       <GlowOverlay geo={geo} active={active} />
-      <TextRing />
+      <TextLabel />
       <EffectComposer>
         <Bloom luminanceThreshold={0.9} luminanceSmoothing={0.2} intensity={0.4} mipmapBlur />
         <ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={new THREE.Vector2(0.0015, 0.0015)} />
