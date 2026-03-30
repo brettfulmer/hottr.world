@@ -1,15 +1,15 @@
 /**
  * ShowcasePage — Crystal-Mirrorball Globe (R3F)
  * PIN 963223 route. "Layer Cake" architecture:
- * 1. Base mirrorball sphere with tiled normal map
- * 2. Translucent silver country overlay
- * 3. Hot pink glowing country highlight layer
- * 4. DANCEFLOOR 3D text ring
+ * 1. Base mirrorball sphere with tiled normal map (Faceted crystal)
+ * 2. Translucent silver country overlay (Faceted)
+ * 3. Hot pink glowing country highlight layer (Faceted)
+ * 4. DANCEFLOOR 3D text (Centered)
  * + Bloom + ChromaticAberration post-processing
  */
 import { useRef, useState, useEffect, useMemo, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Environment, Text3D } from '@react-three/drei'
+import { Environment, Text3D, Center } from '@react-three/drei'
 import { EffectComposer, Bloom, ChromaticAberration, Vignette } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
 import * as THREE from 'three'
@@ -23,32 +23,28 @@ const TEX_W = 2048, TEX_H = 1024, R = 2
    NORMAL MAP — Small repeating tile for mirror grid
    ═══════════════════════════════════════════════════════════════ */
 function makeMirrorNormalMap(): THREE.CanvasTexture {
-  // One tile at 32x32 — will be repeated heavily
   const S = 32
   const c = document.createElement('canvas')
   c.width = S; c.height = S
   const ctx = c.getContext('2d')!
 
-  // Tile face — slightly randomized normal for unique specular per tile
   const nx = 128 + (Math.random() - 0.5) * 30
   const ny = 128 + (Math.random() - 0.5) * 30
   ctx.fillStyle = `rgb(${nx|0},${ny|0},250)`
   ctx.fillRect(0, 0, S, S)
 
-  // Groove edges — strong inward normal = visible gap between tiles
   ctx.fillStyle = 'rgb(128,128,140)'
-  ctx.fillRect(0, 0, S, 2)   // top edge
-  ctx.fillRect(0, 0, 2, S)   // left edge
-  ctx.fillRect(S-2, 0, 2, S) // right edge
-  ctx.fillRect(0, S-2, S, 2) // bottom edge
+  ctx.fillRect(0, 0, S, 2)
+  ctx.fillRect(0, 0, 2, S)
+  ctx.fillRect(S-2, 0, 2, S)
+  ctx.fillRect(0, S-2, S, 2)
 
-  // Specular catch — bright spot in upper-left (like light hitting a facet)
   ctx.fillStyle = 'rgb(145,145,255)'
   ctx.fillRect(4, 4, 8, 6)
 
   const tex = new THREE.CanvasTexture(c)
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping
-  tex.repeat.set(60, 60) // dense square micro-tiles
+  tex.repeat.set(60, 60)
   tex.needsUpdate = true
   return tex
 }
@@ -69,7 +65,6 @@ async function loadGeo(): Promise<GeoFeature[]> {
   })
 }
 
-// Draw country polygons onto a canvas in equirectangular projection
 function drawCountries(
   geo: GeoFeature[],
   filter: (name: string) => boolean,
@@ -99,8 +94,7 @@ function drawCountries(
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   LAYER 1: MIRRORBALL BASE
-   Full metallic chrome sphere with tiled normal map grid
+   LAYER 1: MIRRORBALL BASE (Faceted Crystal)
    ═══════════════════════════════════════════════════════════════ */
 function MirrorballBase() {
   const ref = useRef<THREE.Mesh>(null)
@@ -110,21 +104,22 @@ function MirrorballBase() {
 
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[R, 128, 128]} />
+      <icosahedronGeometry args={[R, 16]} />
       <meshStandardMaterial
         color="#1a1a24"
         normalMap={nMap}
         normalScale={new THREE.Vector2(0.7, 0.7)}
         metalness={1.0}
-        roughness={0.08}
-        envMapIntensity={3.5}
+        roughness={0.1}
+        envMapIntensity={2.0}
+        flatShading={true} 
       />
     </mesh>
   )
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   LAYER 2: TRANSLUCENT SILVER COUNTRIES (all land)
+   LAYER 2: TRANSLUCENT SILVER COUNTRIES (Faceted)
    ═══════════════════════════════════════════════════════════════ */
 function LandOverlay({ geo }: { geo: GeoFeature[] }) {
   const ref = useRef<THREE.Mesh>(null)
@@ -142,22 +137,22 @@ function LandOverlay({ geo }: { geo: GeoFeature[] }) {
   if (!map) return null
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[R * 1.002, 128, 128]} />
+      <icosahedronGeometry args={[R * 1.002, 16]} />
       <meshStandardMaterial
         map={map}
         transparent
         opacity={0.7}
-        metalness={0.5}
-        roughness={0.3}
+        metalness={0.8}
+        roughness={0.2}
         depthWrite={false}
+        flatShading={true}
       />
     </mesh>
   )
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   LAYER 3: GLOWING PINK HIGHLIGHT (selected countries)
-   emissiveIntensity high enough to trigger Bloom
+   LAYER 3: GLOWING PINK HIGHLIGHT (Faceted)
    ═══════════════════════════════════════════════════════════════ */
 function GlowOverlay({ geo, active }: { geo: GeoFeature[]; active: string[] }) {
   const ref = useRef<THREE.Mesh>(null)
@@ -173,59 +168,47 @@ function GlowOverlay({ geo, active }: { geo: GeoFeature[]; active: string[] }) {
   if (!map) return null
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[R * 1.005, 128, 128]} />
+      <icosahedronGeometry args={[R * 1.005, 16]} />
       <meshStandardMaterial
         map={map}
         transparent
         color="#FF0CB6"
         emissive="#FF0CB6"
-        emissiveIntensity={1.5}
+        emissiveIntensity={2.5}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
+        flatShading={true}
       />
     </mesh>
   )
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DANCEFLOOR 3D TEXT RING
+   DANCEFLOOR 3D TEXT RING (Centered correctly)
    ═══════════════════════════════════════════════════════════════ */
 function TextLabel() {
-  const ref = useRef<THREE.Mesh>(null)
-  const centered = useRef(false)
-
-  // Center the geometry manually after it loads (no Center component = no bounding box artifact)
-  useFrame(() => {
-    if (ref.current && !centered.current) {
-      const geo = ref.current.geometry
-      geo.computeBoundingBox()
-      if (geo.boundingBox) {
-        const cx = (geo.boundingBox.max.x + geo.boundingBox.min.x) / 2
-        const cy = (geo.boundingBox.max.y + geo.boundingBox.min.y) / 2
-        geo.translate(-cx, -cy, 0)
-        centered.current = true
-      }
-    }
-  })
-
   return (
-    <mesh ref={ref} position={[0, 0, R + 0.5]}>
-      <Text3D
-        font="https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_bold.typeface.json"
-        size={0.5} height={0.08} curveSegments={12}
-        bevelEnabled bevelThickness={0.015} bevelSize={0.01} bevelSegments={4}
-      >
-        DANCEFLOOR
-        <meshStandardMaterial
-          color="#FF0CB6"
-          emissive="#FF0CB6"
-          emissiveIntensity={0.8}
-          metalness={0.95}
-          roughness={0.08}
-          envMapIntensity={2.5}
-        />
-      </Text3D>
-    </mesh>
+    <group position={[0, 0, R + 0.5]}>
+      <Center>
+        <Text3D
+          font="https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_bold.typeface.json"
+          size={0.45} 
+          height={0.1} 
+          curveSegments={12}
+          bevelEnabled bevelThickness={0.015} bevelSize={0.01} bevelSegments={4}
+        >
+          DANCEFLOOR
+          <meshStandardMaterial
+            color="#FF0CB6"
+            emissive="#FF0CB6"
+            emissiveIntensity={0.5}
+            metalness={1.0}
+            roughness={0.1}
+            envMapIntensity={2.5}
+          />
+        </Text3D>
+      </Center>
+    </group>
   )
 }
 
