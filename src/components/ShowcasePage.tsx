@@ -22,111 +22,37 @@ const TEX_W = 2048, TEX_H = 1024, GLOBE_R = 2
    TEXTURE GENERATORS
    ═══════════════════════════════════════════════════════════════ */
 
-// Grid + facet blended normal map
+// Small-tile normal map — renders a small tile then tiles it across the sphere
 function generateNormalMap(): THREE.CanvasTexture {
+  // Small tile — will be repeated via texture.repeat
+  const TILE = 64
   const c = document.createElement('canvas')
-  c.width = TEX_W; c.height = TEX_H
+  c.width = TILE; c.height = TILE
   const ctx = c.getContext('2d')!
 
-  // Base flat normal
-  ctx.fillStyle = 'rgb(128, 128, 255)'
-  ctx.fillRect(0, 0, TEX_W, TEX_H)
+  // Per-tile facet angle — each tile has a unique normal direction
+  const nx = 128 + (Math.random() - 0.5) * 25
+  const ny = 128 + (Math.random() - 0.5) * 25
+  ctx.fillStyle = `rgb(${Math.round(nx)}, ${Math.round(ny)}, 248)`
+  ctx.fillRect(0, 0, TILE, TILE)
 
-  // Grid grooves — mirrorball tile structure
-  const tileSize = 10
-  ctx.strokeStyle = 'rgb(128, 128, 180)'
-  ctx.lineWidth = 1.5
-  for (let x = 0; x < TEX_W; x += tileSize) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, TEX_H); ctx.stroke()
-  }
-  for (let y = 0; y < TEX_H; y += tileSize) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(TEX_W, y); ctx.stroke()
-  }
+  // Grid groove edges — dark normal = inward-facing groove between tiles
+  ctx.strokeStyle = 'rgb(128, 128, 160)' // strong groove
+  ctx.lineWidth = 3
+  ctx.strokeRect(0, 0, TILE, TILE)
 
-  // Per-tile facet variation — each tile has a slightly different normal angle
-  for (let y = 0; y < TEX_H; y += tileSize) {
-    for (let x = 0; x < TEX_W; x += tileSize) {
-      const nx = 128 + (Math.random() - 0.5) * 20
-      const ny = 128 + (Math.random() - 0.5) * 20
-      ctx.fillStyle = `rgb(${Math.round(nx)}, ${Math.round(ny)}, 245)`
-      ctx.fillRect(x + 1, y + 1, tileSize - 2, tileSize - 2)
-    }
-  }
+  // Inner specular highlight — slight bright normal offset in top-left corner
+  ctx.fillStyle = 'rgb(140, 140, 255)'
+  ctx.fillRect(3, 3, TILE * 0.3, TILE * 0.25)
 
   const tex = new THREE.CanvasTexture(c)
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+  // Tile heavily so they look like small mirror squares
+  tex.repeat.set(80, 40) // 80 tiles around, 40 tiles top-to-bottom
   return tex
 }
 
-// Country map texture (for emissive + base color)
-function generateCountryMap(
-  countryData: CountryFeature[],
-  activeCountries: string[]
-): THREE.CanvasTexture {
-  const c = document.createElement('canvas')
-  c.width = TEX_W; c.height = TEX_H
-  const ctx = c.getContext('2d')!
-
-  // Ocean: very dark
-  ctx.fillStyle = '#060608'
-  ctx.fillRect(0, 0, TEX_W, TEX_H)
-
-  // Land: grey (will catch metallic reflections)
-  ctx.fillStyle = '#888888'
-  for (const feat of countryData) {
-    const isActive = activeCountries.includes(feat.name)
-    ctx.fillStyle = isActive ? '#FF0CB6' : '#888888'
-    for (const ring of feat.rings) {
-      ctx.beginPath()
-      for (let i = 0; i < ring.length; i++) {
-        const [lng, lat] = ring[i]
-        const px = ((lng + 180) / 360) * TEX_W
-        const py = ((90 - lat) / 180) * TEX_H
-        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py)
-      }
-      ctx.closePath(); ctx.fill()
-    }
-  }
-
-  const tex = new THREE.CanvasTexture(c)
-  tex.colorSpace = THREE.SRGBColorSpace
-  return tex
-}
-
-// Emissive map — only highlighted countries glow
-function generateEmissiveMap(
-  countryData: CountryFeature[],
-  activeCountries: string[]
-): THREE.CanvasTexture {
-  const c = document.createElement('canvas')
-  c.width = TEX_W; c.height = TEX_H
-  const ctx = c.getContext('2d')!
-
-  ctx.fillStyle = '#000000'
-  ctx.fillRect(0, 0, TEX_W, TEX_H)
-
-  if (activeCountries.length > 0) {
-    ctx.fillStyle = '#FF0CB6'
-    ctx.shadowColor = '#FF0CB6'
-    ctx.shadowBlur = 12
-    for (const feat of countryData) {
-      if (!activeCountries.includes(feat.name)) continue
-      for (const ring of feat.rings) {
-        ctx.beginPath()
-        for (let i = 0; i < ring.length; i++) {
-          const [lng, lat] = ring[i]
-          const px = ((lng + 180) / 360) * TEX_W
-          const py = ((90 - lat) / 180) * TEX_H
-          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py)
-        }
-        ctx.closePath(); ctx.fill()
-      }
-    }
-  }
-
-  const tex = new THREE.CanvasTexture(c)
-  return tex
-}
+/* Country map + emissive map removed — using separate geo layers instead */
 
 /* ═══════════════════════════════════════════════════════════════
    GEO DATA
@@ -146,49 +72,129 @@ async function loadCountryData(): Promise<CountryFeature[]> {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   CRYSTAL GLOBE COMPONENT
+   LAYER 1: MIRRORBALL BASE SPHERE
+   Pure chrome mirror with tiled normal map — the disco ball
    ═══════════════════════════════════════════════════════════════ */
-function CrystalGlobe({ countryData, activeCountries }: { countryData: CountryFeature[]; activeCountries: string[] }) {
+function MirrorballBase() {
   const meshRef = useRef<THREE.Mesh>(null)
-  const matRef = useRef<THREE.MeshPhysicalMaterial>(null)
-
   const normalMap = useMemo(() => generateNormalMap(), [])
 
-  // Update maps when language changes
-  const colorMap = useMemo(
-    () => countryData.length > 0 ? generateCountryMap(countryData, activeCountries) : null,
-    [countryData, activeCountries]
-  )
-  const emissiveMap = useMemo(
-    () => countryData.length > 0 ? generateEmissiveMap(countryData, activeCountries) : null,
-    [countryData, activeCountries]
-  )
-
-  useFrame(() => {
-    if (meshRef.current) meshRef.current.rotation.y += 0.002
-  })
+  useFrame(() => { if (meshRef.current) meshRef.current.rotation.y += 0.002 })
 
   return (
     <mesh ref={meshRef}>
-      <icosahedronGeometry args={[GLOBE_R, 14]} />
+      <sphereGeometry args={[GLOBE_R, 128, 128]} />
       <meshPhysicalMaterial
-        ref={matRef}
-        map={colorMap}
+        color="#1a1a22"
         normalMap={normalMap}
-        normalScale={new THREE.Vector2(0.4, 0.4)}
-        emissiveMap={emissiveMap}
-        emissive="#FF0CB6"
-        emissiveIntensity={activeCountries.length > 0 ? 0.6 : 0}
-        metalness={0.95}
-        roughness={0.05}
-        transmission={0.1}
-        ior={1.5}
+        normalScale={new THREE.Vector2(0.6, 0.6)}
+        metalness={1.0}
+        roughness={0.04}
         clearcoat={1.0}
         clearcoatRoughness={0.02}
-        envMapIntensity={3.0}
-        side={THREE.DoubleSide}
+        envMapIntensity={3.5}
       />
     </mesh>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYER 2: COUNTRY GEO OVERLAY
+   Canvas-textured sphere slightly above the mirrorball surface.
+   Unselected countries = translucent silver. Selected = glowing pink.
+   ═══════════════════════════════════════════════════════════════ */
+function CountryOverlay({ countryData, activeCountries }: { countryData: CountryFeature[]; activeCountries: string[] }) {
+  const meshRef = useRef<THREE.Mesh>(null)
+  const glowRef = useRef<THREE.Mesh>(null)
+
+  // Base country shapes — silver land on transparent ocean
+  const landMap = useMemo(() => {
+    if (!countryData.length) return null
+    const c = document.createElement('canvas')
+    c.width = TEX_W; c.height = TEX_H
+    const ctx = c.getContext('2d')!
+    ctx.clearRect(0, 0, TEX_W, TEX_H) // fully transparent ocean
+    ctx.fillStyle = 'rgba(200, 200, 210, 0.5)' // translucent silver land
+    for (const feat of countryData) {
+      for (const ring of feat.rings) {
+        ctx.beginPath()
+        for (let i = 0; i < ring.length; i++) {
+          const [lng, lat] = ring[i]
+          const px = ((lng + 180) / 360) * TEX_W
+          const py = ((90 - lat) / 180) * TEX_H
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py)
+        }
+        ctx.closePath(); ctx.fill()
+      }
+    }
+    const tex = new THREE.CanvasTexture(c)
+    tex.colorSpace = THREE.SRGBColorSpace
+    return tex
+  }, [countryData])
+
+  // Highlighted countries — bright pink glow
+  const glowMap = useMemo(() => {
+    if (!countryData.length) return null
+    const c = document.createElement('canvas')
+    c.width = TEX_W; c.height = TEX_H
+    const ctx = c.getContext('2d')!
+    ctx.clearRect(0, 0, TEX_W, TEX_H)
+    if (activeCountries.length > 0) {
+      ctx.fillStyle = '#FF0CB6'
+      ctx.shadowColor = '#FF0CB6'
+      ctx.shadowBlur = 15
+      for (const feat of countryData) {
+        if (!activeCountries.includes(feat.name)) continue
+        for (const ring of feat.rings) {
+          ctx.beginPath()
+          for (let i = 0; i < ring.length; i++) {
+            const [lng, lat] = ring[i]
+            const px = ((lng + 180) / 360) * TEX_W
+            const py = ((90 - lat) / 180) * TEX_H
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py)
+          }
+          ctx.closePath(); ctx.fill()
+        }
+      }
+    }
+    const tex = new THREE.CanvasTexture(c)
+    return tex
+  }, [countryData, activeCountries])
+
+  useFrame(() => {
+    if (meshRef.current) meshRef.current.rotation.y += 0.002
+    if (glowRef.current) glowRef.current.rotation.y += 0.002
+  })
+
+  return (
+    <>
+      {/* Silver land overlay */}
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[GLOBE_R * 1.002, 128, 128]} />
+        <meshStandardMaterial
+          map={landMap}
+          transparent
+          opacity={0.6}
+          metalness={0.7}
+          roughness={0.2}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Pink glow overlay — selected countries */}
+      <mesh ref={glowRef}>
+        <sphereGeometry args={[GLOBE_R * 1.004, 128, 128]} />
+        <meshStandardMaterial
+          map={glowMap}
+          transparent
+          color="#FF0CB6"
+          emissive="#FF0CB6"
+          emissiveIntensity={5}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+    </>
   )
 }
 
@@ -289,7 +295,8 @@ function Scene({ countryData, activeCountries }: { countryData: CountryFeature[]
   return (
     <>
       <NightclubLights />
-      <CrystalGlobe countryData={countryData} activeCountries={activeCountries} />
+      <MirrorballBase />
+      <CountryOverlay countryData={countryData} activeCountries={activeCountries} />
       <DancefloorRing />
       <EffectComposer>
         <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.4} intensity={0.8} mipmapBlur />
