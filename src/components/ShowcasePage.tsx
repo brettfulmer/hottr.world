@@ -236,7 +236,7 @@ function Scene({ geo, active }: { geo: GeoFeature[]; active: string[] }) {
       <GlowOverlay geo={geo} active={active} />
       <TextLabel />
       {/* disableNormalPass prevents post-processing from flattening out the physical geometry tiles */}
-      <EffectComposer disableNormalPass>
+      <EffectComposer enableNormalPass={false}>
         <Bloom luminanceThreshold={1.0} luminanceSmoothing={0.1} intensity={1.2} mipmapBlur />
         <ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={new THREE.Vector2(0.0015, 0.0015)} />
         <Vignette darkness={0.4} offset={0.3} />
