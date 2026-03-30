@@ -110,14 +110,18 @@ function MirrorballBase() {
 
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[R, 128, 128]} />
-      <meshStandardMaterial
-        color="#1e1e28"
+      <icosahedronGeometry args={[R, 5]} />
+      <meshPhysicalMaterial
+        color="#1a1a24"
         normalMap={nMap}
-        normalScale={new THREE.Vector2(0.8, 0.8)}
-        metalness={1.0}
-        roughness={0.03}
-        envMapIntensity={4.0}
+        normalScale={new THREE.Vector2(0.5, 0.5)}
+        metalness={0.95}
+        roughness={0.06}
+        transmission={0.03}
+        clearcoat={1.0}
+        clearcoatRoughness={0.03}
+        envMapIntensity={3.0}
+        flatShading
       />
     </mesh>
   )
@@ -179,7 +183,7 @@ function GlowOverlay({ geo, active }: { geo: GeoFeature[]; active: string[] }) {
         transparent
         color="#FF0CB6"
         emissive="#FF0CB6"
-        emissiveIntensity={6}
+        emissiveIntensity={1.5}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
       />
@@ -229,10 +233,10 @@ function TextRing() {
           <meshStandardMaterial
             color="#FF0CB6"
             emissive="#FF0CB6"
-            emissiveIntensity={2}
+            emissiveIntensity={0.8}
             metalness={0.95}
             roughness={0.08}
-            envMapIntensity={3.0}
+            envMapIntensity={2.5}
           />
         </Text3D>
       </Center>
@@ -254,11 +258,11 @@ function Lights() {
   return (
     <>
       <Environment preset="studio" background={false} />
-      <ambientLight intensity={0.12} />
-      <pointLight ref={k} color="#ffffff" intensity={60} distance={20} />
-      <pointLight ref={p} color="#FF0CB6" intensity={40} distance={20} />
-      <spotLight color="#FF0CB6" intensity={25} distance={15} position={[0,5,0]} angle={0.6} penumbra={0.8} />
-      <pointLight color="#ffffff" intensity={10} distance={12} position={[0,0,-5]} />
+      <ambientLight intensity={0.1} />
+      <pointLight ref={k} color="#ffffff" intensity={25} distance={20} />
+      <pointLight ref={p} color="#FF0CB6" intensity={15} distance={20} />
+      <spotLight color="#FF0CB6" intensity={10} distance={15} position={[0,5,0]} angle={0.6} penumbra={0.8} />
+      <pointLight color="#ffffff" intensity={5} distance={12} position={[0,0,-5]} />
     </>
   )
 }
@@ -275,7 +279,7 @@ function Scene({ geo, active }: { geo: GeoFeature[]; active: string[] }) {
       <GlowOverlay geo={geo} active={active} />
       <TextRing />
       <EffectComposer>
-        <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.3} intensity={1.0} mipmapBlur />
+        <Bloom luminanceThreshold={0.9} luminanceSmoothing={0.2} intensity={0.4} mipmapBlur />
         <ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={new THREE.Vector2(0.0015, 0.0015)} />
         <Vignette darkness={0.35} offset={0.3} />
       </EffectComposer>
@@ -309,7 +313,7 @@ export default function ShowcasePage() {
     <div style={{ width:'100%', height:'100vh', overflow:'hidden', background:'#000', fontFamily:"'Sora',sans-serif" }}>
       <Canvas
         camera={{ position:[0,0,5.5], fov:45 }}
-        gl={{ antialias:true, toneMapping:THREE.ACESFilmicToneMapping, toneMappingExposure:1.4 }}
+        gl={{ antialias:true, toneMapping:THREE.ACESFilmicToneMapping, toneMappingExposure:1.1 }}
         style={{ position:'fixed', inset:0 }}
       >
         <Suspense fallback={null}>
