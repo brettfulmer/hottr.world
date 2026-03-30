@@ -1,5 +1,5 @@
 /**
- * ShowcasePage — Mirrorball Globe + 5x Swarovski Crystals + Curved Text (R3F)
+ * ShowcasePage — Pure Crystal Globe + Smooth Transitions + 3x Curved Text (R3F)
  */
 import { useRef, useState, useEffect, useMemo, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
@@ -12,7 +12,7 @@ import type { Topology, GeometryCollection } from 'topojson-specification'
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
 import { languages } from '../data/languages-50'
 
-const TEX_W = 2048, TEX_H = 1024, R = 2
+const R = 2
 
 /* ═══════════════════════════════════════════════════════════════
    GEO DATA & SWAROVSKI COORDINATE MATH
@@ -48,7 +48,7 @@ async function loadGeo(): Promise<{ geo: GeoFeature[], points: CrystalPoint[] }>
     return { name: (f.properties as Record<string, string>)?.name || '', rings, mnLng, mxLng, mnLat, mxLat }
   })
 
-  // Generate coordinate points for crystals (5x Density = 0.9 degree steps instead of 2.0)
+  // Generate coordinate points for crystals (5x Density = 0.9 degree steps)
   const pts: CrystalPoint[] = []
   for (let lat = -85; lat <= 85; lat += 0.9) {
     const s = 0.9 / Math.max(Math.cos(lat*Math.PI/180), 0.2)
@@ -79,87 +79,24 @@ async function loadGeo(): Promise<{ geo: GeoFeature[], points: CrystalPoint[] }>
   })
 }
 
-function drawCountries(
-  geo: GeoFeature[],
-  filter: (name: string) => boolean,
-  color: string,
-  shadow = false
-): HTMLCanvasElement {
-  const c = document.createElement('canvas')
-  c.width = TEX_W; c.height = TEX_H
-  const ctx = c.getContext('2d')!
-  ctx.clearRect(0, 0, TEX_W, TEX_H)
-  if (shadow) { ctx.shadowColor = color; ctx.shadowBlur = 15 }
-  ctx.fillStyle = color
-  for (const f of geo) {
-    if (!filter(f.name)) continue
-    for (const ring of f.rings) {
-      ctx.beginPath()
-      for (let i = 0; i < ring.length; i++) {
-        const [lng, lat] = ring[i]
-        const px = ((lng + 180) / 360) * TEX_W
-        const py = ((90 - lat) / 180) * TEX_H
-        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)
-      }
-      ctx.closePath(); ctx.fill()
-    }
-  }
-  return c
-}
-
 /* ═══════════════════════════════════════════════════════════════
-   LAYER 1, 2, 3: GLOBE BASE & GLOW (Mirrorball Tiles)
+   LAYER 1: MATTE BLACK VOID CORE (Prevents seeing through the earth)
    ═══════════════════════════════════════════════════════════════ */
-function MirrorballBase() {
+function VoidCore() {
   const ref = useRef<THREE.Mesh>(null)
   useFrame(() => { if (ref.current) ref.current.rotation.y += 0.002 })
 
   return (
     <mesh ref={ref}>
       <sphereGeometry args={[R, 50, 30]} />
-      <meshStandardMaterial color="#a0a0b0" metalness={1.0} roughness={0.15} envMapIntensity={2.5} flatShading={true} />
-    </mesh>
-  )
-}
-
-function LandOverlay({ geo }: { geo: GeoFeature[] }) {
-  const ref = useRef<THREE.Mesh>(null)
-  const map = useMemo(() => {
-    if (!geo.length) return null
-    const c = drawCountries(geo, () => true, 'rgba(180,180,195,0.4)')
-    const t = new THREE.CanvasTexture(c)
-    t.colorSpace = THREE.SRGBColorSpace
-    return t
-  }, [geo])
-  useFrame(() => { if (ref.current) ref.current.rotation.y += 0.002 })
-  if (!map) return null
-  return (
-    <mesh ref={ref}>
-      <sphereGeometry args={[R * 1.002, 50, 30]} />
-      <meshStandardMaterial map={map} transparent depthWrite={false} metalness={0.8} roughness={0.2} flatShading={true} />
-    </mesh>
-  )
-}
-
-function GlowOverlay({ geo, active }: { geo: GeoFeature[]; active: string[] }) {
-  const ref = useRef<THREE.Mesh>(null)
-  const map = useMemo(() => {
-    if (!geo.length || !active.length) return null
-    const c = drawCountries(geo, n => active.includes(n), '#FF0CB6', true)
-    return new THREE.CanvasTexture(c)
-  }, [geo, active])
-  useFrame(() => { if (ref.current) ref.current.rotation.y += 0.002 })
-  if (!map) return null
-  return (
-    <mesh ref={ref}>
-      <sphereGeometry args={[R * 1.004, 50, 30]} />
-      <meshStandardMaterial map={map} transparent color="#FF0CB6" emissive="#FF0CB6" emissiveIntensity={4.0} depthWrite={false} blending={THREE.AdditiveBlending} flatShading={true} />
+      {/* Pure black, no reflection, just blocks the backface crystals */}
+      <meshStandardMaterial color="#000000" metalness={0} roughness={1} />
     </mesh>
   )
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   LAYER 4: SWAROVSKI CRYSTALS (Instanced Mesh Overlay)
+   LAYER 2: SWAROVSKI CRYSTALS (Instanced Mesh Overlay)
    ═══════════════════════════════════════════════════════════════ */
 function SwarovskiOverlay({ points, active }: { points: CrystalPoint[]; active: string[] }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
@@ -167,12 +104,17 @@ function SwarovskiOverlay({ points, active }: { points: CrystalPoint[]; active: 
   
   const bScales = useMemo(() => new Float32Array(COUNT), [COUNT])
   const tilts = useMemo(() => new Float32Array(COUNT), [COUNT])
+  
+  // Arrays for smooth color interpolation and animation flags
+  const currentCols = useMemo(() => new Array(COUNT).fill(null).map(() => new THREE.Color()), [COUNT])
+  const targetCols = useMemo(() => new Array(COUNT).fill(null).map(() => new THREE.Color()), [COUNT])
+  const isActiveArray = useMemo(() => new Uint8Array(COUNT), [COUNT])
 
-  // Strict Coloring Rules
   const HOT_PINK = useMemo(() => new THREE.Color('#FF0CB6'), [])
   const DIAMOND = useMemo(() => new THREE.Color('#FFFFFF'), [])
-  const OCEAN = useMemo(() => new THREE.Color('#050608'), [])
+  const OCEAN = useMemo(() => new THREE.Color('#020202'), [])
 
+  // Initial Matrix Placement
   useEffect(() => {
     if (!meshRef.current || points.length === 0) return
     const mesh = meshRef.current
@@ -180,7 +122,6 @@ function SwarovskiOverlay({ points, active }: { points: CrystalPoint[]; active: 
 
     const ll2v = (lat: number, lng: number) => {
       const phi = (90 - lat) * Math.PI / 180, theta = (lng + 180) * Math.PI / 180
-      // Position crystals slightly above GlowOverlay
       return new THREE.Vector3(-(R + 0.006) * Math.sin(phi) * Math.cos(theta), (R + 0.006) * Math.cos(phi), (R + 0.006) * Math.sin(phi) * Math.sin(theta))
     }
 
@@ -198,70 +139,102 @@ function SwarovskiOverlay({ points, active }: { points: CrystalPoint[]; active: 
       dummy.updateMatrix()
       mesh.setMatrixAt(i, dummy.matrix)
 
-      // Strict Color Application
-      let c: THREE.Color
-      if (points[i].country) {
-        c = active.includes(points[i].country) ? HOT_PINK : DIAMOND
-      } else {
-        c = OCEAN
-      }
-      mesh.setColorAt(i, c)
+      // Initialize all colors immediately to prevent black flash
+      const c = points[i].country ? (active.includes(points[i].country) ? HOT_PINK : DIAMOND) : OCEAN
+      currentCols[i].copy(c)
+      mesh.setColorAt(i, currentCols[i])
     }
     mesh.instanceMatrix.needsUpdate = true
     mesh.instanceColor!.needsUpdate = true
-  }, [points, active, HOT_PINK, DIAMOND, OCEAN, bScales, tilts])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points])
 
-  // Crystal Twinkle/Shimmer Animation
+  // Update Targets on Language Change
+  useEffect(() => {
+    if (points.length === 0) return
+    for (let i = 0; i < points.length; i++) {
+      const country = points[i].country
+      if (country) {
+        if (active.includes(country)) {
+          targetCols[i].copy(HOT_PINK)
+          isActiveArray[i] = 1
+        } else {
+          targetCols[i].copy(DIAMOND)
+          isActiveArray[i] = 0
+        }
+      } else {
+        targetCols[i].copy(OCEAN)
+        isActiveArray[i] = 0
+      }
+    }
+  }, [points, active, HOT_PINK, DIAMOND, OCEAN, targetCols, isActiveArray])
+
+  // Animation Loop: Interpolate Colors & Execute Twinkle/Pulse
   useFrame(({ clock }) => {
     const mesh = meshRef.current
     if (!mesh) return
     mesh.rotation.y += 0.002
 
     const time = clock.getElapsedTime()
-    const tM = new THREE.Matrix4(), tP = new THREE.Vector3(), tQ = new THREE.Quaternion(), tS = new THREE.Vector3()
+    let needsColorUpdate = false
 
-    for (let n = 0; n < 60; n++) {
+    // Smooth Fade Interpolation
+    for (let i = 0; i < COUNT; i++) {
+      if (currentCols[i].r !== targetCols[i].r || currentCols[i].g !== targetCols[i].g || currentCols[i].b !== targetCols[i].b) {
+        currentCols[i].lerp(targetCols[i], 0.08) // Speed of the fade
+        mesh.setColorAt(i, currentCols[i])
+        needsColorUpdate = true
+      }
+    }
+    if (needsColorUpdate) mesh.instanceColor!.needsUpdate = true
+
+    // Twinkle & Pulse Engine
+    const tM = new THREE.Matrix4(), tP = new THREE.Vector3(), tQ = new THREE.Quaternion(), tS = new THREE.Vector3()
+    
+    // Process 200 random crystals per frame for shimmer efficiency
+    for (let n = 0; n < 200; n++) {
       const i = Math.floor(Math.random() * COUNT)
       mesh.getMatrixAt(i, tM)
       tM.decompose(tP, tQ, tS)
-      const shimmer = Math.sin(time * 1.5 + tilts[i] * 4) * 0.5 + 0.5
-      tS.setScalar(bScales[i] * (1 - 0.05 + shimmer * 0.1))
+      
+      const shimmer = Math.sin(time * 2.0 + tilts[i] * 4) * 0.5 + 0.5
+      let scaleMult = 1 - 0.05 + shimmer * 0.15
+
+      // ACTIVE HIGHLIGHT SPARKLE: Pink crystals bulge aggressively
+      if (isActiveArray[i] === 1) {
+        scaleMult = 1.0 + shimmer * 0.6
+      }
+
+      tS.setScalar(bScales[i] * scaleMult)
       tM.compose(tP, tQ, tS)
       mesh.setMatrixAt(i, tM)
     }
     mesh.instanceMatrix.needsUpdate = true
   })
 
-  // Reduced crystal size slightly (0.014 to 0.009) to accommodate 5x density without merging into a blob
   const geometry = useMemo(() => new THREE.OctahedronGeometry(0.009, 0), [])
 
   if (points.length === 0) return null
 
   return (
     <instancedMesh ref={meshRef} args={[geometry, undefined, points.length]}>
+      {/* High reflectivity to ensure the black oceans still catch sharp studio light edges */}
       <meshPhysicalMaterial
-        transmission={0.15} roughness={0.08} ior={2.4} thickness={0.3}
-        clearcoat={1} clearcoatRoughness={0.02} metalness={0.35} transparent={true} side={THREE.DoubleSide} envMapIntensity={2.5}
+        transmission={0.15} roughness={0.05} ior={2.4} thickness={0.3}
+        clearcoat={1} clearcoatRoughness={0.02} metalness={0.5} transparent={true} side={THREE.DoubleSide} envMapIntensity={3.0}
       />
     </instancedMesh>
   )
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DANCEFLOOR 3D TEXT RING (Mathematically Curved)
+   DANCEFLOOR 3D TEXT RING (Curved & 3x Repeated)
    ═══════════════════════════════════════════════════════════════ */
-function CurvedTextLabel() {
+function CurvedTextLabel({ text, rotY }: { text: string; rotY: number }) {
   const meshRef = useRef<THREE.Mesh>(null)
-  const groupRef = useRef<THREE.Group>(null)
   const warped = useRef(false)
 
-  // Rotate entire group with the globe
-  useFrame(() => { 
-    if (groupRef.current) groupRef.current.rotation.y += 0.002 
-  })
-
   useEffect(() => {
-    // Only bend the vertices once when geometry is ready
     if (!meshRef.current || warped.current) return
     const geo = meshRef.current.geometry as TextGeometry
     if (!geo.boundingBox) {
@@ -274,9 +247,7 @@ function CurvedTextLabel() {
 
     for (let i = 0; i < posAttr.count; i++) {
       const x = posAttr.getX(i), y = posAttr.getY(i), z = posAttr.getZ(i)
-      // Map flat X coordinate to radians around the curve
       const theta = (x / wrapRadius)
-      // Push radius out to Z depth
       const cr = wrapRadius + z
       
       posAttr.setX(i, cr * Math.sin(theta))
@@ -290,20 +261,37 @@ function CurvedTextLabel() {
   }, [])
 
   return (
-    <group ref={groupRef}>
-      {/* Notice NO position shift on the group—the vertex math naturally places it at the surface */}
+    <group rotation={[0, rotY, 0]}>
       <Text3D
         ref={meshRef}
         font="https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_bold.typeface.json"
         size={0.28} height={0.08} curveSegments={12}
         bevelEnabled bevelThickness={0.01} bevelSize={0.005} bevelSegments={4}
       >
-        DANCEFLOOR
+        {text}
         <meshStandardMaterial
           color="#FF0CB6" emissive="#FF0CB6" emissiveIntensity={0.15} 
           metalness={1.0} roughness={0.05} envMapIntensity={2.5}
         />
       </Text3D>
+    </group>
+  )
+}
+
+function ContinuousTextRing() {
+  const groupRef = useRef<THREE.Group>(null)
+  
+  useFrame(() => { 
+    if (groupRef.current) groupRef.current.rotation.y += 0.002 
+  })
+
+  // Using invisible zero-width spaces (\u200B) ensures Three.js treats them as 3 unique geometries.
+  // This prevents the "double bending" bug when sharing geometries.
+  return (
+    <group ref={groupRef}>
+      <CurvedTextLabel text="DANCEFLOOR" rotY={0} />
+      <CurvedTextLabel text="DANCEFLOOR​" rotY={(2 * Math.PI) / 3} />
+      <CurvedTextLabel text="DANCEFLOOR​​" rotY={(4 * Math.PI) / 3} />
     </group>
   )
 }
@@ -334,15 +322,13 @@ function Lights() {
 /* ═══════════════════════════════════════════════════════════════
    SCENE
    ═══════════════════════════════════════════════════════════════ */
-function Scene({ geo, points, active }: { geo: GeoFeature[]; points: CrystalPoint[]; active: string[] }) {
+function Scene({ points, active }: { points: CrystalPoint[]; active: string[] }) {
   return (
     <>
       <Lights />
-      <MirrorballBase />
-      <LandOverlay geo={geo} />
-      <GlowOverlay geo={geo} active={active} />
+      <VoidCore />
       <SwarovskiOverlay points={points} active={active} />
-      <CurvedTextLabel />
+      <ContinuousTextRing />
       <EffectComposer enableNormalPass={false}>
         <Bloom luminanceThreshold={1.0} luminanceSmoothing={0.1} intensity={1.2} mipmapBlur />
         <ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={new THREE.Vector2(0.0015, 0.0015)} />
@@ -382,7 +368,7 @@ export default function ShowcasePage() {
         style={{ position:'fixed', inset:0 }}
       >
         <Suspense fallback={null}>
-          <Scene geo={data.geo} points={data.points} active={active} />
+          <Scene points={data.points} active={active} />
         </Suspense>
       </Canvas>
 
