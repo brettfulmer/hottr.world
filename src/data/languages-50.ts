@@ -16,6 +16,7 @@ export interface Language {
   rank: string
   dialect: string
   whyThisCity: string
+  isIndigenous?: boolean
 }
 
 export const languages: Language[] = [

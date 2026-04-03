@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import * as THREE from 'three'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
@@ -7,6 +8,8 @@ import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
 import { feature } from 'topojson-client'
 import type { Topology, GeometryCollection } from 'topojson-specification'
+import { detectUserCountry, type GeoResult } from '../i18n/geoDetect'
+import { loadLocale } from '../i18n'
 
 /* ═══ GEO ENGINE ═══ */
 interface CrystalPoint { lat: number; lng: number; country: string }
@@ -85,6 +88,7 @@ import { languages as LANGS } from '../data/languages-50'
 
 /* ═══ COMPONENT ═══ */
 export default function DancefloorPage() {
+  const { t } = useTranslation()
   const canvasRef = useRef<HTMLDivElement>(null)
   const flashRef = useRef<HTMLDivElement>(null)
   const [slide, setSlide] = useState(0)
@@ -93,7 +97,9 @@ export default function DancefloorPage() {
   const slideRef = useRef(0)
   const locked = useRef(false)
   const autoTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const [cardCollapsed, setCardCollapsed] = useState(false)
+  const [cardCollapsed, setCardCollapsed] = useState(true)
+  const [geoPopup, setGeoPopup] = useState<GeoResult | null>(null)
+  const [showLangPicker, setShowLangPicker] = useState(false)
 
   const threeRef = useRef<{
     choreo: number; morphStart: number; textDropStart: number
@@ -207,6 +213,38 @@ export default function DancefloorPage() {
     }
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id)
   }, [])
+
+  // Geo-detection — runs once after intro completes
+  const geoRan = useRef(false)
+  useEffect(() => {
+    if (!showUI || geoRan.current) return
+    geoRan.current = true
+    detectUserCountry().then(result => {
+      if (result) {
+        setGeoPopup(result)
+      } else {
+        setShowLangPicker(true)
+      }
+    })
+  }, [showUI])
+
+  const acceptGeo = useCallback((geo: GeoResult) => {
+    const idx = LANGS.findIndex(l => l.id === geo.language.id)
+    if (idx !== -1) {
+      setLangIdx(idx)
+      highlightLang(idx)
+    }
+    loadLocale(geo.language.id)
+    setGeoPopup(null)
+  }, [highlightLang])
+
+  const pickLanguage = useCallback((idx: number) => {
+    setLangIdx(idx)
+    highlightLang(idx)
+    loadLocale(LANGS[idx].id)
+    setShowLangPicker(false)
+    setGeoPopup(null)
+  }, [highlightLang])
 
   /* ═══ THREE.JS SCENE ═══ */
   useEffect(() => {
@@ -332,7 +370,7 @@ export default function DancefloorPage() {
       const t = threeRef.current!
       const now = Date.now(), time = now * 0.001
 
-      globeGroup.rotation.y += (t.choreo === 1 ? 0.04 : 0.002)
+      globeGroup.rotation.y += (t.choreo === 1 ? 0.04 : 0.006)
       kL.position.set(Math.sin(time*0.3)*5, Math.sin(time*0.2)*2+2, Math.cos(time*0.4)*5)
       pL.position.set(Math.cos(time*0.25)*4, Math.cos(time*0.15)*2-1, Math.sin(time*0.35)*4)
 
@@ -449,11 +487,11 @@ export default function DancefloorPage() {
       <div className={panelCls(0)} onClick={advance}>
         <div className="w-[90%] max-w-[880px] px-6 text-center">
           <h1 style={{ ...fadeIn(0.3), fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.08, letterSpacing: '-0.02em', color: '#e2e2e2', fontSize: 'clamp(1.6rem, 6.5vw, 3.2rem)' }}>
-            Music has always been the thing that brings strangers together<span style={{ color: '#FF0CB6' }}>.</span>
+            {t('beat1.headline')}<span style={{ color: '#FF0CB6' }}>.</span>
           </h1>
           <p style={{ ...fadeIn(1.5), fontFamily: "'Sora', sans-serif", fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#919090', fontSize: 'clamp(0.7rem, 2vw, 0.95rem)', lineHeight: 1.8, marginTop: '2rem' }}>
-            Across borders<span style={{ color: '#FF0CB6' }}>.</span> Across cultures<span style={{ color: '#FF0CB6' }}>.</span><br />
-            Across languages you&apos;ve never spoken<span style={{ color: '#FF0CB6' }}>.</span>
+            {t('beat1.subtext1')}<span style={{ color: '#FF0CB6' }}>.</span> {t('beat1.subtext2')}<span style={{ color: '#FF0CB6' }}>.</span><br />
+            {t('beat1.subtext3')}<span style={{ color: '#FF0CB6' }}>.</span>
           </p>
         </div>
       </div>
@@ -462,7 +500,7 @@ export default function DancefloorPage() {
       <div className={panelCls(1)} onClick={advance}>
         <div className="w-[90%] max-w-[750px] px-6 text-center">
           <p style={{ ...fadeIn(0.3), fontFamily: "'Sora', sans-serif", fontWeight: 400, color: '#919090', fontSize: 'clamp(1.05rem, 3.2vw, 1.4rem)', lineHeight: 1.85 }}>
-            The beat crosses every border. The words never could.
+            {t('beat2.text')}
           </p>
         </div>
       </div>
@@ -471,7 +509,7 @@ export default function DancefloorPage() {
       <div className={panelCls(2)} onClick={advance}>
         <div className="w-[90%] max-w-[900px] text-center">
           <p style={{ ...fadeIn(0.2), fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#FF0CB6', fontSize: 'clamp(2.5rem, 12vw, 5.5rem)', lineHeight: 0.95 }}>
-            Not anymore<span>.</span>
+            {t('beat3.text')}
           </p>
         </div>
       </div>
@@ -480,14 +518,13 @@ export default function DancefloorPage() {
       <div className={panelCls(3)} onClick={advance}>
         <div className="w-[90%] max-w-[880px] px-6 text-center">
           <p style={{ ...fadeIn(0.2), fontFamily: "'Sora', sans-serif", fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#919090', fontSize: 'clamp(0.75rem, 2vw, 1rem)', marginBottom: '1.5rem' }}>
-            In a world first for a commercial dance track.
+            {t('beat4.prefix')}.
           </p>
           <p style={{ ...fadeIn(0.8), fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#e2e2e2', fontSize: 'clamp(1.4rem, 5vw, 2.8rem)', lineHeight: 1.1 }}>
-            One track<span style={{ color: '#FF0CB6' }}>.</span> 50 languages<span style={{ color: '#FF0CB6' }}>.</span>{' '}
-            <span style={{ whiteSpace: 'nowrap' }}>5.8 billion</span> voices<span style={{ color: '#FF0CB6' }}>.</span>
+            {t('beat4.headline')}
           </p>
           <p style={{ ...fadeIn(1.8), fontFamily: "'Poppins', sans-serif", fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#FF0CB6', fontSize: 'clamp(1rem, 3.5vw, 1.8rem)', marginTop: '1.5rem' }}>
-            17 April 2026
+            {t('beat4.date')}
           </p>
         </div>
       </div>
@@ -495,7 +532,7 @@ export default function DancefloorPage() {
       {/* NEXT */}
       {slide < TOTAL && (
         <button onClick={advance} className="fixed bottom-8 right-6 z-50 text-[10px] font-medium tracking-[0.25em] uppercase" style={{ fontFamily: "'Sora', sans-serif", color: '#FF0CB6', background: 'none', border: 'none', cursor: 'pointer' }}>
-          NEXT
+          {t('nav.next')}
         </button>
       )}
 
@@ -512,82 +549,205 @@ export default function DancefloorPage() {
       {/* Countdown */}
       {showUI && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[95]" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', color: 'rgba(226,226,226,0.6)', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
-          {cd.d}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>D</span>
+          {cd.d}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>{t('countdown.days')}</span>
           <span style={{ color: 'rgba(255,12,182,0.25)', margin: '0 0.12em' }}>:</span>
-          {cd.h}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>H</span>
+          {cd.h}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>{t('countdown.hours')}</span>
           <span style={{ color: 'rgba(255,12,182,0.25)', margin: '0 0.12em' }}>:</span>
-          {cd.m}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>M</span>
+          {cd.m}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>{t('countdown.minutes')}</span>
           <span style={{ color: 'rgba(255,12,182,0.25)', margin: '0 0.12em' }}>:</span>
-          {cd.s}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>S</span>
+          {cd.s}<span style={{ color: 'rgba(255,12,182,0.4)', fontSize: '0.7em', marginLeft: '0.1em' }}>{t('countdown.seconds')}</span>
         </div>
       )}
 
-      {/* Language card — collapsible glassmorphic info card */}
+      {/* ═══ FLOATING PILL PLAYER ═══ */}
       {showUI && (
-        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-[95] w-[92%] max-w-[400px] rounded-[4px]" style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', maxHeight: cardCollapsed ? 'none' : '70vh', overflowY: cardCollapsed ? 'visible' : 'auto' }}>
-          {/* Pink top edge */}
-          <div className="absolute top-0 left-[10%] right-[10%] h-[1px]" style={{ background: 'linear-gradient(to right, transparent, rgba(255,12,182,0.25), transparent)' }} />
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[95] w-[92%] max-w-[420px]" style={{
+          borderRadius: '2rem',
+          background: 'rgba(0,0,0,0.55)',
+          backdropFilter: 'blur(40px)',
+          WebkitBackdropFilter: 'blur(40px)',
+          border: '1px solid rgba(255,12,182,0.3)',
+          boxShadow: '0 0 20px rgba(255,12,182,0.15), 0 0 60px rgba(255,12,182,0.05)',
+          padding: '16px 20px',
+        }}>
+          {/* Top row: arrows + center info */}
+          <div className="flex items-center gap-3">
+            <button onClick={() => cycleLang(-1)} className="arrow-pop w-10 h-10 rounded-full flex items-center justify-center text-lg cursor-pointer flex-shrink-0" style={{ border: '1px solid rgba(255,12,182,0.2)', background: 'rgba(255,12,182,0.05)', color: 'rgba(226,226,226,0.7)' }}>&#8249;</button>
 
-          <div className="px-4 py-3">
-            {/* Header row — always visible */}
-            <div className="flex items-center gap-2">
-              <button onClick={() => cycleLang(-1)} className="w-9 h-9 rounded-[4px] flex items-center justify-center text-lg cursor-pointer flex-shrink-0" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(226,226,226,0.5)' }}>&#8249;</button>
-
-              <div className="flex-1 text-center min-w-0">
-                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#e2e2e2', lineHeight: 1.1 }}>{lang.name}</div>
-                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, color: '#919090', marginTop: 2 }}>{lang.speakers} speakers &middot; {lang.city}</div>
+            <div className="flex-1 text-center min-w-0">
+              {/* EQ Visualizer */}
+              <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', justifyContent: 'center', height: 16, marginBottom: 4 }}>
+                {[0, 0.15, 0.3, 0.45].map((delay, i) => (
+                  <span key={i} style={{
+                    display: 'block', width: 3, height: '100%', borderRadius: 1.5,
+                    background: '#FF0CB6', boxShadow: '0 0 4px #FF0CB6',
+                    transformOrigin: 'bottom',
+                    animation: `eqBounce 0.8s ease-in-out ${delay}s infinite`,
+                  }} />
+                ))}
               </div>
-
-              <button onClick={() => cycleLang(1)} className="w-9 h-9 rounded-[4px] flex items-center justify-center text-lg cursor-pointer flex-shrink-0" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(226,226,226,0.5)' }}>&#8250;</button>
-
-              {/* Collapse/expand toggle */}
-              <button onClick={() => setCardCollapsed(!cardCollapsed)} className="w-8 h-8 rounded-[4px] flex items-center justify-center cursor-pointer flex-shrink-0" style={{ border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', color: 'rgba(226,226,226,0.4)', fontSize: 12 }}>
-                {cardCollapsed ? '▼' : '▲'}
-              </button>
+              {/* Language name */}
+              <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 'clamp(1.3rem, 5vw, 1.8rem)', textTransform: 'uppercase', letterSpacing: '2px', color: '#fff', lineHeight: 1.1, textShadow: '0 0 8px rgba(255,12,182,0.5)' }}>{lang.name}</div>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: '#a0a0a0', marginTop: 3, fontWeight: 500, letterSpacing: '1px' }}>{lang.speakers} {t('player.speakers')}</div>
             </div>
 
-            {/* Expanded content */}
-            {!cardCollapsed && (
-              <div style={{ marginTop: 12 }}>
-                {/* Rank + big speakers */}
-                <div className="text-center mb-3">
-                  {lang.rank && <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 11, color: '#FF0CB6', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>{lang.rank} most spoken</div>}
-                  <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 'clamp(1.4rem, 5vw, 1.8rem)', color: '#FF0CB6', letterSpacing: '-0.02em' }}>{lang.speakers}</span>
-                  <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: '#919090', marginLeft: 8, textTransform: 'uppercase', letterSpacing: '0.1em' }}>speakers</span>
-                </div>
+            <button onClick={() => cycleLang(1)} className="arrow-pop w-10 h-10 rounded-full flex items-center justify-center text-lg cursor-pointer flex-shrink-0" style={{ border: '1px solid rgba(255,12,182,0.2)', background: 'rgba(255,12,182,0.05)', color: 'rgba(226,226,226,0.7)' }}>&#8250;</button>
+          </div>
 
-                {/* Dialect */}
-                {lang.dialect && (
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10, marginBottom: 10 }}>
-                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#FF0CB6', marginBottom: 5 }}>Dialect</div>
-                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: 'rgba(226,226,226,0.6)', lineHeight: 1.6, fontStyle: 'italic' }}>{lang.dialect}</div>
-                  </div>
-                )}
+          {/* CTA + DSP icons */}
+          <div className="flex flex-col items-center" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 12, paddingTop: 12 }}>
+            <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: '1.5px', color: '#FF0CB6', marginBottom: 8 }}>
+              {t('player.listenIn', { language: lang.name.toUpperCase() })}
+            </p>
+            <div className="flex gap-5">
+              {/* Spotify */}
+              <a href="#" className="group" aria-label="Spotify">
+                <svg className="w-6 h-6 fill-white transition-all group-hover:fill-[#1DB954] group-hover:drop-shadow-[0_0_8px_#1DB954]" viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.24 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.621.539.3.719 1.02.419 1.56-.239.54-.959.72-1.559.3z"/></svg>
+              </a>
+              {/* Apple Music */}
+              <a href="#" className="group" aria-label="Apple Music">
+                <svg className="w-6 h-6 fill-white transition-all group-hover:fill-[#FC3C44] group-hover:drop-shadow-[0_0_8px_#FC3C44]" viewBox="0 0 24 24"><path d="M23.994 6.124a9.23 9.23 0 00-.24-2.19c-.317-1.31-1.062-2.31-2.18-3.043a5.022 5.022 0 00-1.877-.726 10.496 10.496 0 00-1.564-.15c-.04-.003-.083-.01-.124-.013H5.986c-.152.01-.303.017-.455.026-.747.043-1.49.123-2.193.4-1.336.53-2.3 1.452-2.865 2.78-.192.448-.292.925-.363 1.408-.056.392-.088.785-.1 1.18 0 .032-.007.062-.01.093v12.223c.01.14.017.283.027.424.05.815.154 1.624.497 2.373.65 1.42 1.738 2.353 3.234 2.802.42.127.856.187 1.296.228.45.042.901.07 1.353.07h11.892c.138-.008.277-.014.415-.023.84-.056 1.674-.164 2.457-.504 1.397-.605 2.327-1.652 2.808-3.104.2-.604.3-1.23.347-1.862.037-.5.054-1 .057-1.5V6.124zM17.26 17.79c-.014.098-.036.196-.063.292-.15.548-.42.993-.9 1.3-.398.254-.846.378-1.315.402-.588.03-1.17-.04-1.73-.242a1.673 1.673 0 01-.984-.917c-.14-.342-.17-.706-.118-1.07.074-.508.33-.916.746-1.2.283-.193.6-.316.93-.402.34-.09.685-.154 1.03-.218.374-.07.75-.13 1.11-.26.14-.05.27-.12.38-.22.088-.082.14-.186.137-.314V8.665c0-.092-.022-.18-.08-.256a.395.395 0 00-.243-.147c-.118-.027-.238-.035-.358-.023-.187.019-.37.063-.55.117l-4.93 1.378c-.09.025-.178.055-.26.1a.487.487 0 00-.252.357c-.017.09-.024.18-.024.272v7.17c0 .09-.003.18-.014.268-.03.285-.077.566-.2.83-.196.422-.518.72-.934.916-.31.146-.64.22-.98.27-.548.078-1.09.078-1.617-.1a1.87 1.87 0 01-.973-.78c-.2-.34-.28-.714-.275-1.105.01-.4.11-.776.345-1.108.27-.38.63-.63 1.05-.796.34-.135.698-.208 1.06-.266.37-.06.743-.11 1.1-.22.193-.058.376-.14.53-.272a.57.57 0 00.193-.444V6.972c0-.208.04-.408.13-.596.12-.248.31-.424.558-.516.163-.06.333-.1.505-.137l5.34-1.397c.262-.07.53-.12.8-.132.226-.01.45 0 .666.08.32.118.52.348.58.693.015.09.023.18.023.27v11.456c0 .086-.003.174-.016.26z"/></svg>
+              </a>
+              {/* YouTube Music */}
+              <a href="#" className="group" aria-label="YouTube Music">
+                <svg className="w-6 h-6 fill-white transition-all group-hover:fill-[#FF0000] group-hover:drop-shadow-[0_0_8px_#FF0000]" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              </a>
+            </div>
+          </div>
 
-                {/* Why this city */}
-                {lang.whyThisCity && (
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10, marginBottom: 10 }}>
-                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#919090', marginBottom: 5 }}>Why {lang.city.split(',')[0]}</div>
-                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: 'rgba(226,226,226,0.5)', lineHeight: 1.6 }}>{lang.whyThisCity}</div>
-                  </div>
-                )}
+          {/* Track Notes toggle */}
+          <div className="text-center" style={{ marginTop: 10 }}>
+            <button onClick={() => setCardCollapsed(!cardCollapsed)} style={{ background: 'none', border: 'none', color: '#a0a0a0', fontSize: 11, cursor: 'pointer', fontFamily: "'Sora', sans-serif", letterSpacing: '0.5px' }}>
+              {cardCollapsed ? `+ ${t('player.trackNotes')}` : `- ${t('player.hideNotes')}`}
+            </button>
+          </div>
 
-                {/* Countries */}
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
-                  <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#919090', marginBottom: 5 }}>Countries &amp; Regions</div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                    {lang.countries.map(c => (
-                      <div key={c} style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 500, color: '#e2e2e2', textTransform: 'uppercase' }}>{c}</div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Counter */}
-                <div className="text-center mt-3" style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, color: 'rgba(226,226,226,0.25)', letterSpacing: '0.1em' }}>
-                  {langIdx + 1} / {LANGS.length}
-                </div>
+          {/* Expandable Track Notes */}
+          <div className={`lore-content ${!cardCollapsed ? 'expanded' : ''}`} style={{ paddingLeft: 4, paddingRight: 4 }}>
+            {/* Rank */}
+            {lang.rank && (
+              <div className="text-center" style={{ marginBottom: 10 }}>
+                <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 12, color: '#FF0CB6', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{lang.rank} {t('player.mostSpoken')}</span>
               </div>
             )}
+
+            {/* Dialect */}
+            {lang.dialect && (
+              <div style={{ borderTop: '1px dashed rgba(255,12,182,0.3)', paddingTop: 10, marginBottom: 10 }}>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: '#FF0CB6', marginBottom: 5 }}>{t('player.dialect')}</div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: '#ccc', lineHeight: 1.5 }}>{lang.dialect}</div>
+              </div>
+            )}
+
+            {/* Why this city */}
+            {lang.whyThisCity && (
+              <div style={{ borderTop: '1px dashed rgba(255,12,182,0.3)', paddingTop: 10, marginBottom: 10 }}>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: '#a0a0a0', marginBottom: 5 }}>{t('player.whyCity', { city: lang.city.split(',')[0] })}</div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: 'rgba(226,226,226,0.5)', lineHeight: 1.5 }}>{lang.whyThisCity}</div>
+              </div>
+            )}
+
+            {/* Countries */}
+            <div style={{ borderTop: '1px dashed rgba(255,12,182,0.3)', paddingTop: 10 }}>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: '#a0a0a0', marginBottom: 5 }}>{t('player.countriesRegions')}</div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                {lang.countries.map(c => (
+                  <div key={c} style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 500, color: '#e2e2e2', textTransform: 'uppercase' }}>{c}</div>
+                ))}
+              </div>
+            </div>
+
+            {/* Counter */}
+            <div className="text-center" style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, color: 'rgba(226,226,226,0.25)', letterSpacing: '0.1em', marginTop: 10, paddingBottom: 4 }}>
+              {langIdx + 1} / {LANGS.length}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ GEO-DETECTION POPUP ═══ */}
+      {geoPopup && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+          <div style={{
+            borderRadius: '1.5rem',
+            background: 'rgba(10,10,10,0.85)',
+            backdropFilter: 'blur(40px)',
+            border: '1px solid rgba(255,12,182,0.3)',
+            boxShadow: '0 0 30px rgba(255,12,182,0.2)',
+            padding: '28px 32px',
+            maxWidth: 380,
+            width: '90%',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 18, color: '#fff', marginBottom: 6 }}>
+              {t('geo.detected', { country: geoPopup.country })}
+            </div>
+            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, color: '#a0a0a0', marginBottom: 20 }}>
+              {t('geo.suggestion', { language: geoPopup.language.name })}
+            </div>
+            <button onClick={() => acceptGeo(geoPopup)} style={{
+              display: 'block', width: '100%', padding: '12px 0', borderRadius: '2rem',
+              background: '#FF0CB6', border: 'none', color: '#fff',
+              fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 14,
+              cursor: 'pointer', marginBottom: 10,
+              boxShadow: '0 0 15px rgba(255,12,182,0.4)',
+            }}>
+              {t('geo.accept', { language: geoPopup.language.name })}
+            </button>
+            <button onClick={() => { setGeoPopup(null) }} style={{
+              display: 'block', width: '100%', padding: '10px 0', borderRadius: '2rem',
+              background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#a0a0a0',
+              fontFamily: "'Sora', sans-serif", fontWeight: 500, fontSize: 13,
+              cursor: 'pointer',
+            }}>
+              {t('geo.decline')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ LANGUAGE PICKER MODAL ═══ */}
+      {showLangPicker && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+          <div style={{
+            borderRadius: '1.5rem',
+            background: 'rgba(10,10,10,0.9)',
+            backdropFilter: 'blur(40px)',
+            border: '1px solid rgba(255,12,182,0.3)',
+            boxShadow: '0 0 30px rgba(255,12,182,0.2)',
+            padding: '24px',
+            maxWidth: 440,
+            width: '92%',
+            maxHeight: '75vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column' as const,
+          }}>
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 18, color: '#fff', textAlign: 'center', marginBottom: 4 }}>
+              {t('geo.pickLanguage')}
+            </div>
+            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 12, color: '#a0a0a0', textAlign: 'center', marginBottom: 16 }}>
+              {t('geo.pickSubtitle')}
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              <div className="grid grid-cols-2 gap-2">
+                {LANGS.map((l, idx) => (
+                  <button key={l.id} onClick={() => pickLanguage(idx)} style={{
+                    padding: '10px 12px', borderRadius: '1rem',
+                    background: 'rgba(255,12,182,0.06)',
+                    border: '1px solid rgba(255,12,182,0.15)',
+                    color: '#e2e2e2', cursor: 'pointer',
+                    textAlign: 'left', transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,12,182,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,12,182,0.4)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,12,182,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,12,182,0.15)' }}
+                  >
+                    <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>{l.name}</div>
+                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, color: '#a0a0a0', marginTop: 2 }}>{l.city}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

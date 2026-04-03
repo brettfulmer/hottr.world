@@ -41,3 +41,31 @@ body {
   60% { transform: translateX(-4px); }
   80% { transform: translateX(4px); }
 }
+
+/* EQ Visualizer bars */
+@keyframes eqBounce {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1.0); }
+}
+
+/* Arrow click bounce */
+.arrow-pop:active {
+  animation: arrowPop 0.2s ease;
+}
+@keyframes arrowPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.82); }
+  100% { transform: scale(1); }
+}
+
+/* Lore expand/collapse */
+.lore-content {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.4s ease, padding 0.4s ease;
+}
+.lore-content.expanded {
+  max-height: 500px;
+  opacity: 1;
+}
