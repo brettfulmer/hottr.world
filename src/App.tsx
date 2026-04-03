@@ -3,6 +3,7 @@ import PinGate from './components/PinGate'
 import DancefloorPage from './components/DancefloorPage'
 import ShowcasePage from './components/ShowcasePage'
 import ChoicesPage from './components/ChoicesPage'
+import ChoicesResultsPage from './components/ChoicesResultsPage'
 import { detectUserCountry, type GeoResult } from './i18n/geoDetect'
 import { loadLocale } from './i18n'
 import { languages as LANGS } from './data/languages-50'
@@ -106,6 +107,7 @@ export default function App() {
   // Direct link routes — no PIN required
   const params = new URLSearchParams(window.location.search)
   if (params.has('choices')) return <ChoicesPage />
+  if (params.has('results')) return <ChoicesResultsPage />
 
   if (route === 'locked') {
     return <PinGate onUnlock={(label) => {
