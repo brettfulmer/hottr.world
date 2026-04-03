@@ -16,15 +16,15 @@
   "player.speakers": "sprekers",
   "player.listenIn": "LUISTER IN {{language}}",
   "player.trackNotes": "Liedjie Notas",
-  "player.hideNotes": "Versteek Notas",
+  "player.hideNotes": "Steek Notas Weg",
   "player.dialect": "Dialek",
   "player.whyCity": "Hoekom {{city}}",
   "player.countriesRegions": "Lande & Streke",
-  "player.mostSpoken": "mees gepraat",
-  "geo.detected": "Dis lyk asof jy in {{country}} is.",
-  "geo.suggestion": "Wil jy die site in {{language}} sien?",
-  "geo.accept": "Ja, wissel na {{language}}",
-  "geo.decline": "Nee, hou Engels",
+  "player.mostSpoken": "meeste gepraat",
+  "geo.detected": "Lyk of jy in {{country}} is.",
+  "geo.suggestion": "Is {{language}} reg vir jou?",
+  "geo.accept": "Ja, gaan voort in {{language}}",
+  "geo.decline": "Kies 'n ander taal",
   "geo.pickLanguage": "Kies jou taal",
-  "geo.pickSubtitle": "Kies jou voorkeur taal om voort te gaan"
+  "geo.pickSubtitle": "Kies jou verkose taal om voort te gaan"
 }

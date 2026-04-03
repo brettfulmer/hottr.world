@@ -1,9 +1,9 @@
 {
-  "beat1.headline": "La musique a toujours été ce qui rassemble les inconnus",
+  "beat1.headline": "La musique a toujours été ce qui rapproche les inconnus",
   "beat1.subtext1": "Par-delà les frontières",
   "beat1.subtext2": "Par-delà les cultures",
   "beat1.subtext3": "Par-delà les langues que tu n'as jamais parlées",
-  "beat2.text": "Le beat traverse toutes les frontières. Les mots n'ont jamais pu.",
+  "beat2.text": "Le beat traverse toutes les frontières. Les mots n'y arrivent pas.",
   "beat3.text": "Plus maintenant.",
   "beat4.prefix": "Une première mondiale pour un morceau de dance commercial",
   "beat4.headline": "Un morceau. 50 langues. 5,8 milliards de voix.",
@@ -22,9 +22,9 @@
   "player.countriesRegions": "Pays et Régions",
   "player.mostSpoken": "le plus parlé",
   "geo.detected": "On dirait que tu es en {{country}}.",
-  "geo.suggestion": "Tu veux voir le site en {{language}} ?",
-  "geo.accept": "Oui, passer en {{language}}",
-  "geo.decline": "Non, garder l'anglais",
+  "geo.suggestion": "{{language}}, ça te va ?",
+  "geo.accept": "Oui, continuer en {{language}}",
+  "geo.decline": "Choisir une autre langue",
   "geo.pickLanguage": "Choisis ta langue",
   "geo.pickSubtitle": "Sélectionne ta langue préférée pour continuer"
 }

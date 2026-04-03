@@ -7,7 +7,7 @@
   "beat3.text": "Non più.",
   "beat4.prefix": "Una prima mondiale per una traccia dance commerciale",
   "beat4.headline": "Una traccia. 50 lingue. 5,8 miliardi di voci.",
-  "beat4.date": "17 Aprile 2026",
+  "beat4.date": "17 aprile 2026",
   "nav.next": "AVANTI",
   "countdown.days": "G",
   "countdown.hours": "O",
@@ -22,9 +22,9 @@
   "player.countriesRegions": "Paesi e Regioni",
   "player.mostSpoken": "più parlata",
   "geo.detected": "Sembra che tu sia in {{country}}.",
-  "geo.suggestion": "Vuoi vedere il sito in {{language}}?",
-  "geo.accept": "Sì, passa a {{language}}",
-  "geo.decline": "No, tieni l'inglese",
+  "geo.suggestion": "{{language}} va bene per te?",
+  "geo.accept": "Sì, continua in {{language}}",
+  "geo.decline": "Scegli una lingua diversa",
   "geo.pickLanguage": "Scegli la tua lingua",
-  "geo.pickSubtitle": "Seleziona la lingua che preferisci per continuare"
+  "geo.pickSubtitle": "Seleziona la tua lingua preferita per continuare"
 }

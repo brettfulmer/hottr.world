@@ -1,11 +1,11 @@
 {
-  "beat1.headline": "Music has always been yung bagay na nagdadala sa mga strangers na magkakakilala",
+  "beat1.headline": "Music has always been yung bagay na nagkakaisa sa mga strangers",
   "beat1.subtext1": "Across borders",
   "beat1.subtext2": "Across cultures",
-  "beat1.subtext3": "Across languages na hindi mo pa naririnig",
-  "beat2.text": "Ang beat tumatagos sa lahat ng border. Ang words hindi kailanman.",
+  "beat1.subtext3": "Across languages na hindi mo pa nasasalita",
+  "beat2.text": "Ang beat tumatagos sa lahat ng border. Ang words hindi kaya.",
   "beat3.text": "Hindi na ngayon.",
-  "beat4.prefix": "Sa world first para sa commercial dance track",
+  "beat4.prefix": "Sa world first para sa isang commercial dance track",
   "beat4.headline": "Isang track. 50 languages. 5.8 billion voices.",
   "beat4.date": "17 April 2026",
   "nav.next": "NEXT",
@@ -22,9 +22,9 @@
   "player.countriesRegions": "Countries & Regions",
   "player.mostSpoken": "most spoken",
   "geo.detected": "Mukhang nasa {{country}} ka.",
-  "geo.suggestion": "Gusto mo bang tingnan ang site sa {{language}}?",
-  "geo.accept": "Oo, switch sa {{language}}",
-  "geo.decline": "Hindi, keep English",
+  "geo.suggestion": "Okay ba sa'yo ang {{language}}?",
+  "geo.accept": "Oo, continue in {{language}}",
+  "geo.decline": "Choose a different language",
   "geo.pickLanguage": "Choose your language",
-  "geo.pickSubtitle": "Select mo yung preferred language mo to continue"
+  "geo.pickSubtitle": "Select your preferred language to continue"
 }

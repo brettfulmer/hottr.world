@@ -22,9 +22,9 @@
   "player.countriesRegions": "Countries & Regions",
   "player.mostSpoken": "most spoken",
   "geo.detected": "It looks like you're in {{country}}.",
-  "geo.suggestion": "Would you like to view the site in {{language}}?",
-  "geo.accept": "Yes, switch to {{language}}",
-  "geo.decline": "No, keep English",
+  "geo.suggestion": "Is {{language}} okay for you?",
+  "geo.accept": "Yes, continue in {{language}}",
+  "geo.decline": "Choose a different language",
   "geo.pickLanguage": "Choose your language",
   "geo.pickSubtitle": "Select your preferred language to continue"
 }

@@ -19,32 +19,36 @@ export default function App() {
   const [geoResult, setGeoResult] = useState<GeoResult | null>(null)
   const [showPicker, setShowPicker] = useState(false)
   const [chosenLangId, setChosenLangId] = useState<string | undefined>(undefined)
+  const [localeReady, setLocaleReady] = useState(false)
 
-  // Start geo-detection as soon as PIN is unlocked
+  // Geo-detect + preload their locale so the popup shows in their language
   useEffect(() => {
     if (route !== 'detect') return
-    detectUserCountry().then(result => {
+    detectUserCountry().then(async result => {
       if (result) {
+        // Load their locale FIRST so the popup renders in their language
+        await loadLocale(result.language.id)
         setGeoResult(result)
+        setLocaleReady(true)
       } else {
         setShowPicker(true)
       }
     })
   }, [route])
 
-  const acceptGeo = (geo: GeoResult) => {
-    loadLocale(geo.language.id)
+  const acceptGeo = async (geo: GeoResult) => {
+    // Locale already loaded during detection — go straight to main
     setChosenLangId(geo.language.id)
     setRoute('main')
   }
 
   const declineGeo = () => {
-    setChosenLangId('en')
-    setRoute('main')
+    // They want a different language — show picker (still in detected locale)
+    setShowPicker(true)
   }
 
-  const pickLanguage = (langId: string) => {
-    loadLocale(langId)
+  const pickLanguage = async (langId: string) => {
+    await loadLocale(langId)
     setChosenLangId(langId)
     setRoute('main')
   }
@@ -68,8 +72,8 @@ export default function App() {
     return (
       <div className="w-full h-screen bg-black flex items-center justify-center" style={{ fontFamily: "'Sora', sans-serif" }}>
 
-        {/* Geo popup */}
-        {geoResult && !showPicker && (
+        {/* Geo popup — shows in detected language */}
+        {geoResult && localeReady && !showPicker && (
           <div style={{
             borderRadius: '1.5rem',
             background: 'rgba(10,10,10,0.85)',
@@ -100,16 +104,9 @@ export default function App() {
               display: 'block', width: '100%', padding: '10px 0', borderRadius: '2rem',
               background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#a0a0a0',
               fontFamily: "'Sora', sans-serif", fontWeight: 500, fontSize: 13,
-              cursor: 'pointer', marginBottom: 14,
+              cursor: 'pointer',
             }}>
               {t('geo.decline')}
-            </button>
-            <button onClick={() => setShowPicker(true)} style={{
-              background: 'none', border: 'none', color: 'rgba(255,12,182,0.5)',
-              fontFamily: "'Sora', sans-serif", fontSize: 11, cursor: 'pointer',
-              letterSpacing: '0.5px',
-            }}>
-              Choose a different language
             </button>
           </div>
         )}
