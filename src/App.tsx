@@ -105,19 +105,16 @@ export default function App() {
   }
 
   // Direct link routes — no PIN required
-  const params = new URLSearchParams(window.location.search)
-  if (params.has('choices')) return <ChoicesPage />
-  if (params.has('results')) return <ChoicesResultsPage />
+  const path = window.location.pathname
+  if (path === '/choices') return <ChoicesPage />
+  if (path === '/results') return <ChoicesResultsPage />
+  if (path === '/explore') return <Suspense fallback={<Loading />}><GlobeExplorer /></Suspense>
 
   if (route === 'locked') {
     return <PinGate onUnlock={(label) => {
       if (label === 'showcase') setRoute('showcase')
       else setRoute('detect')
     }} />
-  }
-
-  if (params.has('explore')) {
-    return <Suspense fallback={<Loading />}><GlobeExplorer /></Suspense>
   }
 
   if (route === 'showcase') return <ShowcasePage />
