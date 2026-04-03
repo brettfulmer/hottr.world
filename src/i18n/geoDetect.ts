@@ -24,35 +24,16 @@ export interface GeoResult {
 }
 
 function matchCountry(country: string): Language | undefined {
-  // Exact match first
   let lang = countryLangMap.get(country)
   if (lang) return lang
-  // Case-insensitive fallback
   for (const [key, val] of countryLangMap) {
     if (key.toLowerCase() === country.toLowerCase()) return val
   }
   return undefined
 }
 
-async function tryIpwhoIs(): Promise<{ country: string } | null> {
-  try {
-    const res = await fetch('https://ipwho.is/', { signal: AbortSignal.timeout(5000) })
-    const data = await res.json()
-    if (data.success !== false && data.country) return { country: data.country }
-  } catch { /* fall through */ }
-  return null
-}
-
-async function tryFreeIpApi(): Promise<{ country: string } | null> {
-  try {
-    const res = await fetch('https://freeipapi.com/api/json/', { signal: AbortSignal.timeout(5000) })
-    const data = await res.json()
-    if (data.countryName) return { country: data.countryName }
-  } catch { /* fall through */ }
-  return null
-}
-
-async function tryIpApi(): Promise<{ country: string } | null> {
+// APIs tested to work from production HTTPS with CORS
+async function tryIpApiCo(): Promise<{ country: string } | null> {
   try {
     const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) })
     const data = await res.json()
@@ -61,9 +42,64 @@ async function tryIpApi(): Promise<{ country: string } | null> {
   return null
 }
 
+async function tryCountryIs(): Promise<{ country: string } | null> {
+  try {
+    const res = await fetch('https://api.country.is', { signal: AbortSignal.timeout(5000) })
+    const data = await res.json()
+    if (data.country) {
+      // Returns ISO code (AU, US, etc) — need to map to full name
+      const codeMap: Record<string, string> = {
+        AU:'Australia', US:'United States of America', GB:'United Kingdom',
+        CA:'Canada', NZ:'New Zealand', IE:'Ireland', ZA:'South Africa',
+        NG:'Nigeria', IN:'India', PH:'Philippines', SG:'Singapore',
+        CN:'China', TW:'Taiwan', MY:'Malaysia', JP:'Japan', KR:'South Korea',
+        ID:'Indonesia', TH:'Thailand', VN:'Vietnam', HK:'Hong Kong',
+        BD:'Bangladesh', PK:'Pakistan', NP:'Nepal', LK:'Sri Lanka',
+        EG:'Egypt', SA:'Saudi Arabia', IQ:'Iraq', JO:'Jordan', LB:'Lebanon',
+        AE:'UAE', KW:'Kuwait', IR:'Iran', AF:'Afghanistan', TJ:'Tajikistan',
+        FR:'France', BE:'Belgium', CH:'Switzerland', HT:'Haiti', SN:'Senegal',
+        CM:'Cameroon', MG:'Madagascar', DE:'Germany', AT:'Austria',
+        LI:'Liechtenstein', LU:'Luxembourg', MX:'Mexico', BR:'Brazil',
+        PT:'Portugal', AO:'Angola', MZ:'Mozambique', CV:'Cape Verde',
+        TL:'East Timor', RU:'Russia', BY:'Belarus', KZ:'Kazakhstan',
+        KG:'Kyrgyzstan', UA:'Ukraine', PL:'Poland', RO:'Romania',
+        MD:'Moldova', NL:'Netherlands', SR:'Suriname', SE:'Sweden',
+        FI:'Finland', NO:'Norway', DK:'Denmark', GR:'Greece', CY:'Cyprus',
+        TR:'Turkey', IL:'Israel', IT:'Italy', SM:'San Marino',
+        ES:'Spain', AD:'Andorra', RS:'Serbia', BA:'Bosnia and Herzegovina',
+        ME:'Montenegro', HR:'Croatia', CO:'Colombia', AR:'Argentina',
+        UY:'Uruguay', CL:'Chile', PE:'Peru', VE:'Venezuela', EC:'Ecuador',
+        KE:'Kenya', TZ:'Tanzania', UG:'Uganda', RW:'Rwanda', BI:'Burundi',
+        ET:'Ethiopia', GH:'Ghana', NE:'Niger', TD:'Chad', BJ:'Benin',
+        TG:'Togo', MA:'Morocco', DZ:'Algeria', TN:'Tunisia', LY:'Libya',
+        MR:'Mauritania', MM:'Myanmar', BN:'Brunei', SZ:'Eswatini',
+        LS:'Lesotho', NA:'Namibia', BW:'Botswana', FJ:'Fiji',
+        MU:'Mauritius', TT:'Trinidad and Tobago', PS:'Palestine',
+        SY:'Syria',
+      }
+      const name = codeMap[data.country]
+      if (name) return { country: name }
+    }
+  } catch { /* fall through */ }
+  return null
+}
+
+async function tryIpInfo(): Promise<{ country: string } | null> {
+  try {
+    const res = await fetch('https://ipinfo.io/json', { signal: AbortSignal.timeout(5000) })
+    const data = await res.json()
+    if (data.country) {
+      // Also returns ISO code — reuse same approach
+      const res2 = await tryCountryIs() // reuse the code map logic
+      if (res2) return res2
+    }
+  } catch { /* fall through */ }
+  return null
+}
+
 export async function detectUserCountry(): Promise<GeoResult | null> {
-  // Try multiple APIs with fallback
-  const result = await tryIpwhoIs() || await tryFreeIpApi() || await tryIpApi()
+  // Try APIs in order — all support CORS from HTTPS origins
+  const result = await tryIpApiCo() || await tryCountryIs()
 
   if (result) {
     const lang = matchCountry(result.country)
