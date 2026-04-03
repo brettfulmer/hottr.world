@@ -8,8 +8,6 @@ import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
 import { feature } from 'topojson-client'
 import type { Topology, GeometryCollection } from 'topojson-specification'
-import { detectUserCountry, type GeoResult } from '../i18n/geoDetect'
-import { loadLocale } from '../i18n'
 
 /* ═══ GEO ENGINE ═══ */
 interface CrystalPoint { lat: number; lng: number; country: string }
@@ -87,19 +85,20 @@ function matchesCountry(geoName: string, langCountries: string[]): boolean {
 import { languages as LANGS } from '../data/languages-50'
 
 /* ═══ COMPONENT ═══ */
-export default function DancefloorPage() {
+interface DancefloorProps { initialLangId?: string }
+
+export default function DancefloorPage({ initialLangId }: DancefloorProps) {
   const { t } = useTranslation()
   const canvasRef = useRef<HTMLDivElement>(null)
   const flashRef = useRef<HTMLDivElement>(null)
   const [slide, setSlide] = useState(0)
   const [showUI, setShowUI] = useState(false)
-  const [langIdx, setLangIdx] = useState(0)
+  const initialIdx = initialLangId ? Math.max(0, LANGS.findIndex(l => l.id === initialLangId)) : 0
+  const [langIdx, setLangIdx] = useState(initialIdx)
   const slideRef = useRef(0)
   const locked = useRef(false)
   const autoTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [cardCollapsed, setCardCollapsed] = useState(true)
-  const [geoPopup, setGeoPopup] = useState<GeoResult | null>(null)
-  const [showLangPicker, setShowLangPicker] = useState(false)
 
   const threeRef = useRef<{
     choreo: number; morphStart: number; textDropStart: number
@@ -213,38 +212,6 @@ export default function DancefloorPage() {
     }
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id)
   }, [])
-
-  // Geo-detection — runs once after intro completes
-  const geoRan = useRef(false)
-  useEffect(() => {
-    if (!showUI || geoRan.current) return
-    geoRan.current = true
-    detectUserCountry().then(result => {
-      if (result) {
-        setGeoPopup(result)
-      } else {
-        setShowLangPicker(true)
-      }
-    })
-  }, [showUI])
-
-  const acceptGeo = useCallback((geo: GeoResult) => {
-    const idx = LANGS.findIndex(l => l.id === geo.language.id)
-    if (idx !== -1) {
-      setLangIdx(idx)
-      highlightLang(idx)
-    }
-    loadLocale(geo.language.id)
-    setGeoPopup(null)
-  }, [highlightLang])
-
-  const pickLanguage = useCallback((idx: number) => {
-    setLangIdx(idx)
-    highlightLang(idx)
-    loadLocale(LANGS[idx].id)
-    setShowLangPicker(false)
-    setGeoPopup(null)
-  }, [highlightLang])
 
   /* ═══ THREE.JS SCENE ═══ */
   useEffect(() => {
@@ -665,92 +632,6 @@ export default function DancefloorPage() {
         </div>
       )}
 
-      {/* ═══ GEO-DETECTION POPUP ═══ */}
-      {geoPopup && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
-          <div style={{
-            borderRadius: '1.5rem',
-            background: 'rgba(10,10,10,0.85)',
-            backdropFilter: 'blur(40px)',
-            border: '1px solid rgba(255,12,182,0.3)',
-            boxShadow: '0 0 30px rgba(255,12,182,0.2)',
-            padding: '28px 32px',
-            maxWidth: 380,
-            width: '90%',
-            textAlign: 'center',
-          }}>
-            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 18, color: '#fff', marginBottom: 6 }}>
-              {t('geo.detected', { country: geoPopup.country })}
-            </div>
-            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, color: '#a0a0a0', marginBottom: 20 }}>
-              {t('geo.suggestion', { language: geoPopup.language.name })}
-            </div>
-            <button onClick={() => acceptGeo(geoPopup)} style={{
-              display: 'block', width: '100%', padding: '12px 0', borderRadius: '2rem',
-              background: '#FF0CB6', border: 'none', color: '#fff',
-              fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 14,
-              cursor: 'pointer', marginBottom: 10,
-              boxShadow: '0 0 15px rgba(255,12,182,0.4)',
-            }}>
-              {t('geo.accept', { language: geoPopup.language.name })}
-            </button>
-            <button onClick={() => { setGeoPopup(null) }} style={{
-              display: 'block', width: '100%', padding: '10px 0', borderRadius: '2rem',
-              background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#a0a0a0',
-              fontFamily: "'Sora', sans-serif", fontWeight: 500, fontSize: 13,
-              cursor: 'pointer',
-            }}>
-              {t('geo.decline')}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ LANGUAGE PICKER MODAL ═══ */}
-      {showLangPicker && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
-          <div style={{
-            borderRadius: '1.5rem',
-            background: 'rgba(10,10,10,0.9)',
-            backdropFilter: 'blur(40px)',
-            border: '1px solid rgba(255,12,182,0.3)',
-            boxShadow: '0 0 30px rgba(255,12,182,0.2)',
-            padding: '24px',
-            maxWidth: 440,
-            width: '92%',
-            maxHeight: '75vh',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column' as const,
-          }}>
-            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 18, color: '#fff', textAlign: 'center', marginBottom: 4 }}>
-              {t('geo.pickLanguage')}
-            </div>
-            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 12, color: '#a0a0a0', textAlign: 'center', marginBottom: 16 }}>
-              {t('geo.pickSubtitle')}
-            </div>
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              <div className="grid grid-cols-2 gap-2">
-                {LANGS.map((l, idx) => (
-                  <button key={l.id} onClick={() => pickLanguage(idx)} style={{
-                    padding: '10px 12px', borderRadius: '1rem',
-                    background: 'rgba(255,12,182,0.06)',
-                    border: '1px solid rgba(255,12,182,0.15)',
-                    color: '#e2e2e2', cursor: 'pointer',
-                    textAlign: 'left', transition: 'all 0.15s',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,12,182,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,12,182,0.4)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,12,182,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,12,182,0.15)' }}
-                  >
-                    <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>{l.name}</div>
-                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, color: '#a0a0a0', marginTop: 2 }}>{l.city}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
