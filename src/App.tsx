@@ -117,87 +117,83 @@ export default function App() {
     return (
       <div className="w-full h-screen bg-black flex items-center justify-center" style={{ fontFamily: "'Sora', sans-serif" }}>
 
-        {/* Geo popup — shows in detected language */}
-        {geoResult && localeReady && !showPicker && (
-          <div style={{
-            borderRadius: '1.5rem',
-            background: 'rgba(10,10,10,0.85)',
-            backdropFilter: 'blur(40px)',
-            border: '1px solid rgba(255,12,182,0.3)',
-            boxShadow: '0 0 30px rgba(255,12,182,0.2)',
-            padding: '28px 32px',
-            maxWidth: 380,
-            width: '90%',
-            textAlign: 'center',
-          }}>
-            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 18, color: '#fff', marginBottom: 6 }}>
-              {t('geo.detected', { country: geoResult.country })}
-            </div>
-            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, color: '#a0a0a0', marginBottom: 20 }}>
-              {t('geo.suggestion', { language: geoResult.language.name })}
-            </div>
-            <button onClick={() => acceptGeo(geoResult)} style={{
-              display: 'block', width: '100%', padding: '12px 0', borderRadius: '2rem',
-              background: '#FF0CB6', border: 'none', color: '#fff',
-              fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 14,
-              cursor: 'pointer', marginBottom: 10,
-              boxShadow: '0 0 15px rgba(255,12,182,0.4)',
-            }}>
-              {t('geo.accept', { language: geoResult.language.name })}
-            </button>
-            <button onClick={declineGeo} style={{
-              display: 'block', width: '100%', padding: '10px 0', borderRadius: '2rem',
-              background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#a0a0a0',
-              fontFamily: "'Sora', sans-serif", fontWeight: 500, fontSize: 13,
-              cursor: 'pointer',
-            }}>
-              {t('geo.decline')}
-            </button>
-          </div>
-        )}
-
-        {/* Language picker */}
-        {showPicker && (
+        {/* Unified language selection card */}
+        {(geoResult && localeReady) || showPicker ? (
           <div style={{
             borderRadius: '1.5rem',
             background: 'rgba(10,10,10,0.9)',
             backdropFilter: 'blur(40px)',
             border: '1px solid rgba(255,12,182,0.3)',
             boxShadow: '0 0 30px rgba(255,12,182,0.2)',
-            padding: '24px',
-            maxWidth: 440,
+            padding: '24px 28px',
+            maxWidth: 420,
             width: '92%',
-            maxHeight: '75vh',
+            maxHeight: '80vh',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column' as const,
+            textAlign: 'center',
           }}>
-            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 18, color: '#fff', textAlign: 'center', marginBottom: 4 }}>
-              {t('geo.pickLanguage')}
+            {/* Detected language suggestion */}
+            {geoResult && localeReady && (
+              <>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, color: '#a0a0a0', marginBottom: 6 }}>
+                  We've detected
+                </div>
+                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: 22, color: '#FF0CB6', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  {geoResult.language.name}
+                </div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 12, color: '#a0a0a0', marginBottom: 16 }}>
+                  might be your preferred language
+                </div>
+                <button onClick={() => acceptGeo(geoResult)} style={{
+                  display: 'block', width: '100%', padding: '13px 0', borderRadius: '2rem',
+                  background: '#FF0CB6', border: 'none', color: '#fff',
+                  fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 14,
+                  cursor: 'pointer',
+                  boxShadow: '0 0 15px rgba(255,12,182,0.4)',
+                }}>
+                  Continue
+                </button>
+              </>
+            )}
+
+            {/* Divider + expand trigger */}
+            <div style={{ marginTop: geoResult ? 18 : 0, marginBottom: 12 }}>
+              <button onClick={() => setShowPicker(!showPicker)} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: "'Sora', sans-serif", fontSize: 12, color: '#a0a0a0',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                width: '100%',
+              }}>
+                {geoResult ? 'Or, select from:' : 'Choose your language'}
+                <span style={{ fontSize: 10, transition: 'transform 0.2s', display: 'inline-block', transform: showPicker ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+              </button>
             </div>
-            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 12, color: '#a0a0a0', textAlign: 'center', marginBottom: 16 }}>
-              {t('geo.pickSubtitle')}
-            </div>
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              <div className="grid grid-cols-2 gap-2">
-                {[...LANGS].sort((a, b) => pickerName(a.id, a.name).localeCompare(pickerName(b.id, b.name))).map((l) => (
-                  <button key={l.id} onClick={() => pickLanguage(l.id)} style={{
-                    padding: '10px 12px', borderRadius: '1rem',
-                    background: 'rgba(255,12,182,0.06)',
-                    border: '1px solid rgba(255,12,182,0.15)',
-                    color: '#e2e2e2', cursor: 'pointer',
-                    textAlign: 'left', transition: 'all 0.15s',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,12,182,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,12,182,0.4)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,12,182,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,12,182,0.15)' }}
-                  >
-                    <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>{pickerName(l.id, l.name)}</div>
-                  </button>
-                ))}
+
+            {/* Expandable language grid */}
+            {showPicker && (
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                <div className="grid grid-cols-2 gap-2">
+                  {[...LANGS].sort((a, b) => pickerName(a.id, a.name).localeCompare(pickerName(b.id, b.name))).map((l) => (
+                    <button key={l.id} onClick={() => pickLanguage(l.id)} style={{
+                      padding: '10px 12px', borderRadius: '1rem',
+                      background: geoResult && l.id === geoResult.language.id ? 'rgba(255,12,182,0.15)' : 'rgba(255,12,182,0.06)',
+                      border: `1px solid ${geoResult && l.id === geoResult.language.id ? 'rgba(255,12,182,0.4)' : 'rgba(255,12,182,0.15)'}`,
+                      color: '#e2e2e2', cursor: 'pointer',
+                      textAlign: 'left', transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,12,182,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,12,182,0.4)' }}
+                    onMouseLeave={e => { if (!(geoResult && l.id === geoResult.language.id)) { e.currentTarget.style.background = 'rgba(255,12,182,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,12,182,0.15)' } }}
+                    >
+                      <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>{pickerName(l.id, l.name)}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        ) : null}
 
         {/* Loading state while detecting */}
         {!geoResult && !showPicker && (
