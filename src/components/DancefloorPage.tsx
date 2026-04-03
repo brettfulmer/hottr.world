@@ -359,12 +359,12 @@ export default function DancefloorPage({ initialLangId, analyser }: DancefloorPr
 
       globeGroup.rotation.y += (t.choreo === 1 ? 0.04 : 0.006)
 
-      // Pulse globe scale to bass
-      const gScale = 1.0 + audioPulse * 0.03
+      // Pulse globe scale to bass — visible thump
+      const gScale = 1.0 + audioPulse * 0.08
       globeGroup.scale.set(gScale, gScale, gScale)
 
       // Pulse lights to beat
-      const lightBoost = 1 + audioPulse * 0.8
+      const lightBoost = 1 + audioPulse * 1.5
       kL.position.set(Math.sin(time*0.3)*5, Math.sin(time*0.2)*2+2, Math.cos(time*0.4)*5)
       kL.intensity = 40 * lightBoost
       pL.position.set(Math.cos(time*0.25)*4, Math.cos(time*0.15)*2-1, Math.sin(time*0.35)*4)
@@ -409,14 +409,14 @@ export default function DancefloorPage({ initialLangId, analyser }: DancefloorPr
 
       // Audio-reactive bloom — pulse bloom strength on bass hits
       if (t.choreo === 4) {
-        bloom.strength = 0.6 + audioPulse * 0.8
+        bloom.strength = 0.6 + audioPulse * 1.2
       }
 
       // Twinkle — scale shimmer for all gems, sparkle for active pink gems
       // Audio boosts: more sparkle count + bigger pulse on bass
       const twSpeed = t.choreo === 1 ? 3.0 : 1.5
-      const twRange = t.choreo === 1 ? 0.15 : 0.03 + audioPulse * 0.04
-      const twCount = t.choreo === 1 ? 200 : Math.floor(60 + audioPulse * 80)
+      const twRange = t.choreo === 1 ? 0.15 : 0.03 + audioPulse * 0.08
+      const twCount = t.choreo === 1 ? 200 : Math.floor(60 + audioPulse * 140)
       const PINK_SPARKLE = new THREE.Color('#FF4DD4')
       let colorsChanged = false
       for (let n = 0; n < twCount; n++) {
@@ -429,9 +429,9 @@ export default function DancefloorPage({ initialLangId, analyser }: DancefloorPr
 
         if (isPink && t.choreo === 4 && !t.langTrans) {
           // Active gems: scale pulse amplified by audio
-          const pinkPulse = 0.25 + audioPulse * 0.3
+          const pinkPulse = 0.25 + audioPulse * 0.6
           tS.setScalar(bScales[i] * (1 + shimmer * pinkPulse))
-          if (shimmer > 0.75 - audioPulse * 0.2) {
+          if (shimmer > 0.65 - audioPulse * 0.3) {
             mesh.setColorAt(i, PINK_SPARKLE)
             colorsChanged = true
           } else {
