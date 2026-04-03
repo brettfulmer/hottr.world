@@ -360,7 +360,7 @@ export default function DancefloorPage({ initialLangId, analyser }: DancefloorPr
       globeGroup.rotation.y += (t.choreo === 1 ? 0.04 : 0.006)
 
       // Pulse globe scale to bass — visible thump
-      const gScale = 1.0 + audioPulse * 0.08
+      const gScale = 1.0 + audioPulse * 0.20
       globeGroup.scale.set(gScale, gScale, gScale)
 
       // Pulse lights to beat
