@@ -104,11 +104,12 @@ export default function App() {
     setRoute('main')
   }
 
-  // Direct link routes — no PIN required
+  // Route by path
   const path = window.location.pathname
   if (path === '/choices') return <ChoicesPage />
   if (path === '/results') return <ChoicesResultsPage />
   if (path === '/explore') return <Suspense fallback={<Loading />}><GlobeExplorer /></Suspense>
+  // /play → main dancefloor (falls through to PIN → detect → intro → globe)
 
   if (route === 'locked') {
     return <PinGate onUnlock={(label) => {
