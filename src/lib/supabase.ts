@@ -15,6 +15,12 @@ export async function submitSignup(email: string, name: string): Promise<{ ok: b
   return { ok: true }
 }
 
+export async function submitVote(version: number): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.from('track_votes').insert({ version })
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
 export async function validateAccessCode(code: string): Promise<boolean> {
   const { data, error } = await supabase.rpc('validate_access_code', { input_code: code })
   if (error) throw new Error("Couldn't verify your code. Check your connection and try again.")

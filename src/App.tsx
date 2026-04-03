@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import PinGate from './components/PinGate'
 import DancefloorPage from './components/DancefloorPage'
 import ShowcasePage from './components/ShowcasePage'
+import ChoicesPage from './components/ChoicesPage'
 import { detectUserCountry, type GeoResult } from './i18n/geoDetect'
 import { loadLocale } from './i18n'
 import { languages as LANGS } from './data/languages-50'
@@ -109,8 +110,10 @@ export default function App() {
     }} />
   }
 
-  // ?explore override (for either PIN)
-  if (new URLSearchParams(window.location.search).has('explore')) {
+  // Direct link routes — no PIN required
+  const params = new URLSearchParams(window.location.search)
+  if (params.has('choices')) return <ChoicesPage />
+  if (params.has('explore')) {
     return <Suspense fallback={<Loading />}><GlobeExplorer /></Suspense>
   }
 
