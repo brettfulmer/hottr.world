@@ -103,6 +103,10 @@ export default function App() {
     setRoute('main')
   }
 
+  // Direct link routes — no PIN required
+  const params = new URLSearchParams(window.location.search)
+  if (params.has('choices')) return <ChoicesPage />
+
   if (route === 'locked') {
     return <PinGate onUnlock={(label) => {
       if (label === 'showcase') setRoute('showcase')
@@ -110,9 +114,6 @@ export default function App() {
     }} />
   }
 
-  // Direct link routes — no PIN required
-  const params = new URLSearchParams(window.location.search)
-  if (params.has('choices')) return <ChoicesPage />
   if (params.has('explore')) {
     return <Suspense fallback={<Loading />}><GlobeExplorer /></Suspense>
   }
