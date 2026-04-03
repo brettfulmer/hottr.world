@@ -7,6 +7,21 @@ import { detectUserCountry, type GeoResult } from './i18n/geoDetect'
 import { loadLocale } from './i18n'
 import { languages as LANGS } from './data/languages-50'
 
+// Display names for picker — group variants under main language
+const PICKER_NAMES: Record<string, string> = {
+  'ar-eg': 'Arabic (Egyptian)',
+  'ar-lv': 'Arabic (Levantine)',
+  'ar-ma': 'Arabic (Maghrebi)',
+  'pt-br': 'Portuguese (Brazilian)',
+  'pt-eu': 'Portuguese (European)',
+  'es-ar': 'Spanish (Argentine)',
+  'es-cl': 'Spanish (Chilean)',
+  'es-co': 'Spanish (Colombian)',
+  'es-es': 'Spanish (Madrid)',
+  'es-mx': 'Spanish (Mexican)',
+}
+const pickerName = (id: string, name: string) => PICKER_NAMES[id] || name
+
 const GlobeExplorer = lazy(() => import('./components/globe/GlobeExplorer'))
 
 const Loading = () => (
@@ -135,7 +150,7 @@ export default function App() {
             </div>
             <div style={{ overflowY: 'auto', flex: 1 }}>
               <div className="grid grid-cols-2 gap-2">
-                {[...LANGS].sort((a, b) => a.name.localeCompare(b.name)).map((l) => (
+                {[...LANGS].sort((a, b) => pickerName(a.id, a.name).localeCompare(pickerName(b.id, b.name))).map((l) => (
                   <button key={l.id} onClick={() => pickLanguage(l.id)} style={{
                     padding: '10px 12px', borderRadius: '1rem',
                     background: 'rgba(255,12,182,0.06)',
@@ -146,8 +161,7 @@ export default function App() {
                   onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,12,182,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,12,182,0.4)' }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,12,182,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,12,182,0.15)' }}
                   >
-                    <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>{l.name}</div>
-                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, color: '#a0a0a0', marginTop: 2 }}>{l.city}</div>
+                    <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>{pickerName(l.id, l.name)}</div>
                   </button>
                 ))}
               </div>
