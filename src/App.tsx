@@ -34,6 +34,7 @@ export default function App() {
   const [chosenLangId, setChosenLangId] = useState<string | undefined>(undefined)
   const [localeReady, setLocaleReady] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [volume, setVolume] = useState(0.6)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
 
@@ -212,30 +213,71 @@ export default function App() {
   return (
     <>
       <DancefloorPage initialLangId={chosenLangId} analyser={analyserRef.current} />
-      {/* Play/Pause button — visible during intro + globe */}
-      <button onClick={togglePlay} className="fixed top-6 right-6 z-[300] flex items-center gap-2" style={{
-        background: 'rgba(255,12,182,0.12)',
-        border: '1px solid rgba(255,12,182,0.3)',
-        borderRadius: '2rem',
-        padding: '8px 16px',
-        cursor: 'pointer',
-        backdropFilter: 'blur(20px)',
-        boxShadow: '0 0 12px rgba(255,12,182,0.1)',
-      }}>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
-          {isPlaying ? (
-            <>
-              <rect x="2" y="1" width="3.5" height="12" rx="1" fill="#FF0CB6" />
-              <rect x="8.5" y="1" width="3.5" height="12" rx="1" fill="#FF0CB6" />
-            </>
-          ) : (
-            <path d="M2.5 1.5L12 7L2.5 12.5V1.5Z" fill="#FF0CB6" />
-          )}
-        </svg>
-        <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: '#FF0CB6', fontWeight: 600, letterSpacing: '0.5px' }}>
-          {isPlaying ? 'PLAYING' : 'PLAY'}
-        </span>
-      </button>
+      {/* Audio controls — top right */}
+      <div className="fixed top-6 right-6 z-[300] flex items-center gap-2">
+        {/* Play/Pause */}
+        <button onClick={togglePlay} className="flex items-center gap-2" style={{
+          background: 'rgba(255,12,182,0.12)',
+          border: '1px solid rgba(255,12,182,0.3)',
+          borderRadius: '2rem',
+          padding: '8px 16px',
+          cursor: 'pointer',
+          backdropFilter: 'blur(20px)',
+          boxShadow: '0 0 12px rgba(255,12,182,0.1)',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+            {isPlaying ? (
+              <>
+                <rect x="2" y="1" width="3.5" height="12" rx="1" fill="#FF0CB6" />
+                <rect x="8.5" y="1" width="3.5" height="12" rx="1" fill="#FF0CB6" />
+              </>
+            ) : (
+              <path d="M2.5 1.5L12 7L2.5 12.5V1.5Z" fill="#FF0CB6" />
+            )}
+          </svg>
+          <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: '#FF0CB6', fontWeight: 600, letterSpacing: '0.5px' }}>
+            {isPlaying ? 'PLAYING' : 'PLAY'}
+          </span>
+        </button>
+        {/* Volume */}
+        <div className="flex items-center gap-1.5" style={{
+          background: 'rgba(255,12,182,0.12)',
+          border: '1px solid rgba(255,12,182,0.3)',
+          borderRadius: '2rem',
+          padding: '8px 12px',
+          backdropFilter: 'blur(20px)',
+          boxShadow: '0 0 12px rgba(255,12,182,0.1)',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#FF0CB6" style={{ flexShrink: 0 }}>
+            {volume === 0 ? (
+              <path d="M16.5 12A4.5 4.5 0 0014 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0021 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 003.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+            ) : (
+              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+            )}
+          </svg>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={volume}
+            onChange={e => {
+              const v = parseFloat(e.target.value)
+              setVolume(v)
+              if (audioRef.current) audioRef.current.volume = v
+            }}
+            style={{
+              width: 60,
+              height: 3,
+              appearance: 'none',
+              background: `linear-gradient(to right, #FF0CB6 ${volume * 100}%, rgba(255,255,255,0.15) ${volume * 100}%)`,
+              borderRadius: 2,
+              outline: 'none',
+              cursor: 'pointer',
+            }}
+          />
+        </div>
+      </div>
     </>
   )
 }
