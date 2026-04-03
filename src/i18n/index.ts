@@ -7,6 +7,13 @@ const localeModules = import.meta.glob(['./locales/*.json', '!./locales/en.json'
   () => Promise<{ default: Record<string, string> }>
 >
 
+// Build langId -> loader map so lookups are reliable regardless of glob key format
+const localeLoaders = new Map<string, () => Promise<{ default: Record<string, string> }>>()
+for (const [key, loader] of Object.entries(localeModules)) {
+  const match = key.match(/\/([^/]+)\.json$/)
+  if (match) localeLoaders.set(match[1], loader)
+}
+
 i18n
   .use(initReactI18next)
   .init({
@@ -21,14 +28,16 @@ i18n
 
 export async function loadLocale(langId: string): Promise<void> {
   if (langId === 'en') {
-    i18n.changeLanguage('en')
+    await i18n.changeLanguage('en')
     return
   }
-  const path = `./locales/${langId}.json`
-  if (localeModules[path]) {
-    const mod = await localeModules[path]()
+  const loader = localeLoaders.get(langId)
+  if (loader) {
+    const mod = await loader()
     i18n.addResourceBundle(langId, 'translation', mod.default, true, true)
-    i18n.changeLanguage(langId)
+    await i18n.changeLanguage(langId)
+  } else {
+    console.warn(`[i18n] No locale found for "${langId}". Available:`, [...localeLoaders.keys()])
   }
 }
 
