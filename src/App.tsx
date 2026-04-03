@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
-import { useTranslation } from 'react-i18next'
 import PinGate from './components/PinGate'
 import DancefloorPage from './components/DancefloorPage'
 import ShowcasePage from './components/ShowcasePage'
@@ -29,7 +28,6 @@ const Loading = () => (
 )
 
 export default function App() {
-  const { t } = useTranslation()
   const [route, setRoute] = useState<'locked' | 'detect' | 'main' | 'showcase' | 'explore'>('locked')
   const [geoResult, setGeoResult] = useState<GeoResult | null>(null)
   const [showPicker, setShowPicker] = useState(false)
