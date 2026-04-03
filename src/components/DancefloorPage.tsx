@@ -364,7 +364,7 @@ export default function DancefloorPage({ initialLangId, analyser }: DancefloorPr
       globeGroup.scale.set(gScale, gScale, gScale)
 
       // Pulse lights to beat
-      const lightBoost = 1 + audioPulse * 1.5
+      const lightBoost = 1 + audioPulse * 0.4
       kL.position.set(Math.sin(time*0.3)*5, Math.sin(time*0.2)*2+2, Math.cos(time*0.4)*5)
       kL.intensity = 40 * lightBoost
       pL.position.set(Math.cos(time*0.25)*4, Math.cos(time*0.15)*2-1, Math.sin(time*0.35)*4)
@@ -409,7 +409,7 @@ export default function DancefloorPage({ initialLangId, analyser }: DancefloorPr
 
       // Audio-reactive bloom — pulse bloom strength on bass hits
       if (t.choreo === 4) {
-        bloom.strength = 0.6 + audioPulse * 1.2
+        bloom.strength = 0.6 + audioPulse * 0.35
       }
 
       // Twinkle — scale shimmer for all gems, sparkle for active pink gems
