@@ -135,7 +135,7 @@ export default function App() {
             </div>
             <div style={{ overflowY: 'auto', flex: 1 }}>
               <div className="grid grid-cols-2 gap-2">
-                {LANGS.map((l) => (
+                {[...LANGS].sort((a, b) => a.name.localeCompare(b.name)).map((l) => (
                   <button key={l.id} onClick={() => pickLanguage(l.id)} style={{
                     padding: '10px 12px', borderRadius: '1rem',
                     background: 'rgba(255,12,182,0.06)',
