@@ -10,7 +10,7 @@ export default function ChoicesResultsPage() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
 
-  const PIN_CODE = '1234'
+  const PIN_CODE = '3450'
 
   const handlePin = () => {
     if (pin === PIN_CODE) setAuthed(true)
