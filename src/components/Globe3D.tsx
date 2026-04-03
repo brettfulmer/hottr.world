@@ -10,9 +10,9 @@ const PI2 = Math.PI * 2
 const CW = 2048
 const CH = 1024
 const SPIN_SPEED = 0.003
-const TILE_W = 3
-const TILE_H = 3
-const GAP = 0.5
+const TILE_W = 1.95
+const TILE_H = 1.95
+const GAP = 0.1
 
 // Exact colors
 const OCEAN = '#050608'
@@ -164,7 +164,7 @@ export default function Globe3D({ selected }: Props) {
     if (!activeTiles.length) { texture.needsUpdate = true; return }
 
     // Pick random active tiles to flash white
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 60; i++) {
       const tile = activeTiles[Math.floor(Math.random() * activeTiles.length)]
       if (!tile) continue
 
