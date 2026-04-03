@@ -40,9 +40,7 @@ export default function App() {
 
   const INSTRUMENTAL_URL = 'https://ykjntvewdxdgbmzmvmwa.supabase.co/storage/v1/object/sign/records-source-audio/public/music/dancefloor/Dancefloor-Intrumental-master.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83YzcwNmEwNC04MjJiLTQ4YjEtOWQyZC04ZWY3ZDRjZmQ0MGIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJyZWNvcmRzLXNvdXJjZS1hdWRpby9wdWJsaWMvbXVzaWMvZGFuY2VmbG9vci9EYW5jZWZsb29yLUludHJ1bWVudGFsLW1hc3Rlci5tcDMiLCJpYXQiOjE3NzUxOTcwMjYsImV4cCI6MTgwNjczMzAyNn0.KYPY9E73nd9V3vNcNuVqKQJAablAfNI2NfBoqEfegWE'
 
-  // Start playing when detect screen appears
-  useEffect(() => {
-    if (route !== 'detect') return
+  const startAudio = () => {
     if (!audioRef.current) {
       const audio = new Audio(INSTRUMENTAL_URL)
       audio.loop = true
@@ -50,10 +48,7 @@ export default function App() {
       audioRef.current = audio
     }
     audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {})
-    return () => {
-      // Don't stop — let it keep playing into the intro
-    }
-  }, [route])
+  }
 
   const togglePlay = () => {
     const audio = audioRef.current
@@ -76,24 +71,22 @@ export default function App() {
         setGeoResult(result)
         setLocaleReady(true)
       } else {
+        // No detection — show picker directly, default English
         setShowPicker(true)
+        setLocaleReady(true)
       }
     })
   }, [route])
 
   const acceptGeo = async (geo: GeoResult) => {
-    // Locale already loaded during detection — go straight to main
+    startAudio()
     setChosenLangId(geo.language.id)
     setRoute('main')
   }
 
-  const declineGeo = () => {
-    // They want a different language — show picker (still in detected locale)
-    setShowPicker(true)
-  }
-
   const pickLanguage = async (langId: string) => {
     await loadLocale(langId)
+    startAudio()
     setChosenLangId(langId)
     setRoute('main')
   }
@@ -202,33 +195,37 @@ export default function App() {
           </div>
         )}
 
-        {/* Play/Pause button */}
-        <button onClick={togglePlay} className="fixed bottom-6 right-6 z-[300] flex items-center gap-2" style={{
-          background: 'rgba(255,12,182,0.12)',
-          border: '1px solid rgba(255,12,182,0.3)',
-          borderRadius: '2rem',
-          padding: '8px 16px',
-          cursor: 'pointer',
-          backdropFilter: 'blur(20px)',
-          boxShadow: '0 0 12px rgba(255,12,182,0.1)',
-        }}>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
-            {isPlaying ? (
-              <>
-                <rect x="2" y="1" width="3.5" height="12" rx="1" fill="#FF0CB6" />
-                <rect x="8.5" y="1" width="3.5" height="12" rx="1" fill="#FF0CB6" />
-              </>
-            ) : (
-              <path d="M2.5 1.5L12 7L2.5 12.5V1.5Z" fill="#FF0CB6" />
-            )}
-          </svg>
-          <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: '#FF0CB6', fontWeight: 600, letterSpacing: '0.5px' }}>
-            {isPlaying ? 'PLAYING' : 'PLAY'}
-          </span>
-        </button>
       </div>
     )
   }
 
-  return <DancefloorPage initialLangId={chosenLangId} />
+  return (
+    <>
+      <DancefloorPage initialLangId={chosenLangId} />
+      {/* Play/Pause button — visible during intro + globe */}
+      <button onClick={togglePlay} className="fixed top-6 right-6 z-[300] flex items-center gap-2" style={{
+        background: 'rgba(255,12,182,0.12)',
+        border: '1px solid rgba(255,12,182,0.3)',
+        borderRadius: '2rem',
+        padding: '8px 16px',
+        cursor: 'pointer',
+        backdropFilter: 'blur(20px)',
+        boxShadow: '0 0 12px rgba(255,12,182,0.1)',
+      }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+          {isPlaying ? (
+            <>
+              <rect x="2" y="1" width="3.5" height="12" rx="1" fill="#FF0CB6" />
+              <rect x="8.5" y="1" width="3.5" height="12" rx="1" fill="#FF0CB6" />
+            </>
+          ) : (
+            <path d="M2.5 1.5L12 7L2.5 12.5V1.5Z" fill="#FF0CB6" />
+          )}
+        </svg>
+        <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: '#FF0CB6', fontWeight: 600, letterSpacing: '0.5px' }}>
+          {isPlaying ? 'PLAYING' : 'PLAY'}
+        </span>
+      </button>
+    </>
+  )
 }
