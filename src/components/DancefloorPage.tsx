@@ -373,18 +373,39 @@ export default function DancefloorPage() {
         if (p >= 1) t.langTrans = null
       }
 
-      // Twinkle — ONLY scale shimmer, NO color changes
-      const twSpeed = t.choreo === 1 ? 3.0 : 1.5, twRange = t.choreo === 1 ? 0.15 : 0.05, twCount = t.choreo === 1 ? 200 : 60
+      // Twinkle — scale shimmer for all gems (subtle), sparkle for active pink gems
+      const twSpeed = t.choreo === 1 ? 3.0 : 1.5
+      const twRange = t.choreo === 1 ? 0.15 : 0.03
+      const twCount = t.choreo === 1 ? 200 : 60
+      const PINK_SPARKLE = new THREE.Color('#FF4DD4')
+      let colorsChanged = false
       for (let n = 0; n < twCount; n++) {
         const i = Math.floor(Math.random() * COUNT)
         mesh.getMatrixAt(i, tM); tM.decompose(tP, tQ, tS)
         const shimmer = Math.sin(time * twSpeed + tilts[i] * 4) * 0.5 + 0.5
-        tS.setScalar(bScales[i] * (1 - twRange + shimmer * twRange * 2))
+
+        // Check if this gem is currently pink (active)
+        const isPink = t.curCols[i].r > 0.8 && t.curCols[i].g < 0.2 && t.curCols[i].b > 0.4
+
+        if (isPink && t.choreo === 4 && !t.langTrans) {
+          // Active gems: bigger scale pulse + white flash sparkle
+          tS.setScalar(bScales[i] * (1 + shimmer * 0.25))
+          if (shimmer > 0.75) {
+            mesh.setColorAt(i, PINK_SPARKLE)
+            colorsChanged = true
+          } else {
+            mesh.setColorAt(i, PINK)
+            colorsChanged = true
+          }
+        } else {
+          // Non-active gems: very subtle scale shimmer only
+          tS.setScalar(bScales[i] * (1 - twRange + shimmer * twRange * 2))
+        }
+
         tM.compose(tP, tQ, tS); mesh.setMatrixAt(i, tM)
       }
       mesh.instanceMatrix.needsUpdate = true
-
-      // NO settled sparkle color loop — colors are strictly controlled by langTrans only
+      if (colorsChanged) mesh.instanceColor!.needsUpdate = true
 
       composer.render()
     }
