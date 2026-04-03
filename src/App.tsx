@@ -35,15 +35,27 @@ export default function App() {
   const [localeReady, setLocaleReady] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
 
   const INSTRUMENTAL_URL = 'https://ykjntvewdxdgbmzmvmwa.supabase.co/storage/v1/object/sign/records-source-audio/public/music/dancefloor/Dancefloor-Intrumental-master.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83YzcwNmEwNC04MjJiLTQ4YjEtOWQyZC04ZWY3ZDRjZmQ0MGIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJyZWNvcmRzLXNvdXJjZS1hdWRpby9wdWJsaWMvbXVzaWMvZGFuY2VmbG9vci9EYW5jZWZsb29yLUludHJ1bWVudGFsLW1hc3Rlci5tcDMiLCJpYXQiOjE3NzUxOTcwMjYsImV4cCI6MTgwNjczMzAyNn0.KYPY9E73nd9V3vNcNuVqKQJAablAfNI2NfBoqEfegWE'
 
   const startAudio = () => {
     if (!audioRef.current) {
       const audio = new Audio(INSTRUMENTAL_URL)
+      audio.crossOrigin = 'anonymous'
       audio.loop = true
       audio.volume = 0.6
       audioRef.current = audio
+
+      // Set up Web Audio API analyser for globe reactivity
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      const ctx = new AudioCtx()
+      const analyser = ctx.createAnalyser()
+      analyser.fftSize = 256
+      const source = ctx.createMediaElementSource(audio)
+      source.connect(analyser)
+      analyser.connect(ctx.destination)
+      analyserRef.current = analyser
     }
     audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {})
   }
@@ -199,7 +211,7 @@ export default function App() {
 
   return (
     <>
-      <DancefloorPage initialLangId={chosenLangId} />
+      <DancefloorPage initialLangId={chosenLangId} analyser={analyserRef.current} />
       {/* Play/Pause button — visible during intro + globe */}
       <button onClick={togglePlay} className="fixed top-6 right-6 z-[300] flex items-center gap-2" style={{
         background: 'rgba(255,12,182,0.12)',

@@ -85,9 +85,9 @@ function matchesCountry(geoName: string, langCountries: string[]): boolean {
 import { languages as LANGS } from '../data/languages-50'
 
 /* ═══ COMPONENT ═══ */
-interface DancefloorProps { initialLangId?: string }
+interface DancefloorProps { initialLangId?: string; analyser?: AnalyserNode | null }
 
-export default function DancefloorPage({ initialLangId }: DancefloorProps) {
+export default function DancefloorPage({ initialLangId, analyser }: DancefloorProps) {
   const { t } = useTranslation()
   const canvasRef = useRef<HTMLDivElement>(null)
   const flashRef = useRef<HTMLDivElement>(null)
@@ -99,6 +99,16 @@ export default function DancefloorPage({ initialLangId }: DancefloorProps) {
   const locked = useRef(false)
   const autoTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [cardCollapsed, setCardCollapsed] = useState(true)
+  const analyserDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null)
+  const analyserNodeRef = useRef<AnalyserNode | null>(analyser || null)
+
+  // Keep analyser ref in sync with prop (may arrive after mount)
+  useEffect(() => {
+    if (analyser) {
+      analyserNodeRef.current = analyser
+      analyserDataRef.current = new Uint8Array(analyser.frequencyBinCount)
+    }
+  }, [analyser])
 
   const threeRef = useRef<{
     choreo: number; morphStart: number; textDropStart: number
@@ -337,9 +347,28 @@ export default function DancefloorPage({ initialLangId }: DancefloorProps) {
       const t = threeRef.current!
       const now = Date.now(), time = now * 0.001
 
+      // ── Audio reactivity ──
+      let audioPulse = 0
+      if (analyserNodeRef.current && analyserDataRef.current) {
+        analyserNodeRef.current.getByteFrequencyData(analyserDataRef.current)
+        // Average lower 10 bins (bass frequencies)
+        let bassSum = 0
+        for (let i = 0; i < 10; i++) bassSum += analyserDataRef.current[i]
+        audioPulse = (bassSum / 10) / 255 // 0.0 – 1.0
+      }
+
       globeGroup.rotation.y += (t.choreo === 1 ? 0.04 : 0.006)
+
+      // Pulse globe scale to bass
+      const gScale = 1.0 + audioPulse * 0.03
+      globeGroup.scale.set(gScale, gScale, gScale)
+
+      // Pulse lights to beat
+      const lightBoost = 1 + audioPulse * 0.8
       kL.position.set(Math.sin(time*0.3)*5, Math.sin(time*0.2)*2+2, Math.cos(time*0.4)*5)
+      kL.intensity = 40 * lightBoost
       pL.position.set(Math.cos(time*0.25)*4, Math.cos(time*0.15)*2-1, Math.sin(time*0.35)*4)
+      pL.intensity = 30 * lightBoost
 
       // 3D text slam
       if (t.textMesh3D && t.textMesh3D.visible && t.choreo >= 2) {
@@ -378,10 +407,16 @@ export default function DancefloorPage({ initialLangId }: DancefloorProps) {
         if (p >= 1) t.langTrans = null
       }
 
-      // Twinkle — scale shimmer for all gems (subtle), sparkle for active pink gems
+      // Audio-reactive bloom — pulse bloom strength on bass hits
+      if (t.choreo === 4) {
+        bloom.strength = 0.6 + audioPulse * 0.8
+      }
+
+      // Twinkle — scale shimmer for all gems, sparkle for active pink gems
+      // Audio boosts: more sparkle count + bigger pulse on bass
       const twSpeed = t.choreo === 1 ? 3.0 : 1.5
-      const twRange = t.choreo === 1 ? 0.15 : 0.03
-      const twCount = t.choreo === 1 ? 200 : 60
+      const twRange = t.choreo === 1 ? 0.15 : 0.03 + audioPulse * 0.04
+      const twCount = t.choreo === 1 ? 200 : Math.floor(60 + audioPulse * 80)
       const PINK_SPARKLE = new THREE.Color('#FF4DD4')
       let colorsChanged = false
       for (let n = 0; n < twCount; n++) {
@@ -393,9 +428,10 @@ export default function DancefloorPage({ initialLangId }: DancefloorProps) {
         const isPink = t.curCols[i].r > 0.8 && t.curCols[i].g < 0.2 && t.curCols[i].b > 0.4
 
         if (isPink && t.choreo === 4 && !t.langTrans) {
-          // Active gems: bigger scale pulse + white flash sparkle
-          tS.setScalar(bScales[i] * (1 + shimmer * 0.25))
-          if (shimmer > 0.75) {
+          // Active gems: scale pulse amplified by audio
+          const pinkPulse = 0.25 + audioPulse * 0.3
+          tS.setScalar(bScales[i] * (1 + shimmer * pinkPulse))
+          if (shimmer > 0.75 - audioPulse * 0.2) {
             mesh.setColorAt(i, PINK_SPARKLE)
             colorsChanged = true
           } else {
@@ -403,7 +439,7 @@ export default function DancefloorPage({ initialLangId }: DancefloorProps) {
             colorsChanged = true
           }
         } else {
-          // Non-active gems: very subtle scale shimmer only
+          // Non-active gems: subtle shimmer, slightly boosted by audio
           tS.setScalar(bScales[i] * (1 - twRange + shimmer * twRange * 2))
         }
 
