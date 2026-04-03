@@ -12,7 +12,7 @@ const TRACKS = [
   },
   {
     label: 'Version 3',
-    url: 'https://ykjntvewdxdgbmzmvmwa.supabase.co/storage/v1/object/sign/records-source-audio/public/music/dancefloor/Dancefloor%20-%20English%20-%20V3.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83YzcwNmEwNC04MjJiLTQ4YjEtOWQyZC04ZWY3ZDRjZmQ0MGIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJyZWNvcmRzLXNvdXJjZS1hdWRpby9wdWJsaWMvbXVzaWMvZGFuY2VmbG9vci9EYW5jZWZsb29yIC0gRW5nbGlzaCAtIFYzLm1wMyIsImlhdCI6MTc3NTIxNTU2NiwiZXhwIjoxNzc1ODIwMzY2fQ._aRCbj6Hs0CBhG0nRDovXimFbEIKfO_bNrc9DMQ5OyA',
+    url: 'https://ykjntvewdxdgbmzmvmwa.supabase.co/storage/v1/object/sign/records-source-audio/public/music/dancefloor/Dancefloor%20-%20English%20-%20V3%20(1).mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83YzcwNmEwNC04MjJiLTQ4YjEtOWQyZC04ZWY3ZDRjZmQ0MGIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJyZWNvcmRzLXNvdXJjZS1hdWRpby9wdWJsaWMvbXVzaWMvZGFuY2VmbG9vci9EYW5jZWZsb29yIC0gRW5nbGlzaCAtIFYzICgxKS5tcDMiLCJpYXQiOjE3NzUyMTcyNTMsImV4cCI6MTc3NTgyMjA1M30.BGGrX8EIO1wLAJzQxWoWYzbziWfA7Tylj3LJ8ii6V5c',
   },
 ]
 
