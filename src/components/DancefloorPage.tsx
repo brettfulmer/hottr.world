@@ -52,6 +52,34 @@ async function loadGeoData(points: CrystalPoint[], onComplete: () => void) {
   } catch { onComplete() }
 }
 
+/* ═══ COUNTRY MATCHING ═══ */
+const ALIASES: Record<string, string[]> = {
+  'United States of America': ['United States', 'USA', 'United States (60M+ Spanish speakers)'],
+  'United Kingdom': ['United Kingdom', 'UK'],
+  'South Korea': ['South Korea'],
+  'North Korea': ['North Korea'],
+  'Democratic Republic of the Congo': ['DR Congo'],
+  'Republic of the Congo': ['Republic of Congo'],
+  "Côte d'Ivoire": ['Ivory Coast'],
+  'Czechia': ['Czech Republic'],
+  'Turkey': ['Turkey', 'Türkiye'],
+  'Taiwan': ['Taiwan'],
+}
+
+function matchesCountry(geoName: string, langCountries: string[]): boolean {
+  for (const c of langCountries) {
+    if (geoName === c) return true
+    if (c.includes('(') && geoName.startsWith(c.split('(')[0].trim())) return true
+  }
+  const aliases = ALIASES[geoName]
+  if (aliases) {
+    for (const a of aliases) {
+      for (const c of langCountries) { if (c === a || c.startsWith(a)) return true }
+    }
+  }
+  return false
+}
+
 /* ═══ 50 LANGUAGES — sorted most spoken → least spoken ═══ */
 import { languages as LANGS } from '../data/languages-50'
 
@@ -92,7 +120,8 @@ export default function DancefloorPage() {
     for (let i = 0; i < t.COUNT; i++) {
       startCols[i] = t.curCols[i].clone()
       const c = t.pts[i].country
-      targets[i] = (c && lang.countries.includes(c)) ? PINK.clone() : t.globeCols[i].clone()
+      const isActive = lang.isIndigenous ? c === 'Australia' : (c && matchesCountry(c, lang.countries))
+      targets[i] = isActive ? PINK.clone() : t.globeCols[i].clone()
     }
     t.langTrans = { targets, startCols, start: Date.now(), duration: 600 }
   }, [])
@@ -329,7 +358,8 @@ export default function DancefloorPage() {
           const targets: THREE.Color[] = [], startCols: THREE.Color[] = []
           for (let i = 0; i < COUNT; i++) {
             startCols[i] = t.curCols[i].clone()
-            targets[i] = (t.pts[i].country && lang.countries.includes(t.pts[i].country)) ? PINK.clone() : t.globeCols[i].clone()
+            const isActive = lang.isIndigenous ? t.pts[i].country === 'Australia' : (t.pts[i].country && matchesCountry(t.pts[i].country, lang.countries))
+            targets[i] = isActive ? PINK.clone() : t.globeCols[i].clone()
           }
           t.langTrans = { targets, startCols, start: Date.now(), duration: 600 }
         }
