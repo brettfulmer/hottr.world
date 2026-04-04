@@ -84,19 +84,6 @@ async function tryCountryIs(): Promise<{ country: string } | null> {
   return null
 }
 
-async function tryIpInfo(): Promise<{ country: string } | null> {
-  try {
-    const res = await fetch('https://ipinfo.io/json', { signal: AbortSignal.timeout(5000) })
-    const data = await res.json()
-    if (data.country) {
-      // Also returns ISO code — reuse same approach
-      const res2 = await tryCountryIs() // reuse the code map logic
-      if (res2) return res2
-    }
-  } catch { /* fall through */ }
-  return null
-}
-
 export async function detectUserCountry(): Promise<GeoResult | null> {
   // Try APIs in order — all support CORS from HTTPS origins
   const result = await tryIpApiCo() || await tryCountryIs()
