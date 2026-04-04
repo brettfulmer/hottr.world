@@ -40,7 +40,7 @@ export default function App() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
 
-  const INSTRUMENTAL_URL = 'https://ykjntvewdxdgbmzmvmwa.supabase.co/storage/v1/object/sign/records-source-audio/public/music/dancefloor/Dancefloor-Intrumental-master.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83YzcwNmEwNC04MjJiLTQ4YjEtOWQyZC04ZWY3ZDRjZmQ0MGIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJyZWNvcmRzLXNvdXJjZS1hdWRpby9wdWJsaWMvbXVzaWMvZGFuY2VmbG9vci9EYW5jZWZsb29yLUludHJ1bWVudGFsLW1hc3Rlci5tcDMiLCJpYXQiOjE3NzUxOTcwMjYsImV4cCI6MTgwNjczMzAyNn0.KYPY9E73nd9V3vNcNuVqKQJAablAfNI2NfBoqEfegWE'
+  const INSTRUMENTAL_URL = 'https://ykjntvewdxdgbmzmvmwa.supabase.co/storage/v1/object/sign/records-source-audio/public/music/dancefloor/LANDR-Dancefloor_V3_English_Melbourne-Balanced-Medium.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83YzcwNmEwNC04MjJiLTQ4YjEtOWQyZC04ZWY3ZDRjZmQ0MGIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJyZWNvcmRzLXNvdXJjZS1hdWRpby9wdWJsaWMvbXVzaWMvZGFuY2VmbG9vci9MQU5EUi1EYW5jZWZsb29yX1YzX0VuZ2xpc2hfTWVsYm91cm5lLUJhbGFuY2VkLU1lZGl1bS5tcDMiLCJpYXQiOjE3NzUyNzk0NTcsImV4cCI6MTgwNjgxNTQ1N30.oFb6WuZ9AbBxy6R-EYQm_4ubq-9NTGSMPlRpZrSSI-A'
 
   const startAudio = () => {
     if (!audioRef.current) {
