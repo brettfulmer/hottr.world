@@ -638,7 +638,7 @@ export default function DancefloorPage({ initialLangId, analyser }: DancefloorPr
             {lang.dialect && (
               <div style={{ borderTop: '1px dashed rgba(255,12,182,0.3)', paddingTop: 10, marginBottom: 10 }}>
                 <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: '#FF0CB6', marginBottom: 5 }}>{t('player.dialect')}</div>
-                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: '#ccc', lineHeight: 1.5 }}>{lang.dialect}</div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: '#ccc', lineHeight: 1.5 }}>{t(`dialect.${lang.id}`, lang.dialect)}</div>
               </div>
             )}
 
@@ -646,7 +646,7 @@ export default function DancefloorPage({ initialLangId, analyser }: DancefloorPr
             {lang.whyThisCity && (
               <div style={{ borderTop: '1px dashed rgba(255,12,182,0.3)', paddingTop: 10, marginBottom: 10 }}>
                 <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: '#a0a0a0', marginBottom: 5 }}>{t('player.whyCity', { city: lang.city.split(',')[0] })}</div>
-                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: 'rgba(226,226,226,0.5)', lineHeight: 1.5 }}>{lang.whyThisCity}</div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, color: 'rgba(226,226,226,0.5)', lineHeight: 1.5 }}>{t(`whyCity.${lang.id}`, lang.whyThisCity)}</div>
               </div>
             )}
 

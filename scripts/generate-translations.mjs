@@ -76,7 +76,7 @@ const LANG_INFO = {
 
 const ALL_LANG_IDS = Object.keys(LANG_INFO)
 
-async function translateBatch(enJson, langId, langInfo) {
+async function callClaude(jsonChunk, langInfo) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -86,7 +86,7 @@ async function translateBatch(enJson, langId, langInfo) {
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
+      max_tokens: 8192,
       messages: [{
         role: 'user',
         content: `Translate the following JSON values from English into ${langInfo.name}.
@@ -98,10 +98,11 @@ CRITICAL RULES:
 - Preserve all {{interpolation}} placeholders exactly as-is (e.g. {{language}}, {{country}}, {{city}})
 - Return ONLY valid JSON — no markdown, no explanation, no code fences
 - Keep the same JSON keys, only translate the values
+- Escape any double quotes inside values with backslash
 - For short UI labels (like "D", "H", "M", "S" for countdown), use the appropriate abbreviation in the target language
 
 Source JSON:
-${JSON.stringify(enJson, null, 2)}`
+${JSON.stringify(jsonChunk, null, 2)}`
       }],
     }),
   })
@@ -110,9 +111,37 @@ ${JSON.stringify(enJson, null, 2)}`
   if (data.error) throw new Error(data.error.message)
 
   const text = data.content[0].text.trim()
-  // Strip any accidental code fences
   const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
   return JSON.parse(cleaned)
+}
+
+async function translateBatch(enJson, langId, langInfo) {
+  // Split into UI keys and content keys to avoid output truncation
+  const uiKeys = {}
+  const contentKeys = {}
+  for (const [k, v] of Object.entries(enJson)) {
+    if (k.startsWith('dialect.') || k.startsWith('whyCity.')) {
+      contentKeys[k] = v
+    } else {
+      uiKeys[k] = v
+    }
+  }
+
+  // Translate UI strings
+  const uiResult = await callClaude(uiKeys, langInfo)
+  await new Promise(r => setTimeout(r, 800))
+
+  // Translate content strings in chunks of 25
+  const contentEntries = Object.entries(contentKeys)
+  let contentResult = {}
+  for (let i = 0; i < contentEntries.length; i += 25) {
+    const chunk = Object.fromEntries(contentEntries.slice(i, i + 25))
+    const chunkResult = await callClaude(chunk, langInfo)
+    contentResult = { ...contentResult, ...chunkResult }
+    if (i + 25 < contentEntries.length) await new Promise(r => setTimeout(r, 800))
+  }
+
+  return { ...uiResult, ...contentResult }
 }
 
 async function main() {
